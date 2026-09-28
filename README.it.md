@@ -135,7 +135,7 @@ Per impostazione predefinita, non vengono effettuate telemetrie, analisi o chiam
 
 ## Stato
 
-Costruiamo in pubblico. Tutti i pacchetti principali sono implementati, testati e in fase di sviluppo. La v0.1.0 è la prima versione pubblicata. I pacchetti sono librerie. Non sono ancora su npm.
+Sviluppo in ambiente pubblico. Tutti i pacchetti principali sono stati implementati, testati e sono in fase di compilazione. Installa il pacchetto con `npm install @mcptoolshop/cognate`. I nomi dei `@cognate/*` rimangono in questo repository.
 
 | Porta | Stato |
 |------|--------|

@@ -135,7 +135,7 @@ De forma predeterminada, no se realizan telemetría, análisis ni llamadas de re
 
 ## Estado
 
-Construyendo en público. Todos los paquetes principales están implementados, probados y en construcción. v0.1.0 es la primera versión publicada. Los paquetes son bibliotecas. Aún no están en npm.
+Desarrollando en un entorno público. Todos los paquetes principales están implementados, probados y en proceso de compilación. Instale el paquete con `npm install @mcptoolshop/cognate`. Los nombres de `@cognate/*` se mantienen en este repositorio.
 
 | Puerta de enlace | Estado |
 |------|--------|

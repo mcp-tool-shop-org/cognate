@@ -135,7 +135,7 @@ No telemetry, analytics, or outbound network calls are made by default.
 
 ## Status
 
-Building in public. All core packages are implemented, tested, and building. v0.1.0 is the first published cut. The packages are libraries. They are not on npm yet.
+Building in public. All core packages are implemented, tested, and building. Install the bundle with `npm install @mcptoolshop/cognate`. The `@cognate/*` names stay in this repo.
 
 | Gate | Status |
 |------|--------|

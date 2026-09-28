@@ -1,0 +1,50 @@
+{
+  "name": "@mcptoolshop/cognate",
+  "version": "0.1.1",
+  "description": "Structural governance for autonomous intelligence. One package for Cognate's model lineage, policy decisions, agent capabilities, and prompt integrity.",
+  "type": "module",
+  "license": "MIT",
+  "author": "mcp-tool-shop-org",
+  "homepage": "https://mcp-tool-shop-org.github.io/cognate/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcp-tool-shop-org/cognate.git",
+    "directory": "packages/cognate"
+  },
+  "keywords": [
+    "cognate",
+    "ai-governance",
+    "attestation",
+    "policy-engine",
+    "model-registry"
+  ],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./types": { "types": "./dist/types.d.ts", "import": "./dist/types.js" },
+    "./policy": { "types": "./dist/policy.d.ts", "import": "./dist/policy.js" },
+    "./model-registry": { "types": "./dist/model-registry.d.ts", "import": "./dist/model-registry.js" },
+    "./agent-identity": { "types": "./dist/agent-identity.d.ts", "import": "./dist/agent-identity.js" },
+    "./prompt-store": { "types": "./dist/prompt-store.d.ts", "import": "./dist/prompt-store.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cognate/agent-identity": "workspace:*",
+    "@cognate/model-registry": "workspace:*",
+    "@cognate/policy": "workspace:*",
+    "@cognate/prompt-store": "workspace:*",
+    "@cognate/types": "workspace:*",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

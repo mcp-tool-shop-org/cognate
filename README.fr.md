@@ -135,7 +135,7 @@ Par défaut, aucune télémétrie, analyse ou appel réseau sortant n’est effe
 
 ## État
 
-Développement en public. Tous les principaux paquets sont implémentés, testés et en cours de construction. La version 0.1.0 est la première version publiée. Les paquets sont des bibliothèques. Ils ne sont pas encore sur npm.
+Développement en mode ouvert. Tous les principaux modules sont implémentés, testés et en cours de construction. Installez le paquet avec `npm install @mcptoolshop/cognate`. Les noms des `@cognate/*` restent dans ce dépôt.
 
 | Porte | État |
 |------|--------|

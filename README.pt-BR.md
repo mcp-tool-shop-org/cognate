@@ -135,7 +135,7 @@ Por padrão, nenhuma telemetria, análise ou chamadas de rede de saída são fei
 
 ## Status
 
-Construindo em público. Todos os pacotes principais são implementados, testados e estão em construção. A v0.1.0 é a primeira versão publicada. Os pacotes são bibliotecas. Eles ainda não estão no npm.
+Desenvolvimento em modo aberto. Todos os pacotes principais estão implementados, testados e em fase de construção. Instale o conjunto de pacotes com `npm install @mcptoolshop/cognate`. Os nomes dos `@cognate/*` permanecem neste repositório.
 
 | Portão | Status |
 |------|--------|

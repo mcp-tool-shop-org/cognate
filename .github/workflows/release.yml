@@ -1,0 +1,95 @@
+name: Release
+
+# Publishes the bundled package @mcptoolshop/cognate (packages/cognate)
+# to npm via OIDC Trusted Publishing. The five @cognate/* packages stay
+# inside the repo and are inlined at build time.
+#
+# v0.1.0 is already a GitHub release of the libraries, before this package
+# existed. The first npm release after the 0.0.0 placeholder is v0.1.1+.
+# Bump packages/cognate/package.json, then git tag vX.Y.Z && git push origin vX.Y.Z.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Publish @mcptoolshop/cognate to npm + GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install pnpm
+        run: npm install -g pnpm@10
+
+      - name: Install npm >=11.5 in sandbox for OIDC trusted-publishing auth
+        run: |
+          SANDBOX="$HOME/.npm-cli-sandbox"
+          mkdir -p "$SANDBOX"
+          pushd "$SANDBOX" >/dev/null
+          echo '{"name":"npm-cli-sandbox","version":"0.0.0","private":true}' > package.json
+          npm install --no-save --no-audit --no-fund --silent npm@latest
+          popd >/dev/null
+          echo "$SANDBOX/node_modules/.bin" >> "$GITHUB_PATH"
+          "$SANDBOX/node_modules/.bin/npm" --version
+
+      - name: Verify tag matches packages/cognate/package.json version
+        run: |
+          PKG_VERSION=$(node -p "require('./packages/cognate/package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "Tag: ${GITHUB_REF_NAME} -> ${TAG_VERSION}"
+          echo "Package: ${PKG_VERSION}"
+          if [ "${PKG_VERSION}" != "${TAG_VERSION}" ]; then
+            echo "::error::Tag ${TAG_VERSION} does not match packages/cognate/package.json version ${PKG_VERSION}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages (incl. the bundle)
+        run: pnpm build
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Strip workspace-only devDependencies from the published manifest
+        working-directory: packages/cognate
+        run: |
+          npm pkg delete devDependencies
+          echo "Published dependencies:" && node -p "JSON.stringify(require('./package.json').dependencies || {}, null, 2)"
+
+      - name: npm pack dry-run (verify tarball shape)
+        working-directory: packages/cognate
+        run: npm pack --dry-run
+
+      - name: Publish to npm with provenance (OIDC trusted publisher)
+        working-directory: packages/cognate
+        run: npm publish --provenance --access public
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "@mcptoolshop/cognate ${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --verify-tag

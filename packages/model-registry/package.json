@@ -21,7 +21,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@cognate/types": "workspace:*"
+    "@cognate/types": "workspace:*",
+    "@mcptoolshop/attestia": "^2.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

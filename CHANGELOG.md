@@ -2,6 +2,12 @@
 
 All notable changes to Cognate are documented in this file.
 
+## [0.1.1] — 2026-09-28
+
+### Added
+- `@mcptoolshop/cognate` on npm. One package bundles types, policy, model-registry, agent-identity, and prompt-store. The `@cognate/*` names stay in the repo.
+- `release.yml` publishes that package on a version tag through Trusted Publishing.
+
 ## [0.1.0] — 2026-09-28
 
 ### Added

@@ -1,7 +1,7 @@
 {
-  "name": "@cognate/prompt-store",
+  "name": "@cognate/node",
   "version": "0.1.0",
-  "description": "Encrypted prompt and output logging for Cognate AI governance",
+  "description": "HTTP API server for Cognate AI governance",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,13 +21,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "start": "node dist/index.js"
   },
   "keywords": [
     "cognate",
     "ai-governance",
-    "prompt-store",
-    "audit-log"
+    "rest-api",
+    "http-server"
   ],
   "author": "mcp-tool-shop-org",
   "license": "MIT",
@@ -36,12 +37,15 @@
   },
   "dependencies": {
     "@cognate/types": "workspace:*",
-    "@mcptoolshop/attestia": "^2.0.2"
+    "@cognate/policy": "workspace:*",
+    "@cognate/model-registry": "workspace:*",
+    "@cognate/agent-identity": "workspace:*",
+    "@cognate/prompt-store": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^1.6.1",
-    "typescript": "^5.3.0",
-    "vitest": "^1.2.0",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.4.0",
+    "vitest": "^1.2.0"
   }
 }

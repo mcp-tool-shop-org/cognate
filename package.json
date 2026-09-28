@@ -1,6 +1,6 @@
 {
   "name": "cognate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "AI governance attestation layer — structural truth for autonomous systems",
   "type": "module",
