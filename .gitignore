@@ -7,3 +7,6 @@ coverage/
 .vscode/
 .idea/
 *.tsbuildinfo
+node_modules/
+_gen_test.js
+write-test.js
