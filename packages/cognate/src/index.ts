@@ -14,3 +14,4 @@ export * as policy from "@cognate/policy";
 export * as modelRegistry from "@cognate/model-registry";
 export * as agentIdentity from "@cognate/agent-identity";
 export * as promptStore from "@cognate/prompt-store";
+export * as repomeshBridge from "@cognate/repomesh-bridge";

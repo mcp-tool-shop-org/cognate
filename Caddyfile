@@ -1,0 +1,22 @@
+{
+	# Caddyfile — auto-TLS reverse proxy for Cognate
+	# Replace {} with your actual domain via env var or hardcode.
+}
+
+{:localhost} {
+	reverse_proxy cognate-node:4000
+	encode gzip
+
+	header {
+		# Security headers
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	# Health endpoint passthrough (Caddy handles TLS, Cognate handles /health)
+	handle /health {
+		reverse_proxy cognate-node:4000
+	}
+}

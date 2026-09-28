@@ -39,27 +39,28 @@ const rateLimits: Record<string, RateLimitConfig> = {
   "/prompts": { maxTokens: 1000, refillRate: 100 },
 };
 
-function getRateLimitConfig(pathname: string): RateLimitConfig {
+function getRateLimitConfig(pathname: string): { prefix: string; config: RateLimitConfig } {
   for (const [prefix, config] of Object.entries(rateLimits)) {
-    if (pathname === prefix || pathname.startsWith(prefix)) return config;
+    if (pathname === prefix || pathname.startsWith(prefix)) return { prefix, config };
   }
-  return rateLimits.default;
+  return { prefix: "default", config: rateLimits.default };
 }
 
 function checkRateLimitForAgent(agentId: string, pathname: string, nowMs: number): { allowed: boolean; retryAfter?: number } {
-  const config = getRateLimitConfig(pathname);
-  let state = rateLimitBuckets.get(agentId);
+  const { prefix, config } = getRateLimitConfig(pathname);
+  const bucketKey = agentId + ":" + prefix;
+  let state = rateLimitBuckets.get(bucketKey);
   if (!state) {
     state = createRateLimitState();
     state.tokens = config.maxTokens;
-    rateLimitBuckets.set(agentId, state);
+    rateLimitBuckets.set(bucketKey, state);
   }
   const result = checkRateLimit(state, config, nowMs);
   if (!result.allowed) {
     const retryAfter = Math.ceil((1 - result.state.tokens) / config.refillRate);
     return { allowed: false, retryAfter };
   }
-  rateLimitBuckets.set(agentId, result.state);
+  rateLimitBuckets.set(bucketKey, result.state);
   return { allowed: true };
 }
 

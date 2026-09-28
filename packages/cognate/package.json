@@ -1,6 +1,6 @@
 {
   "name": "@mcptoolshop/cognate",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Structural governance for autonomous intelligence. One package for Cognate's model lineage, policy decisions, agent capabilities, and prompt integrity.",
   "type": "module",
   "license": "MIT",
@@ -19,15 +19,41 @@
     "model-registry"
   ],
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./types": { "types": "./dist/types.d.ts", "import": "./dist/types.js" },
-    "./policy": { "types": "./dist/policy.d.ts", "import": "./dist/policy.js" },
-    "./model-registry": { "types": "./dist/model-registry.d.ts", "import": "./dist/model-registry.js" },
-    "./agent-identity": { "types": "./dist/agent-identity.d.ts", "import": "./dist/agent-identity.js" },
-    "./prompt-store": { "types": "./dist/prompt-store.d.ts", "import": "./dist/prompt-store.js" },
-    "./package.json": "./package.json"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./policy": {
+      "types": "./dist/policy.d.ts",
+      "import": "./dist/policy.js"
+    },
+    "./model-registry": {
+      "types": "./dist/model-registry.d.ts",
+      "import": "./dist/model-registry.js"
+    },
+    "./agent-identity": {
+      "types": "./dist/agent-identity.d.ts",
+      "import": "./dist/agent-identity.js"
+    },
+    "./prompt-store": {
+      "types": "./dist/prompt-store.d.ts",
+      "import": "./dist/prompt-store.js"
+    },
+    "./package.json": "./package.json",
+    "./repomesh-bridge": {
+      "types": "./dist/repomesh-bridge.d.ts",
+      "import": "./dist/repomesh-bridge.js"
+    }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
@@ -42,9 +68,13 @@
     "@types/node": "^22.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.4.0",
-    "vitest": "^1.6.1"
+    "vitest": "^1.6.1",
+    "@cognate/repomesh-bridge": "workspace:*"
   },
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "@mcptoolshop/repomesh": "^2.3.1"
   }
 }

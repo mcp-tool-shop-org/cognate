@@ -3,13 +3,29 @@ import { createCognateServer } from "../src/server.js";
 import { handleRegistry } from "../src/routes/registry.js";
 import { handlePrompts } from "../src/routes/prompts.js";
 import { createRegistry as createModelRegistry } from "@cognate/model-registry";
-import { createRegistry as createIdentityRegistry } from "@cognate/agent-identity";
+import { createRegistry as createIdentityRegistry, registerAgent } from "@cognate/agent-identity";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
 
+const TEST_AGENT_ID = "test-agent-1";
+const TEST_TIMESTAMP = "2026-09-28T12:00:00Z";
+
 function emptyState() {
+  let identity = createIdentityRegistry();
+  const regResult = registerAgent(identity, {
+    id: TEST_AGENT_ID,
+    tenantId: "tenant-1",
+    name: "Test Agent",
+    owner: "human-1",
+    walletAddress: null,
+    publicKey: null,
+    capabilities: [],
+    createdAt: TEST_TIMESTAMP,
+    status: "active",
+  });
+  if (regResult.ok) identity = regResult.state;
   return {
     registry: createModelRegistry(),
-    identity: createIdentityRegistry(),
+    identity,
     prompts: createPromptStore(),
   };
 }
@@ -30,11 +46,17 @@ async function startTestServer() {
   });
 }
 
-async function fetchJson(port: number, path: string, opts?: { method?: string; body?: unknown }) {
+async function fetchJson(port: number, path: string, opts?: { method?: string; body?: unknown; auth?: boolean }) {
   const url = `http://127.0.0.1:${port}${path}`;
+  const headers: Record<string, string> = {};
+  if (opts?.body) headers["Content-Type"] = "application/json";
+  if (opts?.auth !== false && (opts?.method === "POST" || opts?.method === "PUT" || opts?.method === "PATCH" || opts?.method === "DELETE")) {
+    headers["X-Agent-Id"] = TEST_AGENT_ID;
+    headers["X-Timestamp"] = TEST_TIMESTAMP;
+  }
   const res = await fetch(url, {
     method: opts?.method ?? "GET",
-    headers: opts?.body ? { "Content-Type": "application/json" } : undefined,
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
     body: opts?.body ? JSON.stringify(opts.body) : undefined,
   });
   const text = await res.text();
@@ -422,13 +444,67 @@ describe("Cognate HTTP API", () => {
     }
   });
 
-  it("returns 500 when the JSON body is invalid", async () => {
+  it("returns 401 when auth headers are missing on POST", async () => {
     const { port, stop } = await startTestServer();
     try {
       const url = `http://127.0.0.1:${port}/registry/models`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model }),
+      });
+      const json = await res.json() as { error: string };
+      expect(res.status).toBe(401);
+      expect(json.error).toBe("auth.missing-credentials");
+    } finally {
+      stop();
+    }
+  });
+
+  it("returns 401 when the agent is not registered", async () => {
+    const { port, stop } = await startTestServer();
+    try {
+      const url = `http://127.0.0.1:${port}/registry/models`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Agent-Id": "unknown-agent",
+          "X-Timestamp": TEST_TIMESTAMP,
+        },
+        body: JSON.stringify({ model }),
+      });
+      const json = await res.json() as { error: string };
+      expect(res.status).toBe(401);
+      expect(json.error).toBe("auth.agent-not-found");
+    } finally {
+      stop();
+    }
+  });
+
+  it("returns 429 when rate limit is exceeded", async () => {
+    const { port, stop } = await startTestServer();
+    try {
+      // Burst enough requests to exhaust the /registry/models bucket (maxTokens: 10)
+      for (let i = 0; i < 12; i++) {
+        const uniqueModel = { ...model, id: "m-burst-" + i };
+        await fetchJson(port, "/registry/models", { method: "POST", body: { model: uniqueModel } });
+      }
+      const { status, json } = await fetchJson(port, "/registry/models", { method: "POST", body: { model } });
+      expect(status).toBe(429);
+      expect(json.error).toBe("rate-limit.exceeded");
+    } finally {
+      stop();
+    }
+  });
+
+  it("returns 500 when the JSON body is invalid", async () => {
+    const { port, stop } = await startTestServer();
+    try {
+      const url = `http://127.0.0.1:${port}/registry/models`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Agent-Id": TEST_AGENT_ID, "X-Timestamp": TEST_TIMESTAMP },
         body: "not-json",
       });
       const json = await res.json() as { error: string; message: string };

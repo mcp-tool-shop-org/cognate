@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 /**
- * Bundles the five @cognate/* libraries into @mcptoolshop/cognate.
+ * Bundles the @cognate/* libraries into @mcptoolshop/cognate.
  * noExternal inlines the workspace packages so the tarball has no workspace:* deps.
  */
 export default defineConfig({
@@ -12,6 +12,7 @@ export default defineConfig({
     "model-registry": "src/model-registry.ts",
     "agent-identity": "src/agent-identity.ts",
     "prompt-store": "src/prompt-store.ts",
+    "repomesh-bridge": "src/repomesh-bridge.ts",
   },
   format: ["esm"],
   dts: true,
