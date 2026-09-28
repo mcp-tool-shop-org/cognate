@@ -5,13 +5,13 @@
  * No input is ever mutated.
  */
 
-import type { Model, ModelVersion, ModelVersionState } from "@cognate/types";
+import type { Model, ModelVersion, ModelVersionStatus } from "@cognate/types";
 import type { RegistryState, TransitionEvent } from "./types.js";
 import { RegistryError } from "./types.js";
 
 /** Valid lifecycle transitions keyed by source state. */
 const VALID_TRANSITIONS: Readonly<
-  Record<ModelVersionState, readonly ModelVersionState[]>
+  Record<ModelVersionStatus, readonly ModelVersionStatus[]>
 > = {
   registered: ["evaluated"],
   evaluated: ["approved", "rejected"],
@@ -101,8 +101,8 @@ export function registerVersion(
 export function transitionVersion(
   state: RegistryState,
   modelVersionId: string,
-  from: ModelVersionState,
-  to: ModelVersionState,
+  from: ModelVersionStatus,
+  to: ModelVersionStatus,
   actorId: string,
   reason: string,
 ): RegistryState {
@@ -115,10 +115,10 @@ export function transitionVersion(
     });
   }
 
-  if (version.state !== from) {
+  if (version.status !== from) {
     throw new RegistryError({
       code: "INVALID_TRANSITION_SOURCE",
-      message: `Version "${modelVersionId}" is in state "${version.state}", not "${from}".`,
+      message: `Version "${modelVersionId}" is in state "${version.status}", not "${from}".`,
       hint: "Ensure the 'from' state matches the current version state.",
     });
   }
@@ -142,7 +142,7 @@ export function transitionVersion(
     timestamp,
   };
 
-  const updatedVersion: ModelVersion = { ...version, state: to };
+  const updatedVersion: ModelVersion = { ...version, status: to };
   const versionTransitions = state.transitions[modelVersionId] ?? [];
 
   return {
@@ -183,5 +183,5 @@ export function getCurrentDeployedVersion(
   modelId: string,
 ): ModelVersion | undefined {
   const versions = getVersionHistory(state, modelId);
-  return versions.filter((v) => v.state === "deployed").pop();
+  return versions.filter((v) => v.status === "deployed").pop();
 }

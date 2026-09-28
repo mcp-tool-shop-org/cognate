@@ -113,8 +113,8 @@ export function revokeCapability(
   state: IdentityRegistryState,
   agentId: ActorId,
   capabilityId: HashId,
-  revokerId: ActorId,
-  timestamp: Timestamp
+  _revokerId: ActorId,
+  _timestamp: Timestamp
 ): IdentityResult<void> {
   const agent = state.agents.get(agentId);
   if (!agent) {

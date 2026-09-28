@@ -7,9 +7,7 @@
 
 import type {
   Capability,
-  CapabilityConstraint,
   CapabilityKind,
-  HashId,
   Policy,
   PolicyCondition,
   PolicyRule,

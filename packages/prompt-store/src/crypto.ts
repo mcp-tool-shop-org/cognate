@@ -8,7 +8,7 @@
  * here so the rest of the package can remain pure.
  */
 
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
 
 export interface EncryptedPayload {
   readonly ciphertext: string; // base64

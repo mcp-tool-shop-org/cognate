@@ -21,12 +21,12 @@ describe("model registry", () => {
     id: string,
     modelId: string,
     version: string,
-    state: ModelVersion["state"] = "registered",
+    status: ModelVersion["status"] = "registered",
   ): ModelVersion => ({
     id,
     modelId,
     version,
-    state,
+    status,
     createdAt: "2026-01-01T00:00:00Z",
   });
 
@@ -78,11 +78,11 @@ describe("model registry", () => {
     state = registerModel(state, makeModel("m1"));
     state = registerVersion(state, makeVersion("v1", "m1", "1.0.0"));
     state = transitionVersion(state, "v1", "registered", "evaluated", "actor-1", "Initial evaluation");
-    expect(state.versions["v1"].state).toBe("evaluated");
+    expect(state.versions["v1"].status).toBe("evaluated");
     state = transitionVersion(state, "v1", "evaluated", "approved", "actor-1", "Policy approved");
-    expect(state.versions["v1"].state).toBe("approved");
+    expect(state.versions["v1"].status).toBe("approved");
     state = transitionVersion(state, "v1", "approved", "deployed", "actor-1", "Deployed to prod");
-    expect(state.versions["v1"].state).toBe("deployed");
+    expect(state.versions["v1"].status).toBe("deployed");
   });
 
   it("records transition events with reason and timestamp", () => {
@@ -150,7 +150,7 @@ describe("model registry", () => {
     state = registerVersion(state, makeVersion("v1", "m1", "1.0.0"));
     state = transitionVersion(state, "v1", "registered", "evaluated", "actor-1", "Evaluated");
     state = transitionVersion(state, "v1", "evaluated", "rejected", "actor-1", "Failed policy");
-    expect(state.versions["v1"].state).toBe("rejected");
+    expect(state.versions["v1"].status).toBe("rejected");
   });
 
   it("allows retirement from deployed", () => {
@@ -161,6 +161,6 @@ describe("model registry", () => {
     state = transitionVersion(state, "v1", "evaluated", "approved", "actor-1", "Approved");
     state = transitionVersion(state, "v1", "approved", "deployed", "actor-1", "Deployed");
     state = transitionVersion(state, "v1", "deployed", "retired", "actor-1", "Retired");
-    expect(state.versions["v1"].state).toBe("retired");
+    expect(state.versions["v1"].status).toBe("retired");
   });
 });

@@ -26,40 +26,13 @@ Cognate is the missing layer: model registry, policy enforcement, agent identity
 
 Cognate consumes Attestia primitives and adds an AI-native domain layer:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        COGNATE                               │
-│                                                              │
-│  ┌──────────────┐  ┌──────────┐  ┌────────────────────┐     │
-│  │   AI Policy  │  │  Model   │  │      Agent         │     │
-│  │   Engine     │  │ Registry │  │     Identity       │     │
-│  └──────────────┘  └──────────┘  └────────────────────┘     │
-│  ┌──────────────┐  ┌──────────┐  ┌────────────────────┐     │
-│  │ Prompt/Output│  │  Dataset │  │  Drift / Eval      │     │
-│  │   Store      │  │  Lineage │  │  Detection         │     │
-│  └──────────────┘  └──────────┘  └────────────────────┘     │
-│                          │                                   │
-│              ┌───────────┴───────────┐                       │
-│              │   @mcptoolshop/       │                       │
-│              │   attestia (platform) │                       │
-│              │   event-store · proof · │                       │
-│              │   verify · registrum  │                       │
-│              └───────────┬───────────┘                       │
-│                          │                                   │
-│              ┌───────────┴───────────┐                       │
-│              │   Witness Network      │                       │
-│              │  (XRPL + EVM + Solana) │                       │
-│              └────────────────────────┘                       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-| Package | Purpose |
-|---------|---------|
-| `@cognate/types` | Shared AI governance domain types (zero deps) |
-| `@cognate/policy` | Semantic policy evaluation engine |
-| `@cognate/model-registry` | Model lifecycle, versioning, evaluation |
-| `@cognate/agent-identity` | Agent identity, capabilities, grants |
-| `@cognate/prompt-store` | Prompt/output logging with encrypted events |
+| Package | Purpose | Status |
+|---------|---------|--------|
+| @cognate/types | Shared AI governance domain types (zero deps) | Ready |
+| @cognate/policy | Semantic policy evaluation engine | Ready |
+| @cognate/model-registry | Model lifecycle, versioning, evaluation | Ready |
+| @cognate/agent-identity | Agent identity, capabilities, grants | Ready |
+| @cognate/prompt-store | Prompt/output logging with encrypted events | Ready |
 
 ### Regulatory Alignment
 
@@ -85,17 +58,41 @@ Cognate consumes Attestia primitives and adds an AI-native domain layer:
 
 ---
 
+## Quick Start
+
+```bash
+pnpm install
+pnpm verify        # build + test + typecheck
+pnpm test:coverage # full coverage report
+```
+
+---
+
+## Threat Model
+
+Cognate assumes the following threat model:
+
+1. **Compromised inference endpoint.** An attacker gains access to the model API. Mitigation: all prompts and outputs are logged with encrypted payloads and SHA-256 integrity hashes. Replay is deterministic.
+2. **Rogue agent with stolen credentials.** An agent's keys are exfiltrated. Mitigation: capabilities are time-bound, scope-limited, and revocable. Every grant requires explicit approval.
+3. **Supply-chain model tampering.** Weights or configs are swapped post-evaluation. Mitigation: the model registry hashes weights, config, and manifest at registration. Any deviation invalidates the version.
+4. **Policy bypass via prompt injection.** An adversarial prompt attempts to circumvent content rules. Mitigation: policy evaluation is deterministic, versioned, and runs before inference. No prompt executes without a passing policy check.
+5. **Insider abuse of audit logs.** A privileged operator tampers with logs. Mitigation: the event store is append-only and backed by Attestia's Merkle-tree proofs. Tampering breaks the chain hash.
+
+No telemetry, analytics, or outbound network calls are made by default.
+
+---
+
 ## Status
 
-Scaffolded. Building in public.
+Building in public. All core packages are implemented, tested, and building.
 
-| Package | Status |
-|---------|--------|
-| `@cognate/types` | Scaffolded |
-| `@cognate/policy` | Planned |
-| `@cognate/model-registry` | Planned |
-| `@cognate/agent-identity` | Planned |
-| `@cognate/prompt-store` | Planned |
+| Gate | Status |
+|------|--------|
+| Build | Passing |
+| Tests | 72 passing |
+| Coverage | >90% on policy, registry, identity, prompt-store |
+| Typecheck | Clean |
+| Shipcheck | In progress |
 
 ---
 

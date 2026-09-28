@@ -19,7 +19,7 @@ COPY packages/agent-identity/package.json packages/agent-identity/
 COPY packages/prompt-store/package.json packages/prompt-store/
 
 # Install all dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # Copy all source code
 COPY packages/ packages/
@@ -48,7 +48,7 @@ COPY packages/agent-identity/package.json packages/agent-identity/
 COPY packages/prompt-store/package.json packages/prompt-store/
 
 # Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --prod
 
 # Copy built output from builder
 COPY --from=builder /build/packages/types/dist packages/types/dist

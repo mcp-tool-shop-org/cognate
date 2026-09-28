@@ -5,7 +5,7 @@
  * Encryption is handled externally; the store receives ciphertext + hash.
  */
 
-import type { ActorId, HashId, Output, Prompt, TenantId, Timestamp } from "@cognate/types";
+import type { ActorId, HashId, Output, Prompt, Timestamp } from "@cognate/types";
 
 export interface PromptStoreState {
   readonly prompts: ReadonlyMap<HashId, Prompt>;

@@ -2,7 +2,7 @@
  * Registry-specific types for the model lifecycle state machine.
  */
 
-import type { ModelVersionState } from "@cognate/types";
+import type { ModelVersionStatus } from "@cognate/types";
 
 /**
  * A recorded state transition for a model version.
@@ -11,9 +11,9 @@ export interface TransitionEvent {
   /** The version that transitioned. */
   readonly modelVersionId: string;
   /** The previous state. */
-  readonly from: ModelVersionState;
+  readonly from: ModelVersionStatus;
   /** The new state. */
-  readonly to: ModelVersionState;
+  readonly to: ModelVersionStatus;
   /** Who authorized the transition. */
   readonly actorId: string;
   /** Why the transition occurred. */

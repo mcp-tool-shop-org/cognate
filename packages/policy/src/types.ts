@@ -4,14 +4,9 @@
 
 import type {
   ActorId,
-  Capability,
   HashId,
-  Policy,
   PolicyAction,
-  PolicyCondition,
-  PolicyRule,
   PolicyRuleType,
-  PolicyTarget,
   TenantId,
 } from "@cognate/types";
 
@@ -40,7 +35,7 @@ export interface EvaluationContext {
   };
 
   /** Current capabilities of the acting agent (if any). */
-  readonly agentCapabilities: readonly Capability[];
+  readonly agentCapabilities: readonly import("@cognate/types").Capability[];
 
   /** Evaluation counters for rate-limit checks. */
   readonly counters: {

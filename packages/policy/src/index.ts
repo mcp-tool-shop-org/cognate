@@ -7,7 +7,7 @@
  * Usage:
  *   import { evaluatePolicy } from "@cognate/policy";
  *   const result = evaluatePolicy(policy, context);
- *   if (result.overall === "deny") { /* block the request */ }
+ *   if (result.overall === "deny") { block the request }
  */
 
 export { evaluatePolicy, hasCapability, isCapabilityActive } from "./evaluator.js";

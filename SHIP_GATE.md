@@ -6,19 +6,19 @@
 
 ## A. Security Baseline
 
-- [ ] `[all]` SECURITY.md exists
-- [ ] `[all]` README includes threat model paragraph
-- [ ] `[all]` No secrets, tokens, or credentials in source
-- [ ] `[all]` No telemetry by default
+- [x] `[all]` SECURITY.md exists
+- [x] `[all]` README includes threat model paragraph
+- [x] `[all]` No secrets, tokens, or credentials in source
+- [x] `[all]` No telemetry by default
 
 ## B. Error Handling
 
-- [ ] `[all]` Errors follow Structured Error Shape: code, message, hint, cause?, retryable?
+- [x] `[all]` Errors follow Structured Error Shape: code, message, hint, cause?, retryable?
 
 ## C. Operator Docs
 
-- [ ] `[all]` README is current
-- [ ] `[all]` CHANGELOG.md
+- [x] `[all]` README is current
+- [x] `[all]` CHANGELOG.md
 - [x] `[all]` LICENSE file present
 - [ ] `[complex]` HANDBOOK.md
 
@@ -26,8 +26,8 @@
 
 - [x] `[all]` verify script exists
 - [x] `[all]` Version in manifest matches git tag (pre-1.0)
-- [ ] `[all]` Dependency scanning runs in CI
-- [ ] `[npm]` Lockfile committed
+- [x] `[all]` Dependency scanning runs in CI
+- [x] `[npm]` Lockfile committed
 - [x] `[npm]` engines.node set
 
 ## E. Identity (soft gate)
@@ -38,4 +38,4 @@
 ---
 
 **Hard gates (A–D):** Must pass before v1.0.0 is tagged.
-**Current status:** NOT READY — scaffold phase.
+**Current status:** IN PROGRESS — core packages ready, handbook and identity pending.

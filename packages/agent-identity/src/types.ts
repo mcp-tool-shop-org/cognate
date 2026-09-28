@@ -2,7 +2,7 @@
  * Agent identity registry types — pure, serializable, zero side effects.
  */
 
-import type { ActorId, Agent, Capability, CapabilityGrant, HashId, TenantId } from "@cognate/types";
+import type { ActorId, Agent, CapabilityGrant, HashId } from "@cognate/types";
 
 export interface IdentityRegistryState {
   readonly agents: ReadonlyMap<ActorId, Agent>;

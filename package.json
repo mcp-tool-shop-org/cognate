@@ -13,7 +13,7 @@
     "test:coverage": "pnpm -r run test:coverage",
     "typecheck": "pnpm -r exec tsc --noEmit",
     "lint": "pnpm -r lint",
-    "verify": "pnpm build && pnpm typecheck && pnpm test",
+    "verify": "pnpm build && pnpm test && pnpm typecheck",
     "clean": "pnpm -r exec rm -rf dist"
   },
   "keywords": [
