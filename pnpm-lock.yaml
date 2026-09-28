@@ -159,6 +159,22 @@ importers:
         specifier: ^1.2.0
         version: 1.6.1(@types/node@22.20.4)
 
+  packages/repomesh-bridge:
+    dependencies:
+      '@cognate/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.4
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.2.0
+        version: 1.6.1(@types/node@22.20.4)
+
   packages/types:
     devDependencies:
       '@vitest/coverage-v8':

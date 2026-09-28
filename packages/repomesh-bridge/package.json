@@ -1,0 +1,33 @@
+{
+  "name": "@cognate/repomesh-bridge",
+  "version": "0.1.0",
+  "description": "RepoMesh integration bridge for Cognate AI governance",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "pnpm exec tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": ["cognate", "repomesh", "attestation", "web3", "ai-governance"],
+  "author": "mcp-tool-shop-org",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "@cognate/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.2.0"
+  }
+}

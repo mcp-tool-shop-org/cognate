@@ -112,7 +112,7 @@ export interface Capability {
 }
 
 export type CapabilityKind =
-  | "inference" | "spend" | "sign" | "access-data" | "delegate" | "deploy-model";
+  | "inference" | "spend" | "sign" | "access-data" | "delegate" | "deploy-model" | "verify-repomesh";
 
 export type CapabilityScope =
   | { readonly kind: "model"; readonly modelId: HashId }
