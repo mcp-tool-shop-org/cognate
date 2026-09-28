@@ -5,7 +5,7 @@ sidebar:
   order: 4
 ---
 
-Versions in this cut are `0.1.0`. The packages are workspace libraries. They are not published to npm.
+`@mcptoolshop/cognate` is `0.1.1` on npm. The `@cognate/*` packages stay in this workspace and are inlined into that bundle.
 
 ## @cognate/policy
 

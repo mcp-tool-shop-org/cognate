@@ -19,7 +19,7 @@ Report a vulnerability on GitHub Issues with the label `security`. The aim is a 
 
 ## What this cut does not defend
 
-The Docker process on port 4000 is a health check. It does not authenticate, and it does not store prompts. Do not put a tenant key in that container and expect the placeholder to guard it.
+The Docker process on port 4000 is `@cognate/node`. It does not authenticate. Prompt and registry state live in memory for the life of the process. Do not put a tenant key in that container and expect it to guard the key.
 
 The libraries will not notice if a caller skips `evaluatePolicy` and calls a model anyway. They will not notice if a caller logs the plaintext beside the ciphertext. The gate is the call. The handbook is the contract for that call.
 

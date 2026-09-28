@@ -9,17 +9,14 @@
 | @cognate/model-registry | Passing | 19 pass | **96%** |
 | @cognate/agent-identity | Passing | 16 pass | **96%** |
 | @cognate/prompt-store | Passing | 23 pass | **96%** |
-| @cognate/node | Passing | 9 pass | 71% |
+| @cognate/node | Passing | 26 pass | **98%** |
 | @cognate/cognate | Passing | 2 pass | N/A |
 
 ## Shipcheck Status
 
-Pass rate: ~88% (14/16)
+Pass rate: 16/16
 
-Remaining gaps:
-- HANDBOOK.md (soft gate)
-- Logo in README header (soft gate)
-- GitHub repo metadata (soft gate)
+Handbook, logo, and GitHub description, homepage, and topics are set.
 
 ## Docker Status
 
@@ -57,10 +54,7 @@ Remaining gaps:
 
 ## Next Work
 
-1. Node route coverage to 90%+ (currently 71%)
-2. Add HANDBOOK.md (Starlight docs site)
-3. Design logo and add to README
-4. Update GitHub repo metadata (description, topics, homepage)
+Node route coverage is 98% (26 tests). The handbook is on the landing site. The logo is in the README. GitHub description, topics, and homepage are set.
 
 ## Repos
 

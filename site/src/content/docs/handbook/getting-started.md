@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Cognate is a pnpm workspace. It is not an npm package named `cognate`. Node 22 or newer, and pnpm 10.28.2.
+The published package is `@mcptoolshop/cognate`. This repository is the pnpm workspace behind it. Node 22 or newer, and pnpm 10.28.2.
 
 ## Verify the libraries
 
@@ -29,9 +29,9 @@ docker compose down
 The health body is:
 
 ```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
+{ "status": "ok", "service": "cognate", "mode": "api" }
 ```
 
-`mode` is `placeholder` because the governance HTTP API is not in this image. The container exists so the build is supervised and the `cognate-data` volume is mounted at `/app/data`. v0.1.0 does not write prompt or agent files there yet.
+`mode` is `api` because the image runs `@cognate/node`. The `cognate-data` volume is mounted at `/app/data`. The server keeps its records in memory and does not write that volume yet.
 
 The same Dockerfile is what GitHub pushes to `ghcr.io/mcp-tool-shop-org/cognate` when a release is published.

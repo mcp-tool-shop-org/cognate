@@ -11,7 +11,7 @@ Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-to
 
 Where Attestia attests to financial truth, Cognate attests to AI truth — model lineage, policy decisions, agent capabilities, and prompt/output integrity. Same Merkle trees. Same append-only event store. Different domain.
 
-The v0.1.0 cut is five libraries. They are pure functions. You pass in the clock, the tenant key, and the store. They do not open a socket, and they do not publish a governance HTTP API. The Docker image says so: `/health` returns `"mode": "placeholder"`.
+The npm package `@mcptoolshop/cognate` at 0.1.1 is those five libraries in one bundle. They are pure functions. You pass in the clock, the tenant key, and the store. `@cognate/node` is a separate HTTP layer over the same functions. Its `/health` returns `"mode": "api"`.
 
 ## In this handbook
 

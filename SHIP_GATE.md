@@ -38,4 +38,4 @@
 ---
 
 **Hard gates (A–D):** Must pass before v1.0.0 is tagged.
-**Current status:** v0.1.0 — libraries published with handbook, landing page, and GHCR image. Governance HTTP API is still a placeholder.
+**Current status:** `@mcptoolshop/cognate@0.1.1` is on npm. Handbook, landing page, logo, and GitHub metadata are set. `@cognate/node` serves `/health` with `mode: api`.

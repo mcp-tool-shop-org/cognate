@@ -6,7 +6,7 @@ Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-to
 
 Where Attestia attests to financial truth, Cognate attests to AI truth — model lineage, policy decisions, agent capabilities, and prompt/output integrity. Same Merkle trees. Same append-only event store. Different domain.
 
-The v0.1.0 cut is five libraries. They are pure functions. You pass in the clock, the tenant key, and the store. They do not open a socket, and they do not publish a governance HTTP API. The Docker image says so: `/health` returns `"mode": "placeholder"`.
+The npm package `@mcptoolshop/cognate` at 0.1.1 is those five libraries in one bundle. They are pure functions. You pass in the clock, the tenant key, and the store. `@cognate/node` is a separate HTTP layer over the same functions. Its `/health` returns `"mode": "api"`.
 
 The pages under `site/` are this same handbook, with install, usage, and the package reference beside it.
 
@@ -92,17 +92,17 @@ The store indexes by session, model version, agent, and time range. Those querie
 
 ## Docker
 
-`docker compose up -d` builds `Dockerfile` and publishes port 4000. The process behind that port is a health server. It is there so the image can be supervised. It is not the governance API.
+`docker compose up -d` builds `Dockerfile` and publishes port 4000. The process is `@cognate/node`. It serves the governance routes and keeps registry, identity, and prompt state in memory for the life of the process.
 
 ```bash
 curl http://localhost:4000/health
 ```
 
 ```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
+{ "status": "ok", "service": "cognate", "mode": "api" }
 ```
 
-The `cognate-data` volume mounts at `/app/data`. Prompt and agent files belong there when a service starts writing them. Nothing in v0.1.0 writes those files yet.
+The `cognate-data` volume mounts at `/app/data`. The in-memory server does not write that volume yet.
 
 The image is pushed to `ghcr.io/mcp-tool-shop-org/cognate` when a GitHub release is published. Local builds use the same Dockerfile.
 
@@ -118,4 +118,4 @@ No package phones home. There is no telemetry switch to turn off, because there 
 
 ## What v0.1.0 does not include
 
-The five packages do not open an HTTP API, do not publish to npm, and do not choose a model provider. The Docker image tells you that directly: `mode` is `placeholder`. The next service layer should call these functions. It should not reimplement them.
+`@mcptoolshop/cognate` is on npm at 0.1.1. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.
