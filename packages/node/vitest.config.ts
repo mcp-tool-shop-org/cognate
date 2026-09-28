@@ -5,7 +5,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      exclude: ["node_modules", "dist", "tests"],
+      exclude: [
+        "node_modules",
+        "dist",
+        "tests",
+        "**/*.test.ts",
+        "**/index.ts",
+        "**/types.ts",
+      ],
     },
   },
 });

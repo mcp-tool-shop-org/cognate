@@ -241,3 +241,47 @@ describe('agent-identity', () => {
     expect(getGrantsForAgent(state, 'agent-2')).toHaveLength(0);
   });
 });
+
+  it('fails to reject non-existent grant', () => {
+    let state = createRegistry();
+    state = registerAgent(state, baseAgent).state;
+    const result = rejectGrant(state, 'grant-1', 'admin-1', later);
+    expect(result.ok).toBe(false);
+    expect(result.error.code).toBe('identity.grant-not-found');
+  });
+
+  it('fails to reject already-rejected grant', () => {
+    let state = createRegistry();
+    state = registerAgent(state, baseAgent).state;
+    const grant = {
+      id: 'grant-1',
+      tenantId: 'tenant-1',
+      agentId: 'agent-1',
+      capability: baseCapability,
+      requestedBy: 'human-1',
+      requestedAt: now,
+      status: 'pending' as const,
+      approvedBy: null,
+      approvedAt: null,
+    };
+    state = requestGrant(state, grant).state;
+    state = rejectGrant(state, 'grant-1', 'admin-1', later).state;
+    const result = rejectGrant(state, 'grant-1', 'admin-1', later);
+    expect(result.ok).toBe(false);
+    expect(result.error.code).toBe('identity.grant-not-pending');
+  });
+
+  it('fails to revoke capability for unknown agent', () => {
+    const state = createRegistry();
+    const result = revokeCapability(state, 'agent-1', 'cap-1', 'admin-1', later);
+    expect(result.ok).toBe(false);
+    expect(result.error.code).toBe('identity.agent-not-found');
+  });
+
+  it('fails to revoke non-existent capability', () => {
+    let state = createRegistry();
+    state = registerAgent(state, baseAgent).state;
+    const result = revokeCapability(state, 'agent-1', 'cap-1', 'admin-1', later);
+    expect(result.ok).toBe(false);
+    expect(result.error.code).toBe('identity.capability-not-found');
+  });
