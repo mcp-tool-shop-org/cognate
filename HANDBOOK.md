@@ -1,8 +1,14 @@
-# Cognate Handbook
+# Cognate
 
-Structural governance for autonomous intelligence. This is the operator handbook for the v0.1.0 libraries. The landing-page handbook under `site/` is the same material, expanded for the docs site.
+**Structural governance for autonomous intelligence.**
 
-Cognate sits on Attestia. Attestia proves what happened to money. Cognate proves what an AI system was allowed to do, what it did, and who approved it.
+Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia proves that something happened — an event, a transaction, a state transition — and binds that proof to a chain. Cognate uses those same attestation primitives to govern AI systems: what a model was permitted to do, what it actually did, and who authorized it.
+
+Where Attestia attests to financial truth, Cognate attests to AI truth — model lineage, policy decisions, agent capabilities, and prompt/output integrity. Same Merkle trees. Same append-only event store. Different domain.
+
+The v0.1.0 cut is five libraries. They are pure functions. You pass in the clock, the tenant key, and the store. They do not open a socket, and they do not publish a governance HTTP API. The Docker image says so: `/health` returns `"mode": "placeholder"`.
+
+The pages under `site/` are this same handbook, with install, usage, and the package reference beside it.
 
 ## Install
 

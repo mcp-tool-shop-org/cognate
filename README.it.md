@@ -14,7 +14,9 @@
 
 <p align="center"><strong>Governance strutturale per l'intelligenza artificiale autonoma.</strong></p>
 
-Cognate è il livello di governance dell'IA, costruito sulle primitive di attestazione di [Attestia](https://github.com/mcp-tool-shop-org/attestia). Laddove Attestia dimostra la veridicità finanziaria, Cognate dimostra la veridicità dell'IA: ogni versione del modello, ogni prompt, ogni output, ogni decisione politica: tutto attestato, immutabile e governato da un essere umano.
+Cognate è il livello di governance dell’IA, costruito su [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia dimostra che un determinato evento si è verificato (un evento, una transazione, una transizione di stato) e associa tale prova a una catena. Cognate utilizza gli stessi meccanismi di attestazione per governare i sistemi di IA: cosa un modello era autorizzato a fare, cosa ha effettivamente fatto e chi lo ha autorizzato.
+
+Mentre Attestia attesta la veridicità finanziaria, Cognate attesta la veridicità dell’IA: la provenienza del modello, le decisioni politiche, le capacità dell’agente e l’integrità dei prompt/output. Gli stessi alberi di Merkle. Lo stesso archivio di eventi con aggiunte consentite. Un ambito diverso.
 
 ---
 

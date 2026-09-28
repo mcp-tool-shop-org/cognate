@@ -14,7 +14,9 @@
 
 <p align="center"><strong>Gouvernance structurelle pour l’intelligence artificielle autonome.</strong></p>
 
-Cognate est la couche de gouvernance de l’IA, construite sur les primitives d’attestation de [Attestia](https://github.com/mcp-tool-shop-org/attestia). Là où Attestia prouve la vérité financière, Cognate prouve la vérité de l’IA : chaque version du modèle, chaque invite, chaque résultat, chaque décision politique — attesté, immuable et régi par l’humain.
+Cognate est la couche de gouvernance de l’IA, construite sur [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia prouve qu’un événement s’est produit (un événement, une transaction, une transition d’état) et lie cette preuve à une chaîne. Cognate utilise les mêmes primitives d’attestation pour gérer les systèmes d’IA : ce qu’un modèle était autorisé à faire, ce qu’il a réellement fait et qui l’a autorisé.
+
+Là où Attestia atteste de la vérité financière, Cognate atteste de la vérité de l’IA : la généalogie du modèle, les décisions politiques, les capacités de l’agent et l’intégrité des invites et des résultats. Les mêmes arbres de Merkle. Le même magasin d’événements en ajout uniquement. Domaine différent.
 
 ---
 

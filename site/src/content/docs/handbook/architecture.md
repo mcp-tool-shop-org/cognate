@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-Attestia is the settlement layer under Cognate: append-only events and Merkle proofs. Cognate is the AI-shaped domain on top of that. It does not reimplement a ledger.
+Attestia proves that something happened and binds that proof to a chain: append-only events and Merkle trees. Cognate does not build a second store. It uses that one for AI — model lineage, policy decisions, agent capabilities, and prompt integrity.
 
 ```
 policy  ── evaluate before inference

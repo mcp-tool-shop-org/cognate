@@ -14,7 +14,9 @@
 
 <p align="center"><strong>Gobernanza estructural para la inteligencia autónoma.</strong></p>
 
-Cognate es la capa de gobernanza de la IA construida sobre los primitivos de atestación de [Attestia](https://github.com/mcp-tool-shop-org/attestia). Donde Attestia demuestra la veracidad financiera, Cognate demuestra la veracidad de la IA: cada versión del modelo, cada solicitud, cada resultado, cada decisión de política, todo ello atestiguado, inmutable y gobernado por humanos.
+Cognate es la capa de gobernanza de la IA construida sobre [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia demuestra que algo ocurrió —un evento, una transacción, una transición de estado— y vincula esa prueba a una cadena. Cognate utiliza los mismos principios de certificación para gobernar los sistemas de IA: qué se le permitió hacer a un modelo, qué hizo realmente y quién lo autorizó.
+
+Mientras que Attestia certifica la veracidad financiera, Cognate certifica la veracidad de la IA: el linaje del modelo, las decisiones de política, las capacidades del agente y la integridad del mensaje/resultado. Los mismos árboles de Merkle. El mismo almacén de eventos de solo adición. Un dominio diferente.
 
 ---
 

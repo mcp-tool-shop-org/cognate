@@ -14,7 +14,9 @@
 
 <p align="center"><strong>Structural governance for autonomous intelligence.</strong></p>
 
-Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia)'s attestation primitives. Where Attestia proves financial truth, Cognate proves AI truth: every model version, every prompt, every output, every policy decision — attested, immutable, and human-governed.
+Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia proves that something happened — an event, a transaction, a state transition — and binds that proof to a chain. Cognate uses those same attestation primitives to govern AI systems: what a model was permitted to do, what it actually did, and who authorized it.
+
+Where Attestia attests to financial truth, Cognate attests to AI truth — model lineage, policy decisions, agent capabilities, and prompt/output integrity. Same Merkle trees. Same append-only event store. Different domain.
 
 ---
 

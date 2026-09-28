@@ -14,7 +14,9 @@
 
 <p align="center"><strong>Governança estrutural para inteligência autônoma.</strong></p>
 
-Cognate é a camada de governança de IA construída sobre os primitivos de atestação do [Attestia](https://github.com/mcp-tool-shop-org/attestia). Onde o Attestia comprova a veracidade financeira, o Cognate comprova a veracidade da IA: cada versão do modelo, cada prompt, cada saída, cada decisão de política — tudo atestado, imutável e governado por humanos.
+Cognate é a camada de governança de IA construída sobre o [Attestia](https://github.com/mcp-tool-shop-org/attestia). O Attestia comprova que algo aconteceu — um evento, uma transação, uma mudança de estado — e vincula essa prova a uma cadeia. O Cognate utiliza os mesmos princípios de atestação para governar sistemas de IA: o que um modelo tinha permissão para fazer, o que ele realmente fez e quem o autorizou.
+
+Enquanto o Attestia atesta a veracidade financeira, o Cognate atesta a veracidade da IA — linhagem do modelo, decisões de política, capacidades do agente e integridade do prompt/resultado. As mesmas árvores de Merkle. O mesmo armazenamento de eventos com adição exclusiva. Domínio diferente.
 
 ---
 

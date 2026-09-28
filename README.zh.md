@@ -14,7 +14,9 @@
 
 <p align="center"><strong>用于自主智能的结构化治理。</strong></p>
 
-Cognate 是构建在 [Attestia](https://github.com/mcp-tool-shop-org/attestia) 证明原语之上的 AI 治理层。Attestia 证明财务真实性，Cognate 证明 AI 真实性：每个模型版本、每个提示、每个输出、每个策略决策——都经过证明、不可篡改且由人类进行治理。
+Cognate 是构建在 [Attestia](https://github.com/mcp-tool-shop-org/attestia) 之上的 AI 治理层。Attestia 证明某个事件发生了——例如，某个事件、交易或状态转换——并将该证明与链绑定。Cognate 使用相同的证明机制来管理 AI 系统：模型被允许做什么、实际做了什么以及谁授权了它。
+
+Attestia 证明金融领域的真实性，而 Cognate 证明 AI 领域的真实性——模型溯源、策略决策、代理能力以及提示/输出的完整性。使用的都是相同的默克尔树。使用的都是相同的只追加事件存储。只是应用领域不同。
 
 ---
 
