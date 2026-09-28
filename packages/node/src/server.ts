@@ -1,8 +1,5 @@
 /**
  * Cognate HTTP API Server
- *
- * Thin REST layer over pure-function governance packages.
- * Uses native node:http to keep dependencies at zero.
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
@@ -15,6 +12,8 @@ import { handlePolicy } from "./routes/policy.js";
 import { handleRegistry } from "./routes/registry.js";
 import { handleIdentity } from "./routes/identity.js";
 import { handlePrompts } from "./routes/prompts.js";
+import { authenticate } from "./middleware/auth.js";
+import { checkRateLimit, createRateLimitState, type RateLimitConfig } from "./middleware/rate-limit.js";
 
 export interface ServerState {
   registry: RegistryState;
@@ -28,16 +27,49 @@ export interface ServerContext {
   readonly host: string;
 }
 
+const rateLimitBuckets = new Map<string, ReturnType<typeof createRateLimitState>>();
+
+const rateLimits: Record<string, RateLimitConfig> = {
+  default: { maxTokens: 100, refillRate: 10 },
+  "/policy/evaluate": { maxTokens: 100, refillRate: 10 },
+  "/registry/models": { maxTokens: 10, refillRate: 1 },
+  "/registry/versions": { maxTokens: 10, refillRate: 1 },
+  "/identity/agents": { maxTokens: 10, refillRate: 1 },
+  "/identity/grants": { maxTokens: 10, refillRate: 1 },
+  "/prompts": { maxTokens: 1000, refillRate: 100 },
+};
+
+function getRateLimitConfig(pathname: string): RateLimitConfig {
+  for (const [prefix, config] of Object.entries(rateLimits)) {
+    if (pathname === prefix || pathname.startsWith(prefix)) return config;
+  }
+  return rateLimits.default;
+}
+
+function checkRateLimitForAgent(agentId: string, pathname: string, nowMs: number): { allowed: boolean; retryAfter?: number } {
+  const config = getRateLimitConfig(pathname);
+  let state = rateLimitBuckets.get(agentId);
+  if (!state) {
+    state = createRateLimitState();
+    state.tokens = config.maxTokens;
+    rateLimitBuckets.set(agentId, state);
+  }
+  const result = checkRateLimit(state, config, nowMs);
+  if (!result.allowed) {
+    const retryAfter = Math.ceil((1 - result.state.tokens) / config.refillRate);
+    return { allowed: false, retryAfter };
+  }
+  rateLimitBuckets.set(agentId, result.state);
+  return { allowed: true };
+}
+
 function parseBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
     let data = "";
     req.on("data", (chunk) => { data += chunk; });
     req.on("end", () => {
-      try {
-        resolve(data ? JSON.parse(data) : {});
-      } catch {
-        reject(new Error("Invalid JSON"));
-      }
+      try { resolve(data ? JSON.parse(data) : {}); }
+      catch { reject(new Error("Invalid JSON")); }
     });
     req.on("error", reject);
   });
@@ -56,7 +88,7 @@ export function createCognateServer(ctx: ServerContext) {
   };
 
   const server = createServer(async (req, res) => {
-    const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+    const url = new URL(req.url ?? "/", "http://" + (req.headers.host ?? "localhost"));
     const method = req.method ?? "GET";
     const pathname = url.pathname;
 
@@ -66,6 +98,25 @@ export function createCognateServer(ctx: ServerContext) {
       if (pathname === "/health" && method === "GET") {
         handleHealth(res);
         return;
+      }
+
+      // All POST endpoints require authentication + rate limiting
+      if (method === "POST") {
+        const authResult = authenticate(req, { identityState: mutableState.identity });
+        if (!authResult.ok) {
+          sendJson(res, 401, { error: authResult.code, message: authResult.message });
+          return;
+        }
+        const agentId = authResult.agent.agentId;
+        const rateResult = checkRateLimitForAgent(agentId, pathname, Date.now());
+        if (!rateResult.allowed) {
+          res.writeHead(429, {
+            "Content-Type": "application/json",
+            "Retry-After": String(rateResult.retryAfter ?? 60),
+          });
+          res.end(JSON.stringify({ error: "rate-limit.exceeded", message: "Rate limit exceeded", retryAfter: rateResult.retryAfter }));
+          return;
+        }
       }
 
       if (pathname === "/policy/evaluate" && method === "POST") {
