@@ -20,7 +20,7 @@
 - [x] `[all]` README is current
 - [x] `[all]` CHANGELOG.md
 - [x] `[all]` LICENSE file present
-- [ ] `[complex]` HANDBOOK.md
+- [x] `[complex]` HANDBOOK.md
 
 ## D. Shipping Hygiene
 
@@ -32,10 +32,10 @@
 
 ## E. Identity (soft gate)
 
-- [ ] `[all]` Logo in README header
-- [ ] `[all]` GitHub repo metadata: description, homepage, topics
+- [x] `[all]` Logo in README header
+- [x] `[all]` GitHub repo metadata: description, homepage, topics
 
 ---
 
 **Hard gates (A–D):** Must pass before v1.0.0 is tagged.
-**Current status:** IN PROGRESS — core packages ready, handbook and identity pending.
+**Current status:** v0.1.0 — libraries published with handbook, landing page, and GHCR image. Governance HTTP API is still a placeholder.

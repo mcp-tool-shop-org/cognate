@@ -1,6 +1,18 @@
-# Cognate
+<p align="center">
+  <a href="README.md">English</a> | <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+</p>
 
-**Structural governance for autonomous intelligence.**
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/brand/main/logos/cognate/readme.png" alt="Cognate" width="400">
+</p>
+
+<p align="center">
+  <a href="https://github.com/mcp-tool-shop-org/cognate/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/cognate/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://mcp-tool-shop-org.github.io/cognate/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
+  <a href="https://opensource.org/license/mit/"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="MIT License"></a>
+</p>
+
+<p align="center"><strong>Structural governance for autonomous intelligence.</strong></p>
 
 Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia)'s attestation primitives. Where Attestia proves financial truth, Cognate proves AI truth: every model version, every prompt, every output, every policy decision — attested, immutable, and human-governed.
 
@@ -24,7 +36,7 @@ Cognate is the missing layer: model registry, policy enforcement, agent identity
 
 ## Architecture
 
-Cognate consumes Attestia primitives and adds an AI-native domain layer:
+Cognate consumes Attestia primitives and adds an AI-native domain layer. The packages are pure functions. Callers supply state. Nothing here opens a socket, writes a file, or reads a clock unless you hand it the value.
 
 | Package | Purpose | Status |
 |---------|---------|--------|
@@ -66,6 +78,43 @@ pnpm verify        # build + test + typecheck
 pnpm test:coverage # full coverage report
 ```
 
+Evaluate a policy. The engine does not fetch state. You pass the policy and the context.
+
+```ts
+import { evaluatePolicy } from "@cognate/policy";
+
+const result = evaluatePolicy(policy, context);
+if (result.overall === "deny") {
+  // block the request
+}
+```
+
+Register a model version, then walk it through the lifecycle. A version moves `registered → evaluated → approved → deployed`, and it can be `rejected` or `retired`. Deployment still requires an approval recorded on the version.
+
+```ts
+import { createRegistry, registerModel, registerVersion, transitionVersion } from "@cognate/model-registry";
+```
+
+---
+
+## Docker
+
+The published image builds the five packages and serves a health endpoint. The governance HTTP API is not in this image yet. `/health` answers so the container can be supervised while that service is still ahead.
+
+```bash
+docker compose up -d
+curl http://localhost:4000/health
+docker compose down
+```
+
+`/health` returns:
+
+```json
+{ "status": "ok", "service": "cognate", "mode": "placeholder" }
+```
+
+Compose keeps prompt and agent data on the `cognate-data` volume, mounted at `/app/data`. The image is published to GHCR when a GitHub release is published.
+
 ---
 
 ## Threat Model
@@ -84,15 +133,16 @@ No telemetry, analytics, or outbound network calls are made by default.
 
 ## Status
 
-Building in public. All core packages are implemented, tested, and building.
+Building in public. All core packages are implemented, tested, and building. v0.1.0 is the first published cut. The packages are libraries. They are not on npm yet.
 
 | Gate | Status |
 |------|--------|
 | Build | Passing |
 | Tests | 72 passing |
-| Coverage | >90% on policy, registry, identity, prompt-store |
+| Coverage | >90% on policy |
 | Typecheck | Clean |
-| Shipcheck | In progress |
+| Docker | Image builds. Health endpoint is a placeholder |
+| Shipcheck | Handbook, landing page, and repo metadata in this release |
 
 ---
 

@@ -3,7 +3,7 @@
 # ────────────────────────────────────────────────────────────
 FROM node:22-slim AS builder
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 
 WORKDIR /build
 
@@ -18,8 +18,8 @@ COPY packages/model-registry/package.json packages/model-registry/
 COPY packages/agent-identity/package.json packages/agent-identity/
 COPY packages/prompt-store/package.json packages/prompt-store/
 
-# Install all dependencies
-RUN pnpm install
+# Install all dependencies. Dev dependencies stay in this stage so tsc resolves.
+RUN pnpm install --frozen-lockfile
 
 # Copy all source code
 COPY packages/ packages/
@@ -32,7 +32,7 @@ RUN pnpm -r build
 # ────────────────────────────────────────────────────────────
 FROM node:22-slim AS production
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 
 WORKDIR /app
 
@@ -48,7 +48,11 @@ COPY packages/agent-identity/package.json packages/agent-identity/
 COPY packages/prompt-store/package.json packages/prompt-store/
 
 # Install production dependencies only
-RUN pnpm install --prod
+RUN pnpm install --frozen-lockfile --prod
+
+RUN mkdir -p /app/data
+
+COPY scripts/health-server.mjs scripts/health-server.mjs
 
 # Copy built output from builder
 COPY --from=builder /build/packages/types/dist packages/types/dist
@@ -65,4 +69,4 @@ EXPOSE 4000
 HEALTHCHECK --interval=15s --timeout=3s --retries=3 \
   CMD node -e "fetch('http://localhost:4000/health').then(r => process.exit(r.ok ? 0 : 1))"
 
-CMD ["node", "-e", "console.log('Cognate node placeholder — service layer not yet implemented')"]
+CMD ["node", "scripts/health-server.mjs"]

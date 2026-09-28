@@ -10,3 +10,7 @@ coverage/
 node_modules/
 _gen_test.js
 write-test.js
+site/.astro/
+site/dist/
+site/node_modules/
+.polyglot-cache.json
