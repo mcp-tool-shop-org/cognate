@@ -6,6 +6,13 @@
  */
 
 export type { IdentityRegistryState, IdentityError, IdentityResult } from "./types.js";
+export type {
+  VerifiableCredential,
+  DataIntegrityProof,
+  VCExportOptions,
+  VCExportResult,
+  CognateCapabilityGrantSubject,
+} from "./vc-types.js";
 export {
   createRegistry,
   registerAgent,
@@ -19,3 +26,10 @@ export {
   hasCapability,
   getGrantsForAgent,
 } from "./identity.js";
+export {
+  exportGrantAsVC,
+  attachProof,
+  verifyProofStructure,
+  canonicalizeCredential,
+  hashCanonical,
+} from "./vc-export.js";
