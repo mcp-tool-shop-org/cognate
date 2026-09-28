@@ -5,18 +5,19 @@
  * and Merkle-tree hashing for version lineage proof.
  */
 
+import { createHash } from "node:crypto";
 import type { ModelVersionStatus } from "@cognate/types";
 import type { RegistryState, TransitionEvent } from "./types.js";
 import { RegistryError } from "./types.js";
 import { transitionVersion } from "./registry.js";
+// Attestia's published proof types do not currently name MerkleTree.
+// @ts-ignore — runtime export is MerkleTree.build / getRoot
+import { MerkleTree } from "@mcptoolshop/attestia/proof";
 
 // Local interface matching Attestia's EventStore shape
 interface EventStore {
   append(streamId: string, events: unknown | unknown[], options?: unknown): Promise<unknown>;
 }
-
-// @ts-ignore — types are bundled inline; runtime resolution works
-import { MerkleTree } from "@mcptoolshop/attestia/proof";
 
 export interface AttestTransitionConfig {
   readonly eventStore: EventStore;
@@ -95,16 +96,21 @@ export function buildTransitionProof(
   if (!transitions || transitions.length === 0) return null;
 
   const hashes = transitions.map((t) =>
-    JSON.stringify({
-      modelVersionId: t.modelVersionId,
-      from: t.from,
-      to: t.to,
-      actorId: t.actorId,
-      reason: t.reason,
-      timestamp: t.timestamp,
-    })
+    createHash("sha256")
+      .update(
+        JSON.stringify({
+          modelVersionId: t.modelVersionId,
+          from: t.from,
+          to: t.to,
+          actorId: t.actorId,
+          reason: t.reason,
+          timestamp: t.timestamp,
+        }),
+      )
+      .digest("hex"),
   );
 
-  const tree = MerkleTree.fromLeaves(hashes);
-  return { root: tree.rootHash, count: transitions.length };
+  const root = MerkleTree.build(hashes).getRoot();
+  if (!root) return null;
+  return { root, count: transitions.length };
 }
