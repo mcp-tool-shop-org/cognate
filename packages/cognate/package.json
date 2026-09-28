@@ -1,6 +1,6 @@
 {
   "name": "@mcptoolshop/cognate",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Structural governance for autonomous intelligence. One package for Cognate's model lineage, policy decisions, agent capabilities, and prompt integrity.",
   "type": "module",
   "license": "MIT",
