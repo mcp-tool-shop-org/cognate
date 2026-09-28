@@ -2,19 +2,19 @@
 
 ## Build Status
 
-| Package | Build | Tests | Coverage |
-|---------|-------|-------|----------|
+| Package | Build | Tests | Coverage (stmts) |
+|---------|-------|-------|------------------|
 | @cognate/types | Passing | N/A | N/A |
-| @cognate/policy | Passing | 22 passed | 91% stmts |
-| @cognate/model-registry | Passing | 15 passed | TBD |
-| @cognate/agent-identity | Passing | 12 passed | TBD |
-| @cognate/prompt-store | Passing | 11 passed | TBD |
-| @cognate/node | Passing | 2 passed | TBD |
-| @cognate/cognate | Passing | 2 passed | TBD |
+| @cognate/policy | Passing | 22 pass | **95%** |
+| @cognate/model-registry | Passing | 19 pass | **96%** |
+| @cognate/agent-identity | Passing | 16 pass | **96%** |
+| @cognate/prompt-store | Passing | 23 pass | **96%** |
+| @cognate/node | Passing | 9 pass | 71% |
+| @cognate/cognate | Passing | 2 pass | N/A |
 
 ## Shipcheck Status
 
-Pass rate: 81% (13/16)
+Pass rate: ~88% (14/16)
 
 Remaining gaps:
 - HANDBOOK.md (soft gate)
@@ -27,6 +27,7 @@ Remaining gaps:
 - Dockerfile: Multi-stage build, explicit package ordering
 - Status: Builds and runs. Health endpoint returns mode: api
 - CMD now runs actual server: node packages/node/dist/index.js
+- GHCR publish workflow added (.github/workflows/docker-publish.yml)
 
 ## Attestia Integration
 
@@ -48,16 +49,22 @@ Remaining gaps:
 | POST | /prompts | Log a prompt |
 | POST | /prompts/:id/outputs | Log an output |
 
+## npm Publish Status
+
+| Package | Version | Status |
+|---------|---------|--------|
+| @mcptoolshop/cognate | 0.1.1 | Published |
+
 ## Next Work
 
-1. Add HANDBOOK.md (Starlight docs site)
-2. Design logo and add to README
-3. Coverage to 90%+ across all packages
-4. Publish v0.1.0 to npm
+1. Node route coverage to 90%+ (currently 71%)
+2. Add HANDBOOK.md (Starlight docs site)
+3. Design logo and add to README
+4. Update GitHub repo metadata (description, topics, homepage)
 
 ## Repos
 
 | Repo | URL | Status |
 |------|-----|--------|
 | Attestia | https://github.com/mcp-tool-shop-org/attestia | Phase 15 closed |
-| Cognate | https://github.com/mcp-tool-shop-org/cognate | 7 packages building + testing, pushed to main |
+| Cognate | https://github.com/mcp-tool-shop-org/cognate | 91 tests, 7 packages, published |
