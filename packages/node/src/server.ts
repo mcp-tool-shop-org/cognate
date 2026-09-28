@@ -146,7 +146,7 @@ export function createCognateServer(ctx: ServerContext) {
         return;
       }
 
-      if (pathname.startsWith("/identity/grants/") && method === "POST") {
+      if ((pathname === "/identity/grants" || pathname.startsWith("/identity/grants/")) && method === "POST") {
         const result = handleIdentity(mutableState, pathname, method, body);
         mutableState.identity = result.state ?? mutableState.identity;
         sendJson(res, result.ok ? 200 : 400, result.ok ? result.value : result.error);

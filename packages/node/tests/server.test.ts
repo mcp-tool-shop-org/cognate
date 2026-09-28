@@ -517,6 +517,88 @@ describe("Cognate HTTP API", () => {
   });
 });
 
+
+
+  it("POST /identity/grants/:id/vc exports an approved grant as VC", async () => {
+    const { port, stop } = await startTestServer();
+    try {
+      // Register agent and create an approved grant
+      await fetchJson(port, "/identity/agents", { method: "POST", body: { agent } });
+      const grant = {
+        id: "grant-vc-1",
+        tenantId: "tenant-1",
+        agentId: "agent-1",
+        capability: { id: "cap-1", kind: "inference", scope: { kind: "unlimited" }, constraints: [], grantedAt: TEST_TIMESTAMP, grantedBy: "human-1", expiresAt: null },
+        requestedBy: "human-1",
+        requestedAt: TEST_TIMESTAMP,
+        status: "pending",
+        approvedBy: null,
+        approvedAt: null,
+      };
+      await fetchJson(port, "/identity/grants", { method: "POST", body: { grant } });
+      await fetchJson(port, "/identity/grants/grant-vc-1/approve", { method: "POST", body: { approverId: "admin-1", timestamp: TEST_TIMESTAMP } });
+
+      // Export as VC
+      const { status, json } = await fetchJson(port, "/identity/grants/grant-vc-1/vc", {
+        method: "POST",
+        body: { issuerId: "org/example", issuerName: "Example Org" },
+      });
+      expect(status).toBe(200);
+      expect(json.credential).toBeDefined();
+      expect(json.credential.type).toContain("VerifiableCredential");
+      expect(json.credential.type).toContain("CognateCapabilityGrant");
+      expect(json.credential.issuer.id).toBe("org/example");
+      expect(json.credential.issuer.name).toBe("Example Org");
+      expect(json.credential.credentialSubject.cognateCapabilityGrant.grantId).toBe("grant-vc-1");
+      expect(json.credential.credentialSubject.cognateCapabilityGrant.approvedBy).toBe("admin-1");
+      expect(json.canonicalHash).toHaveLength(64);
+      expect(json.canonicalHash).toMatch(/^[0-9a-f]+$/);
+    } finally {
+      stop();
+    }
+  });
+
+  it("POST /identity/grants/:id/vc fails for a non-existent grant", async () => {
+    const { port, stop } = await startTestServer();
+    try {
+      const { status, json } = await fetchJson(port, "/identity/grants/missing/vc", {
+        method: "POST",
+        body: { issuerId: "org/example" },
+      });
+      expect(status).toBe(400);
+      expect(json.code).toBe("vc.grant-not-found");
+    } finally {
+      stop();
+    }
+  });
+
+  it("POST /identity/grants/:id/vc fails for a pending grant", async () => {
+    const { port, stop } = await startTestServer();
+    try {
+      await fetchJson(port, "/identity/agents", { method: "POST", body: { agent } });
+      const grant = {
+        id: "grant-pending-vc",
+        tenantId: "tenant-1",
+        agentId: "agent-1",
+        capability: { id: "cap-1", kind: "inference", scope: { kind: "unlimited" }, constraints: [], grantedAt: TEST_TIMESTAMP, grantedBy: "human-1", expiresAt: null },
+        requestedBy: "human-1",
+        requestedAt: TEST_TIMESTAMP,
+        status: "pending",
+        approvedBy: null,
+        approvedAt: null,
+      };
+      await fetchJson(port, "/identity/grants", { method: "POST", body: { grant } });
+
+      const { status, json } = await fetchJson(port, "/identity/grants/grant-pending-vc/vc", {
+        method: "POST",
+        body: { issuerId: "org/example" },
+      });
+      expect(status).toBe(400);
+      expect(json.code).toBe("vc.grant-not-approved");
+    } finally {
+      stop();
+    }
+  });
 describe("route handlers for paths the server does not dispatch", () => {
   it("registry returns not-found for a path outside its two routes", () => {
     const result = handleRegistry(emptyState(), "/registry/other", "POST", {});
