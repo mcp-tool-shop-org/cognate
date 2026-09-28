@@ -9,21 +9,18 @@
 | @cognate/model-registry | Passing | 19 pass | **96%** |
 | @cognate/agent-identity | Passing | 16 pass | **96%** |
 | @cognate/prompt-store | Passing | 23 pass | **96%** |
-| @cognate/node | Passing | 26 pass | **98%** |
+| @cognate/node | Passing | **26 pass** | **98%** |
 | @cognate/cognate | Passing | 2 pass | N/A |
 
 ## Shipcheck Status
 
-Pass rate: 16/16
-
-Handbook, logo, and GitHub description, homepage, and topics are set.
+**Pass rate: 100% (16/16)** — All hard gates pass. Ship it.
 
 ## Docker Status
 
 - docker-compose.yml: Created with cognate-data persistent volume
 - Dockerfile: Multi-stage build, explicit package ordering
 - Status: Builds and runs. Health endpoint returns mode: api
-- CMD now runs actual server: node packages/node/dist/index.js
 - GHCR publish workflow added (.github/workflows/docker-publish.yml)
 
 ## Attestia Integration
@@ -52,13 +49,13 @@ Handbook, logo, and GitHub description, homepage, and topics are set.
 |---------|---------|--------|
 | @mcptoolshop/cognate | 0.1.1 | Published |
 
-## Next Work
+## Handbook
 
-Node route coverage is 98% (26 tests). The handbook is on the landing site. The logo is in the README. GitHub description, topics, and homepage are set.
+Live at: https://mcp-tool-shop-org.github.io/cognate/handbook/
 
 ## Repos
 
 | Repo | URL | Status |
 |------|-----|--------|
 | Attestia | https://github.com/mcp-tool-shop-org/attestia | Phase 15 closed |
-| Cognate | https://github.com/mcp-tool-shop-org/cognate | 91 tests, 7 packages, published |
+| Cognate | https://github.com/mcp-tool-shop-org/cognate | **Shipcheck 100%** |
