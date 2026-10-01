@@ -1,0 +1,58 @@
+summary: ""
+boundaries:
+  - name: .github
+    globs:
+      - .github/**
+    role: config
+  - name: agent-identity
+    globs:
+      - packages/agent-identity/**
+    role: code
+  - name: cognate
+    globs:
+      - packages/cognate/**
+    role: code
+  - name: docs
+    globs:
+      - docs/**
+    role: docs
+  - name: model-registry
+    globs:
+      - packages/model-registry/**
+    role: code
+  - name: node
+    globs:
+      - packages/node/**
+    role: code
+  - name: policy
+    globs:
+      - packages/policy/**
+    role: code
+  - name: prompt-store
+    globs:
+      - packages/prompt-store/**
+    role: code
+  - name: repomesh-bridge
+    globs:
+      - packages/repomesh-bridge/**
+    role: code
+  - name: root
+    globs:
+      - "*"
+    role: config
+  - name: scripts
+    globs:
+      - scripts/**
+    role: code
+  - name: site
+    globs:
+      - site/**
+    role: site
+  - name: specs
+    globs:
+      - specs/**
+    role: docs
+  - name: types
+    globs:
+      - packages/types/**
+    role: code
