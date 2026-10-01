@@ -35,6 +35,10 @@ export interface ModelVersion {
   readonly datasetRefs: readonly DatasetRef[];
   readonly createdAt: Timestamp;
   readonly status: ModelVersionStatus;
+  /** RepoMesh repository this version deploys as. The HTTP server checks this pair. */
+  readonly repo?: string;
+  /** RepoMesh release name recorded with `repo`. */
+  readonly release?: string;
 }
 
 export type ModelVersionStatus =

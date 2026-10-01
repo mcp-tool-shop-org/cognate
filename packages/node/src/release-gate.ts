@@ -34,6 +34,32 @@ export function releaseAccepted(status: string, failOn: ReleaseFailOn): boolean 
   return false;
 }
 
+function named(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+/**
+ * The version owns the pair. A blank request field is omitted.
+ * A request that names a different repo or release is refused.
+ * A version with no pair cannot be deployed by naming one in the request.
+ */
+export function resolveDeployRelease(
+  stored: { readonly repo?: unknown; readonly release?: unknown },
+  requested: { readonly repo?: unknown; readonly release?: unknown },
+): { ok: true; repo: string; release: string } | { ok: false; code: "repomesh.missing-release" | "repomesh.release-mismatch" } {
+  const repo = named(stored.repo);
+  const release = named(stored.release);
+  if (!repo || !release) return { ok: false, code: "repomesh.missing-release" };
+  const askedRepo = named(requested.repo);
+  const askedRelease = named(requested.release);
+  if ((askedRepo !== undefined && askedRepo !== repo) || (askedRelease !== undefined && askedRelease !== release)) {
+    return { ok: false, code: "repomesh.release-mismatch" };
+  }
+  return { ok: true, repo, release };
+}
+
 export function releaseConfigFromEnv(env: Record<string, string | undefined>): ReleaseRuntimeConfig {
   const ledger = env.REPOMESH_LEDGER_URL?.trim();
   const local = env.REPOMESH_LOCAL_PATH?.trim();

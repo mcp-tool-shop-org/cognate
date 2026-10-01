@@ -77,7 +77,7 @@ Rule types are `content-filter`, `capability-limit`, `rate-limit`, `guardrail`, 
 
 A model has an owner, an architecture, and at most one current version. A version records three hashes: weights, config, and manifest. It also records dataset refs and whether consent was verified.
 
-Legal version states are `registered`, `evaluated`, `approved`, `deployed`, `rejected`, and `retired`. `transitionVersion` is the only way to move a snapshot the caller holds, and that call stays inside the state machine. The HTTP server calls `verifyRelease` before it moves a version from `approved` to `deployed`. The request names `repo` and `release`. A release that does not pass does not deploy. `getCurrentDeployedVersion` returns the version that is actually deployed, which is not the same as the newest version.
+Legal version states are `registered`, `evaluated`, `approved`, `deployed`, `rejected`, and `retired`. `transitionVersion` is the only way to move a snapshot the caller holds, and that call stays inside the state machine. The HTTP server calls `verifyRelease` before it moves a version from `approved` to `deployed`, using the `repo` and `release` recorded when the version was registered. A release that does not pass does not deploy, and neither does a request that names a different release. `getCurrentDeployedVersion` returns the version that is actually deployed, which is not the same as the newest version.
 
 `RegistryError` carries `code`, `message`, and `hint`.
 

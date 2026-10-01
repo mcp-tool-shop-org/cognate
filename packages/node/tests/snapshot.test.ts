@@ -31,6 +31,8 @@ const version = {
   datasetRefs: [],
   createdAt: "2026-09-28T12:00:00Z",
   status: "registered",
+  repo: "acme/weights",
+  release: "1.2.3",
 } as ModelVersion;
 
 const agent = {
@@ -122,6 +124,8 @@ describe("snapshots", () => {
     const loaded = loadSnapshots(files);
     expect(loaded.registry.models["m1"]?.name).toBe("Test Model");
     expect(loaded.registry.versions["v1"]?.status).toBe("registered");
+    expect(loaded.registry.versions["v1"]?.repo).toBe("acme/weights");
+    expect(loaded.registry.versions["v1"]?.release).toBe("1.2.3");
     expect(loaded.identity.agents.get("agent-1")?.name).toBe("Test Agent");
     expect(loaded.identity.grants.get("grant-1")?.status).toBe("pending");
     expect(loaded.prompts.prompts.get("p1")?.plaintextHash).toBe("hash1");

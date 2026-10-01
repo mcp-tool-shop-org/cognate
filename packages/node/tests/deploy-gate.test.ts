@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createCognateServer, type ServerState } from "../src/server.js";
-import { parseReleaseFailOn, releaseAccepted, releaseConfigFromEnv } from "../src/release-gate.js";
+import { parseReleaseFailOn, releaseAccepted, releaseConfigFromEnv, resolveDeployRelease } from "../src/release-gate.js";
 import {
   createRegistry as createModelRegistry,
   registerModel,
@@ -80,9 +80,9 @@ function emptyState(agentId: string): ServerState {
   };
 }
 
-function seed(state: ServerState, to: "registered" | "approved") {
+function seed(state: ServerState, to: "registered" | "approved", bound = true) {
   let registry = registerModel(state.registry, model);
-  registry = registerVersion(registry, version);
+  registry = registerVersion(registry, bound ? { ...version, repo: "acme/weights", release: "1.2.3" } : version);
   if (to === "approved") {
     registry = transitionVersion(registry, "v1", "registered", "evaluated", "admin-1", "eval");
     registry = transitionVersion(registry, "v1", "evaluated", "approved", "admin-1", "approve");
@@ -165,10 +165,31 @@ describe("release gate decisions", () => {
       anchored: false,
     });
   });
+
+  it("checks the pair stored on the version", () => {
+    expect(resolveDeployRelease({ repo: " acme/weights ", release: "1.2.3" }, {})).toEqual({
+      ok: true,
+      repo: "acme/weights",
+      release: "1.2.3",
+    });
+    expect(resolveDeployRelease({ repo: "acme/weights", release: "1.2.3" }, { repo: "  ", release: "" })).toEqual({
+      ok: true,
+      repo: "acme/weights",
+      release: "1.2.3",
+    });
+    expect(resolveDeployRelease({}, { repo: "acme/weights", release: "1.2.3" })).toEqual({
+      ok: false,
+      code: "repomesh.missing-release",
+    });
+    expect(resolveDeployRelease({ repo: "acme/weights", release: "1.2.3" }, { repo: "other/repo" })).toEqual({
+      ok: false,
+      code: "repomesh.release-mismatch",
+    });
+  });
 });
 
 describe("HTTP deploy gate", () => {
-  it("refuses a deploy that names no release and does not call RepoMesh", async () => {
+  it("refuses a deploy of a version that recorded no release, even when the request names one", async () => {
     const agentId = "deploy-missing";
     const calls: string[] = [];
     const { port, stop, recorded, state } = await start({
@@ -179,13 +200,63 @@ describe("HTTP deploy gate", () => {
       },
     });
     try {
-      seed(state, "approved");
-      const { status, json } = await post(port, agentId, deployBody({ repo: "  ", release: "" }));
+      seed(state, "approved", false);
+      const { status, json } = await post(port, agentId, deployBody());
       expect(status).toBe(400);
       expect(json.code).toBe("repomesh.missing-release");
       expect(calls).toEqual([]);
       expect(recorded.appended).toEqual([]);
       expect(state.registry.versions.v1?.status).toBe("approved");
+    } finally {
+      stop();
+    }
+  });
+
+  it("refuses a request that names a different release and does not call RepoMesh", async () => {
+    const agentId = "deploy-mismatch";
+    const calls: string[] = [];
+    const { port, stop, recorded, state } = await start({
+      agentId,
+      verifyRelease: async (repo) => {
+        calls.push(repo);
+        return { status: "PASS" };
+      },
+    });
+    try {
+      seed(state, "approved");
+      const { status, json } = await post(port, agentId, deployBody({ repo: "other/repo", release: "9.9.9" }));
+      expect(status).toBe(400);
+      expect(json.code).toBe("repomesh.release-mismatch");
+      expect(calls).toEqual([]);
+      expect(recorded.appended).toEqual([]);
+      expect(state.registry.versions.v1?.status).toBe("approved");
+    } finally {
+      stop();
+    }
+  });
+
+  it("checks the stored pair when the deploy request omits repo and release", async () => {
+    const agentId = "deploy-stored";
+    const calls: Array<{ repo: string; release: string }> = [];
+    const { port, stop, state } = await start({
+      agentId,
+      verifyRelease: async (repo, release) => {
+        calls.push({ repo, release });
+        return { status: "PASS" };
+      },
+    });
+    try {
+      seed(state, "approved");
+      const { status, json } = await post(port, agentId, {
+        from: "approved",
+        to: "deployed",
+        actorId: "admin-1",
+        reason: "Ship",
+      });
+      expect(status).toBe(200);
+      expect(calls).toEqual([{ repo: "acme/weights", release: "1.2.3" }]);
+      expect(json.releaseStatus).toBe("PASS");
+      expect(state.registry.versions.v1?.status).toBe("deployed");
     } finally {
       stop();
     }

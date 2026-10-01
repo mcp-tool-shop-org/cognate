@@ -18,7 +18,7 @@ import { handlePrompts } from "./routes/prompts.js";
 import { authenticate } from "./middleware/auth.js";
 import { checkRateLimit, createRateLimitState, type RateLimitConfig } from "./middleware/rate-limit.js";
 import { saveSnapshots, type SnapshotPaths, type SnapshotState } from "./snapshot.js";
-import { checkDeploy, type ReleaseFailOn } from "./release-gate.js";
+import { checkDeploy, resolveDeployRelease, type ReleaseFailOn } from "./release-gate.js";
 
 export interface ServerState extends SnapshotState {}
 
@@ -212,17 +212,24 @@ export function createCognateServer(ctx: ServerContext) {
 
           let releaseEventId: string | undefined;
           let releaseStatus: string | undefined;
-          if (deploying) {
-            const repo = typeof transition.repo === "string" ? transition.repo.trim() : "";
-            const release = typeof transition.release === "string" ? transition.release.trim() : "";
-            if (!repo || !release) {
-              sendJson(res, 400, {
-                code: "repomesh.missing-release",
-                message: "A deploy names the repo and the release.",
-                hint: "Send repo and release on the transition to deployed.",
-              });
+          if (deploying && stored) {
+            const bound = resolveDeployRelease(stored, transition);
+            if (!bound.ok) {
+              sendJson(res, 400, bound.code === "repomesh.missing-release"
+                ? {
+                    code: bound.code,
+                    message: "This version has no repo and release.",
+                    hint: "Record repo and release on the version when it is registered.",
+                  }
+                : {
+                    code: bound.code,
+                    message: "The request names a different repo or release than the version.",
+                    hint: "Deploy checks the pair stored on the version.",
+                  });
               return;
             }
+            const repo = bound.repo;
+            const release = bound.release;
             if (!ctx.verifyRelease) {
               sendJson(res, 503, {
                 code: "repomesh.not-configured",

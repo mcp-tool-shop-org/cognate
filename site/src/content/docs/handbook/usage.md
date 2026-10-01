@@ -38,7 +38,7 @@ import {
 
 A version stores three hashes: weights, config, and manifest. `getCurrentDeployedVersion` is the deployed version, which is not automatically the newest one. `RegistryError` carries `code`, `message`, and `hint`.
 
-On the HTTP server, `approved → deployed` also calls `verifyRelease`. The request names `repo` and `release`. A release that does not pass does not deploy, and the refusal is recorded. `transitionVersion` stays the state machine: a caller who holds a snapshot moves it without that check.
+On the HTTP server, `approved → deployed` calls `verifyRelease` on the `repo` and `release` recorded when the version was registered. A release that does not pass does not deploy, and neither does a request that names a different release. The refusal is recorded. `transitionVersion` stays the state machine: a caller who holds a snapshot moves it without that check.
 
 ## Agent identity
 
