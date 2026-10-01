@@ -78,9 +78,10 @@ describe("attestia transition log", () => {
   });
 
   it("throws when the event store rejects the append", async () => {
+    const input = registered();
     await expect(
       attestTransitionVersion(
-        registered(),
+        input,
         {
           tenantId: "tenant-1",
           eventStore: {
@@ -96,6 +97,7 @@ describe("attestia transition log", () => {
         "Evaluated",
       ),
     ).rejects.toBeInstanceOf(RegistryError);
+    expect(input.versions["v1"].status).toBe("registered");
   });
 
   it("returns null when a version has no transitions", () => {

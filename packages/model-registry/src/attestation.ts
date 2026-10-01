@@ -44,12 +44,10 @@ function makeStreamId(config: AttestTransitionConfig): string {
 }
 
 /**
- * Transition a model version AND append a cryptographic event to Attestia.
+ * Transition a model version and append the Attestia event.
  *
- * The transition is first applied to the registry, then a
- * "cognate.model.transitioned" event is appended to the EventStore.
- * If the EventStore append fails, the registry state is NOT rolled back;
- * callers should reconcile the inconsistency.
+ * `transitionVersion` returns a new snapshot and does not mutate `state`.
+ * That snapshot is returned only after the append succeeds.
  */
 export async function attestTransitionVersion(
   state: RegistryState,
@@ -94,8 +92,8 @@ export async function attestTransitionVersion(
   } catch (err) {
     throw new RegistryError({
       code: "attestia.append-failed",
-      message: `Transition applied locally but Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
-      hint: "Check EventStore connectivity. The local state and Attestia may be inconsistent.",
+      message: `Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
+      hint: "The transition was not returned. The caller keeps the registry it passed in.",
     });
   }
 

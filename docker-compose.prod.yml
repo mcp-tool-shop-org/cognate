@@ -1,8 +1,11 @@
-# Docker Compose — Cognate AI Governance Stack (Production)
+# Docker Compose â€” Cognate AI Governance Stack (Production)
 #
 # Services:
-#   caddy        — Reverse proxy with auto-TLS (Let's Encrypt)
-#   cognate-node — AI governance REST API
+#   caddy        â€” Reverse proxy with auto-TLS (Let's Encrypt)
+#   cognate-node â€” AI governance REST API
+#
+# The cognate-data volume is this stack's writer for the event log and the
+# three snapshots. It is not Attestia's attestia-data volume.
 #
 # Usage:
 #   docker compose -f docker-compose.prod.yml up -d
@@ -40,8 +43,12 @@ services:
       HOST: "0.0.0.0"
       LOG_LEVEL: "info"
       NODE_ENV: "production"
-      COGNATE_PROMPT_STORE_PATH: "/app/data/prompts"
-      COGNATE_AGENT_REGISTRY_PATH: "/app/data/agents"
+      COGNATE_DATA_DIR: "/app/data"
+      ATTESTIA_EVENTS_FILE: "/app/data/events.jsonl"
+      COGNATE_MODEL_REGISTRY_PATH: "/app/data/cognate/registry.json"
+      COGNATE_AGENT_REGISTRY_PATH: "/app/data/cognate/agents.json"
+      COGNATE_PROMPT_STORE_PATH: "/app/data/cognate/prompts.json"
+      REPOMESH_FAIL_ON: "unverified"
     volumes:
       - cognate-data:/app/data
     healthcheck:

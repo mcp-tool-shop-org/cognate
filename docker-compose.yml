@@ -2,9 +2,9 @@
 #
 # LOCAL DEVELOPMENT ONLY.
 #
-# Services:
-#   cognate-node  — AI governance REST API (future)
-#   attestia-witness — XRPL witness for attestation (optional)
+# cognate-data is this stack's volume. Attestia's compose uses attestia-data.
+# Both honor ATTESTIA_EVENTS_FILE, and each file has one writer. The log lock
+# fails closed if two processes advance the same file.
 #
 # Usage:
 #   docker compose up -d
@@ -22,8 +22,12 @@ services:
       HOST: "0.0.0.0"
       LOG_LEVEL: "info"
       NODE_ENV: "production"
-      COGNATE_PROMPT_STORE_PATH: "/app/data/prompts"
-      COGNATE_AGENT_REGISTRY_PATH: "/app/data/agents"
+      COGNATE_DATA_DIR: "/app/data"
+      ATTESTIA_EVENTS_FILE: "/app/data/events.jsonl"
+      COGNATE_MODEL_REGISTRY_PATH: "/app/data/cognate/registry.json"
+      COGNATE_AGENT_REGISTRY_PATH: "/app/data/cognate/agents.json"
+      COGNATE_PROMPT_STORE_PATH: "/app/data/cognate/prompts.json"
+      REPOMESH_FAIL_ON: "unverified"
     volumes:
       - cognate-data:/app/data
     healthcheck:

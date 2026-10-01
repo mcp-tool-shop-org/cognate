@@ -38,6 +38,8 @@ import {
 
 A version stores three hashes: weights, config, and manifest. `getCurrentDeployedVersion` is the deployed version, which is not automatically the newest one. `RegistryError` carries `code`, `message`, and `hint`.
 
+On the HTTP server, `approved → deployed` also calls `verifyRelease`. The request names `repo` and `release`. A release that does not pass does not deploy, and the refusal is recorded. `transitionVersion` stays the state machine: a caller who holds a snapshot moves it without that check.
+
 ## Agent identity
 
 The grant sequence is request, then approve or reject. Revocation is its own call.

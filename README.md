@@ -93,7 +93,7 @@ if (result.overall === "deny") {
 }
 ```
 
-Register a model version, then walk it through the lifecycle. A version moves `registered → evaluated → approved → deployed`, and it can be `rejected` or `retired`. Deployment still requires an approval recorded on the version.
+Register a model version, then walk it through the lifecycle. A version moves `registered → evaluated → approved → deployed`, and it can be `rejected` or `retired`. `transitionVersion` moves a snapshot the caller holds. On the HTTP server, `approved → deployed` also calls `verifyRelease`. The request names `repo` and `release`. A release that does not pass does not deploy, and the refusal is recorded.
 
 ```ts
 import { createRegistry, registerModel, registerVersion, transitionVersion } from "@cognate/model-registry";
@@ -103,7 +103,11 @@ import { createRegistry, registerModel, registerVersion, transitionVersion } fro
 
 ## Docker
 
-The published image builds the five packages and serves a health endpoint. The governance HTTP API is not in this image yet. `/health` answers so the container can be supervised while that service is still ahead.
+The image runs `@cognate/node` and serves the governance API. `/health` returns:
+
+```json
+{ "status": "ok", "service": "cognate", "mode": "api" }
+```
 
 ```bash
 docker compose up -d
@@ -111,13 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`/health` returns:
-
-```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
-```
-
-Compose keeps prompt and agent data on the `cognate-data` volume, mounted at `/app/data`. The image is published to GHCR when a GitHub release is published.
+The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data/events.jsonl`. The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. Attestia's compose uses the same event-log variable on its own volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL. The image is published to GHCR when a GitHub release is published.
 
 ---
 
@@ -131,7 +129,7 @@ Cognate assumes the following threat model:
 4. **Policy bypass via prompt injection.** An adversarial prompt attempts to circumvent content rules. Mitigation: policy evaluation is deterministic, versioned, and runs before inference. No prompt executes without a passing policy check.
 5. **Insider abuse of audit logs.** A privileged operator tampers with logs. Mitigation: the event store is append-only and backed by Attestia's Merkle-tree proofs. Tampering breaks the chain hash.
 
-No telemetry, analytics, or outbound network calls are made by default.
+No telemetry or analytics. A deploy on the HTTP server asks RepoMesh whether the named release passes. Health and the other routes stay on this process.
 
 ---
 
@@ -145,7 +143,7 @@ Building in public. All core packages are implemented, tested, and building. Ins
 | Tests | 72 passing |
 | Coverage | >90% on policy |
 | Typecheck | Clean |
-| Docker | Image builds. Health endpoint is a placeholder |
+| Docker | Image serves the governance API. The volume holds the event log and the three snapshots |
 | Shipcheck | Handbook, landing page, and repo metadata in this release |
 
 ---

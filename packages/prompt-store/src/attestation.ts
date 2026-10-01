@@ -46,12 +46,10 @@ function toStoreError(code: string, message: string, hint: string): StoreError {
 }
 
 /**
- * Log a prompt to the store AND append a cryptographic event to Attestia.
+ * Log a prompt and append the Attestia event.
  *
- * This is the attested version of logPrompt. The prompt is first logged
- * to the in-memory store, then an event is appended to the EventStore.
- * If the EventStore append fails, the store mutation is NOT rolled back;
- * callers should treat this as a dual-write inconsistency to reconcile.
+ * The next store is computed first. It is returned only after the append
+ * succeeds. A failed append leaves the caller on the store they passed in.
  */
 export async function attestLogPrompt(
   state: PromptStoreState,
@@ -85,10 +83,10 @@ export async function attestLogPrompt(
       ok: false,
       error: toStoreError(
         "attestia.append-failed",
-        `Prompt logged locally but Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
-        "Check EventStore connectivity. The local state and Attestia may be inconsistent."
+        `Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
+        "The prompt was not logged. The event store rejected the append."
       ),
-      state: result.state,
+      state,
     };
   }
 
@@ -131,10 +129,10 @@ export async function attestLogOutput(
       ok: false,
       error: toStoreError(
         "attestia.append-failed",
-        `Output logged locally but Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
-        "Check EventStore connectivity. The local state and Attestia may be inconsistent."
+        `Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
+        "The output was not logged. The event store rejected the append."
       ),
-      state: result.state,
+      state,
     };
   }
 

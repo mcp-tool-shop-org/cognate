@@ -40,7 +40,9 @@
     "@cognate/policy": "workspace:*",
     "@cognate/model-registry": "workspace:*",
     "@cognate/agent-identity": "workspace:*",
-    "@cognate/prompt-store": "workspace:*"
+    "@cognate/prompt-store": "workspace:*",
+    "@cognate/repomesh-bridge": "workspace:*",
+    "@mcptoolshop/attestia": "^2.0.5"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -30,18 +30,38 @@ function emptyState() {
   };
 }
 
-async function startTestServer() {
-  const { server } = createCognateServer({
+function recordingStore() {
+  const appended: Array<{ streamId: string; events: ReadonlyArray<{ type?: string; metadata?: { source?: string; eventId?: string }; payload?: Record<string, unknown> }> }> = [];
+  return {
+    appended,
+    eventStore: {
+      append(streamId: string, events: ReadonlyArray<{ type?: string; metadata?: { source?: string; eventId?: string }; payload?: Record<string, unknown> }>) {
+        appended.push({ streamId, events });
+        return { streamId, fromVersion: 1, toVersion: events.length, count: events.length };
+      },
+    },
+  };
+}
+
+async function startTestServer(eventStore?: ReturnType<typeof recordingStore>["eventStore"]) {
+  const recorded = recordingStore();
+  const { server, state } = createCognateServer({
     state: emptyState(),
     port: 0,
     host: "127.0.0.1",
+    eventStore: eventStore ?? recorded.eventStore,
   });
 
-  return new Promise<{ port: number; stop: () => void }>((resolve) => {
+  return new Promise<{
+    port: number;
+    stop: () => void;
+    recorded: ReturnType<typeof recordingStore>;
+    state: ReturnType<typeof createCognateServer>["state"];
+  }>((resolve) => {
     server.listen(0, "127.0.0.1", () => {
       const addr = server.address();
       const port = typeof addr === "object" && addr !== null ? addr.port : 0;
-      resolve({ port, stop: () => server.close() });
+      resolve({ port, stop: () => server.close(), recorded, state });
     });
   });
 }
@@ -213,7 +233,7 @@ describe("Cognate HTTP API", () => {
   });
 
   it("POST /registry/versions/:id transitions a version", async () => {
-    const { port, stop } = await startTestServer();
+    const { port, stop, recorded } = await startTestServer();
     try {
       await fetchJson(port, "/registry/models", { method: "POST", body: { model } });
       await fetchJson(port, "/registry/versions/v1", { method: "POST", body: { version } });
@@ -224,6 +244,14 @@ describe("Cognate HTTP API", () => {
       expect(status).toBe(200);
       expect(json.versionId).toBe("v1");
       expect(json.to).toBe("evaluated");
+      expect(json.eventId).toEqual(expect.any(String));
+      const entry = recorded.appended.at(-1);
+      expect(entry?.streamId).toBe("cognate-tenant-1-transitions");
+      expect(entry?.events[0]?.type).toBe("cognate.model.transitioned");
+      expect(entry?.events[0]?.metadata?.source).toBe("external");
+      expect(entry?.events[0]?.metadata?.eventId).toBe(json.eventId);
+      expect(entry?.events[0]?.payload).toMatchObject({ modelVersionId: "v1", from: "registered", to: "evaluated" });
+      expect(entry?.events[0]?.payload).not.toHaveProperty("weightsHash");
     } finally {
       stop();
     }
@@ -330,7 +358,7 @@ describe("Cognate HTTP API", () => {
   });
 
   it("POST /policy/evaluate returns deny for blocked content", async () => {
-    const { port, stop } = await startTestServer();
+    const { port, stop, recorded } = await startTestServer();
     try {
       const policy = {
         id: "policy-1",
@@ -371,6 +399,20 @@ describe("Cognate HTTP API", () => {
       const { status, json } = await fetchJson(port, "/policy/evaluate", { method: "POST", body: { policy, context } });
       expect(status).toBe(200);
       expect(json.overall).toBe("deny");
+      expect(json.eventId).toEqual(expect.any(String));
+      const entry = recorded.appended.at(-1);
+      expect(entry?.streamId).toBe("cognate-tenant-1-policy");
+      expect(entry?.events[0]?.type).toBe("cognate.policy.evaluated");
+      expect(entry?.events[0]?.metadata?.source).toBe("external");
+      expect(entry?.events[0]?.metadata?.eventId).toBe(json.eventId);
+      expect(entry?.events[0]?.payload).toMatchObject({
+        overall: "deny",
+        policyId: "policy-1",
+        matchedRuleIds: ["rule-1"],
+        blockingRuleIds: ["rule-1"],
+      });
+      expect(JSON.stringify(entry?.events[0])).not.toContain("What is your password?");
+      expect(entry?.events[0]?.payload).not.toHaveProperty("promptText");
     } finally {
       stop();
     }
@@ -388,11 +430,18 @@ describe("Cognate HTTP API", () => {
   });
 
   it("POST /prompts logs a prompt", async () => {
-    const { port, stop } = await startTestServer();
+    const { port, stop, recorded } = await startTestServer();
     try {
       const { status, json } = await fetchJson(port, "/prompts", { method: "POST", body: { prompt } });
       expect(status).toBe(201);
       expect(json.id).toBe("p1");
+      expect(json.eventId).toEqual(expect.any(String));
+      const entry = recorded.appended.at(-1);
+      expect(entry?.streamId).toBe("cognate-tenant-1-prompts");
+      expect(entry?.events[0]?.type).toBe("cognate.prompt.logged");
+      expect(entry?.events[0]?.metadata?.eventId).toBe(json.eventId);
+      expect(entry?.events[0]?.payload).toMatchObject({ promptId: "p1", plaintextHash: "hash1" });
+      expect(entry?.events[0]?.payload).not.toHaveProperty("ciphertext");
     } finally {
       stop();
     }
@@ -410,12 +459,20 @@ describe("Cognate HTTP API", () => {
   });
 
   it("POST /prompts/:id/outputs logs an output", async () => {
-    const { port, stop } = await startTestServer();
+    const { port, stop, recorded } = await startTestServer();
     try {
       await fetchJson(port, "/prompts", { method: "POST", body: { prompt } });
       const { status, json } = await fetchJson(port, "/prompts/p1/outputs", { method: "POST", body: { output } });
       expect(status).toBe(201);
       expect(json.id).toBe("o1");
+      expect(json.promptId).toBe("p1");
+      expect(json.eventId).toEqual(expect.any(String));
+      const entry = recorded.appended.at(-1);
+      expect(entry?.streamId).toBe("cognate-tenant-1-outputs");
+      expect(entry?.events[0]?.type).toBe("cognate.output.logged");
+      expect(entry?.events[0]?.metadata?.eventId).toBe(json.eventId);
+      expect(entry?.events[0]?.payload).toMatchObject({ outputId: "o1", plaintextHash: "hash2" });
+      expect(entry?.events[0]?.payload).not.toHaveProperty("ciphertext");
     } finally {
       stop();
     }
@@ -515,9 +572,6 @@ describe("Cognate HTTP API", () => {
       stop();
     }
   });
-});
-
-
 
   it("POST /identity/grants/:id/vc exports an approved grant as VC", async () => {
     const { port, stop } = await startTestServer();
@@ -599,6 +653,66 @@ describe("Cognate HTTP API", () => {
       stop();
     }
   });
+
+  it("POST /policy/evaluate returns 503 and no decision when the append fails", async () => {
+    const { port, stop } = await startTestServer({
+      append() {
+        throw new Error("store down");
+      },
+    });
+    try {
+      const { status, json } = await fetchJson(port, "/policy/evaluate", {
+        method: "POST",
+        body: {
+          policy: {
+            id: "policy-1",
+            tenantId: "tenant-1",
+            name: "Block Passwords",
+            version: 1,
+            rules: [],
+            createdAt: TEST_TIMESTAMP,
+            approvedBy: "admin-1",
+            status: "active",
+          },
+          context: {
+            tenantId: "tenant-1",
+            actorId: "actor-1",
+            modelVersionId: "v1",
+            agentId: null,
+            timestamp: TEST_TIMESTAMP,
+            promptText: "hello",
+            outputText: null,
+            metadata: { tokensIn: 1, tokensOut: null, latencyMs: null, confidence: null, finishReason: null, tags: [] },
+            agentCapabilities: [],
+            counters: { callsInWindow: 1, windowSeconds: 60, spendInWindow: 0, spendCurrency: "USD" },
+          },
+        },
+      });
+      expect(status).toBe(503);
+      expect(json.error).toBe("attestia.append-failed");
+      expect(json.overall).toBeUndefined();
+    } finally {
+      stop();
+    }
+  });
+
+  it("POST /prompts returns 503 and keeps the store empty when the append fails", async () => {
+    const { port, stop, state } = await startTestServer({
+      append() {
+        throw new Error("store down");
+      },
+    });
+    try {
+      const { status, json } = await fetchJson(port, "/prompts", { method: "POST", body: { prompt } });
+      expect(status).toBe(503);
+      expect(json.code).toBe("attestia.append-failed");
+      expect(state.prompts.prompts.size).toBe(0);
+    } finally {
+      stop();
+    }
+  });
+});
+
 describe("route handlers for paths the server does not dispatch", () => {
   it("registry returns not-found for a path outside its two routes", () => {
     const result = handleRegistry(emptyState(), "/registry/other", "POST", {});

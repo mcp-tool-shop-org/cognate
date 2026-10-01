@@ -1,23 +1,27 @@
 /**
  * Cognate Node — HTTP API Server Entry Point
+ *
+ * Opens Attestia's JSONL log and reloads the three snapshots from disk.
  */
 
-import { createRegistry as createModelRegistry } from "@cognate/model-registry";
-import { createRegistry as createIdentityRegistry } from "@cognate/agent-identity";
-import { createStore as createPromptStore } from "@cognate/prompt-store";
+import { verifyRelease } from "@cognate/repomesh-bridge";
+import { releaseConfigFromEnv } from "./release-gate.js";
+import { openRuntime } from "./runtime.js";
 import { createCognateServer, type ServerContext } from "./server.js";
 
 const port = Number(process.env.PORT ?? "4000");
 const host = process.env.HOST ?? "127.0.0.1";
+const runtime = openRuntime(process.env, process.cwd());
+const release = releaseConfigFromEnv(process.env);
 
 const ctx: ServerContext = {
-  state: {
-    registry: createModelRegistry(),
-    identity: createIdentityRegistry(),
-    prompts: createPromptStore(),
-  },
+  state: runtime.state,
   port,
   host,
+  eventStore: runtime.eventStore,
+  snapshots: runtime.snapshots,
+  releaseFailOn: release.failOn,
+  verifyRelease: (repo, version) => verifyRelease(repo, version, release.repomesh),
 };
 
 const { server } = createCognateServer(ctx);

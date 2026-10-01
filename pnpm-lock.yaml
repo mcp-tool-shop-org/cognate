@@ -111,9 +111,15 @@ importers:
       '@cognate/prompt-store':
         specifier: workspace:*
         version: link:../prompt-store
+      '@cognate/repomesh-bridge':
+        specifier: workspace:*
+        version: link:../repomesh-bridge
       '@cognate/types':
         specifier: workspace:*
         version: link:../types
+      '@mcptoolshop/attestia':
+        specifier: ^2.0.5
+        version: 2.0.5(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
     devDependencies:
       '@types/node':
         specifier: ^22.0.0

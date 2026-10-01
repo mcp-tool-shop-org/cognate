@@ -32,6 +32,6 @@ The health body is:
 { "status": "ok", "service": "cognate", "mode": "api" }
 ```
 
-`mode` is `api` because the image runs `@cognate/node`. The `cognate-data` volume is mounted at `/app/data`. The server keeps its records in memory and does not write that volume yet.
+`mode` is `api` because the image runs `@cognate/node`. The `cognate-data` volume is mounted at `/app/data`. The process writes the event log at `/app/data/events.jsonl` and three snapshots under `/app/data/cognate/`: `registry.json`, `agents.json`, and `prompts.json`. A restart reads those snapshots back. Attestia uses the same event-log variable on its own volume. RepoMesh's image does not mount this log.
 
 The same Dockerfile is what GitHub pushes to `ghcr.io/mcp-tool-shop-org/cognate` when a release is published.

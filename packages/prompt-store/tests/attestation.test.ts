@@ -86,6 +86,7 @@ describe("attestia prompt log", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe("attestia.append-failed");
+    expect(result.state.prompts.size).toBe(0);
   });
 
   it("returns store error when duplicate prompt", async () => {

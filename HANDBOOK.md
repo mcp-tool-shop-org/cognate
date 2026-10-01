@@ -77,7 +77,7 @@ Rule types are `content-filter`, `capability-limit`, `rate-limit`, `guardrail`, 
 
 A model has an owner, an architecture, and at most one current version. A version records three hashes: weights, config, and manifest. It also records dataset refs and whether consent was verified.
 
-Legal version states are `registered`, `evaluated`, `approved`, `deployed`, `rejected`, and `retired`. `transitionVersion` is the only way to move. `getCurrentDeployedVersion` returns the version that is actually deployed, which is not the same as the newest version.
+Legal version states are `registered`, `evaluated`, `approved`, `deployed`, `rejected`, and `retired`. `transitionVersion` is the only way to move a snapshot the caller holds, and that call stays inside the state machine. The HTTP server calls `verifyRelease` before it moves a version from `approved` to `deployed`. The request names `repo` and `release`. A release that does not pass does not deploy. `getCurrentDeployedVersion` returns the version that is actually deployed, which is not the same as the newest version.
 
 `RegistryError` carries `code`, `message`, and `hint`.
 
@@ -95,7 +95,7 @@ The store indexes by session, model version, agent, and time range. Those querie
 
 ## Docker
 
-`docker compose up -d` builds `Dockerfile` and publishes port 4000. The process is `@cognate/node`. It serves the governance routes and keeps registry, identity, and prompt state in memory for the life of the process.
+`docker compose up -d` builds `Dockerfile` and publishes port 4000. The process is `@cognate/node`. It serves the governance routes. A restart reads the three snapshots back from the volume.
 
 ```bash
 curl http://localhost:4000/health
@@ -105,7 +105,7 @@ curl http://localhost:4000/health
 { "status": "ok", "service": "cognate", "mode": "api" }
 ```
 
-The `cognate-data` volume mounts at `/app/data`. The in-memory server does not write that volume yet.
+The `cognate-data` volume mounts at `/app/data`. The event log is `/app/data/events.jsonl` (`ATTESTIA_EVENTS_FILE`). The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. Attestia's compose uses the same event-log variable on its own `attestia-data` volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL.
 
 The image is pushed to `ghcr.io/mcp-tool-shop-org/cognate` when a GitHub release is published. Local builds use the same Dockerfile.
 
@@ -117,7 +117,7 @@ The image is pushed to `ghcr.io/mcp-tool-shop-org/cognate` when a GitHub release
 4. Prompt injection is answered by evaluating policy before inference. A failing check does not execute.
 5. Tampered logs are answered by append-only records. Attestia's Merkle proofs are the settlement layer under those records.
 
-No package phones home. There is no telemetry switch to turn off, because there is no telemetry.
+No package sends telemetry. There is no analytics switch to turn off, because there is no analytics client. A deploy on the HTTP server calls RepoMesh `verifyRelease`. That call may reach the release ledger. It is the release check.
 
 ## What v0.1.0 does not include
 
