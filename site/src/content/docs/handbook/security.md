@@ -19,7 +19,7 @@ Report a vulnerability on GitHub Issues with the label `security`. The aim is a 
 
 ## What this cut does not defend
 
-The Docker process on port 4000 is `@cognate/node`. A POST checks `X-Agent-Id` against the agent registry. That check is not a tenant key. The registry, the grants, and the prompts are snapshotted on the volume, and the four governance acts append to the event log. Do not put a tenant key in that container and expect it to guard the key.
+The Docker process on port 4000 is `@cognate/node`. A POST, and a GET of `/events/:eventId`, check `X-Agent-Id` against the agent registry. That check is not a tenant key. The registry, the grants, and the prompts are snapshotted on the volume, and the four governance acts append to the event log. The GET returns the recorded event and an Attestia inclusion proof for the caller's tenant. It does not call RepoMesh, and it does not return prompt or output text. Do not put a tenant key in that container and expect it to guard the key.
 
 The libraries will not notice if a caller skips `evaluatePolicy` and calls a model anyway. They will not notice if a caller logs the plaintext beside the ciphertext. The gate is the call. The handbook is the contract for that call.
 

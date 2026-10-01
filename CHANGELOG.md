@@ -4,6 +4,9 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `GET /events/:eventId` reads Attestia's log and returns the recorded event, an inclusion proof, and the root. The caller sends the same agent headers as a write. An id that is not in this tenant's log is a miss, and the body has no proof. The route does not call RepoMesh. An event that holds prompt or output text is not returned.
+
 ## [0.1.6] - 2026-10-01
 
 ### Added

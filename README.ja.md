@@ -115,7 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`cognate-data`ボリュームは`/app/data`にマウントされます。イベントログは`/app/data/events.jsonl`です。スナップショットは`/app/data/cognate/registry.json`、`/app/data/cognate/agents.json`、および`/app/data/cognate/prompts.json`です。Attestiaのコンポーズは、独自のボリュームで同じイベントログ変数を使用します。各ファイルには1つの書き込み元があります。RepoMeshのイメージは、このログをマウントしません。`REPOMESH_FAIL_ON`はデフォルトで`unverified`に設定されており、合格したリリースのみがデプロイされます。未検証のリリースを許可するには、`fail`に設定します。イメージは、台帳のURLを設定しません。イメージは、GitHubリリースが公開されるとGHCRに公開されます。
+`cognate-data`ボリュームは`/app/data`にマウントされています。イベントログは`/app/data/events.jsonl`です。スナップショットは`/app/data/cognate/registry.json`、`/app/data/cognate/agents.json`、および`/app/data/cognate/prompts.json`です。`GET /events/:eventId`はログを読み取り、アテスティアの包含証明とルートとともに記録されたイベントを返します。呼び出し元は、書き込み時と同じエージェントヘッダーを送信します。このテナントのログにないIDはエラーとなり、本文には証明が含まれません。プロンプトと出力テキストはイベントから除外されます。このルートはRepoMeshを呼び出しません。アテスティアのコンポーズは、独自のボリュームで同じイベントログ変数を使用します。各ファイルには1つの書き込み元があります。RepoMeshのイメージは、このログをマウントしません。`REPOMESH_FAIL_ON`はデフォルトで`unverified`に設定されており、PASSのみがデプロイされます。`fail`に設定すると、検証されていないリリースも許可されます。イメージは、台帳URLを設定しません。GitHubリリースが公開されると、イメージはGHCRに公開されます。
 
 ---
 
@@ -140,7 +140,7 @@ Cognateは、次の脅威モデルを想定しています。
 | ゲート | ステータス |
 |------|--------|
 | ビルド | 合格 |
-| テスト | 165件の合格 |
+| テスト | 178件合格 |
 | カバレッジ | ポリシーの90%以上 |
 | 型チェック | クリーン |
 | Docker | イメージはガバナンスAPIを提供します。ボリュームには、イベントログと3つのスナップショットが格納されます。 |

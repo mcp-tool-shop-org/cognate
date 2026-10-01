@@ -40,6 +40,8 @@ A version stores three hashes: weights, config, and manifest. `getCurrentDeploye
 
 On the HTTP server, `approved → deployed` calls `verifyRelease` on the `repo` and `release` recorded when the version was registered. A release that does not pass does not deploy, and neither does a request that names a different release. The refusal is recorded. `transitionVersion` stays the state machine: a caller who holds a snapshot moves it without that check.
 
+`GET /events/:eventId` reads the log the server already writes and returns that event with an Attestia inclusion proof and the root. The caller sends the same agent headers as a write. An id that is not in this tenant's log is a miss, and the body has no proof. Prompt and output text stay out of the event. The route does not call RepoMesh.
+
 ## Agent identity
 
 The grant sequence is request, then approve or reject. Revocation is its own call.

@@ -19,6 +19,7 @@ import { authenticate } from "./middleware/auth.js";
 import { checkRateLimit, createRateLimitState, type RateLimitConfig } from "./middleware/rate-limit.js";
 import { saveSnapshots, type SnapshotPaths, type SnapshotState } from "./snapshot.js";
 import { checkDeploy, resolveDeployRelease, type ReleaseFailOn } from "./release-gate.js";
+import { proveRecordedEvent, proofErrorBody, statusForProof } from "./event-proof.js";
 
 export interface ServerState extends SnapshotState {}
 
@@ -26,8 +27,11 @@ export interface ServerContext {
   readonly state: ServerState;
   readonly port: number;
   readonly host: string;
-  /** Attestia's append-only log. The four governance acts append here. */
-  readonly eventStore: Pick<EventStore, "append">;
+  /**
+   * Attestia's append-only log. The four governance acts append here.
+   * `readAll` serves the inclusion proof. A store without it cannot prove.
+   */
+  readonly eventStore: Pick<EventStore, "append"> & Partial<Pick<EventStore, "readAll">>;
   /** Registry, grants, and prompts. Absent in tests that do not restart. */
   readonly snapshots?: SnapshotPaths;
   /**
@@ -49,6 +53,7 @@ const rateLimits: Record<string, RateLimitConfig> = {
   "/identity/agents": { maxTokens: 10, refillRate: 1 },
   "/identity/grants": { maxTokens: 10, refillRate: 1 },
   "/prompts": { maxTokens: 1000, refillRate: 100 },
+  "/events": { maxTokens: 100, refillRate: 10 },
 };
 
 function getRateLimitConfig(pathname: string): { prefix: string; config: RateLimitConfig } {
@@ -151,6 +156,66 @@ export function createCognateServer(ctx: ServerContext) {
 
       if (pathname === "/health" && method === "GET") {
         handleHealth(res);
+        return;
+      }
+
+      if (pathname.startsWith("/events/") && method === "GET") {
+        let eventId = pathname.slice("/events/".length);
+        try {
+          eventId = decodeURIComponent(eventId);
+        } catch {
+          sendJson(res, 404, { error: "Not found", path: pathname, method });
+          return;
+        }
+        if (eventId.length === 0 || eventId.includes("/")) {
+          sendJson(res, 404, { error: "Not found", path: pathname, method });
+          return;
+        }
+        const authResult = authenticate(req, { identityState: mutableState.identity });
+        if (!authResult.ok) {
+          sendJson(res, 401, { error: authResult.code, message: authResult.message });
+          return;
+        }
+        const rateResult = checkRateLimitForAgent(authResult.agent.agentId, pathname, Date.now());
+        if (!rateResult.allowed) {
+          res.writeHead(429, {
+            "Content-Type": "application/json",
+            "Retry-After": String(rateResult.retryAfter ?? 60),
+          });
+          res.end(JSON.stringify({ error: "rate-limit.exceeded", message: "Rate limit exceeded", retryAfter: rateResult.retryAfter }));
+          return;
+        }
+        if (!ctx.eventStore.readAll) {
+          sendJson(res, 503, {
+            code: "attestia.read-not-configured",
+            message: "The event log cannot be read.",
+            hint: "The process wires an Attestia store that can read the log.",
+          });
+          return;
+        }
+        let recorded;
+        try {
+          recorded = ctx.eventStore.readAll();
+        } catch (err) {
+          sendJson(res, 503, {
+            code: "attestia.read-failed",
+            message: `Attestia read failed: ${err instanceof Error ? err.message : String(err)}`,
+            hint: "The event was not returned.",
+          });
+          return;
+        }
+        const tenantId = getAgent(mutableState.identity, authResult.agent.agentId)?.tenantId ?? "default";
+        const proved = proveRecordedEvent(recorded, eventId, tenantId);
+        if (!proved.ok) {
+          sendJson(res, statusForProof(proved.code), proofErrorBody(proved.code));
+          return;
+        }
+        sendJson(res, 200, {
+          event: proved.event,
+          proof: proved.proof,
+          root: proved.root,
+          leafCount: proved.leafCount,
+        });
         return;
       }
 

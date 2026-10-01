@@ -115,7 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-Il volume `cognate-data` è montato in `/app/data`. Il registro degli eventi è `/app/data/events.jsonl`. Gli snapshot sono `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` e `/app/data/cognate/prompts.json`. L'ambiente di composizione di Attestia utilizza la stessa variabile del registro degli eventi sul proprio volume. Ogni file ha un solo scrittore. L'immagine di RepoMesh non monta questo registro. `REPOMESH_FAIL_ON` ha come valore predefinito `unverified`: solo un rilascio con esito POSITIVO viene distribuito. Impostalo su `fail` per consentire la distribuzione di un rilascio NON VERIFICATO. L'immagine non imposta un URL del registro. L'immagine viene pubblicata su GHCR quando viene pubblicato un rilascio su GitHub.
+Il volume `cognate-data` è montato in `/app/data`. Il registro degli eventi è `/app/data/events.jsonl`. Gli snapshot sono `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` e `/app/data/cognate/prompts.json`. `GET /events/:eventId` legge il registro e restituisce l’evento registrato con una prova di inclusione Attestia e la radice. Il chiamante invia gli stessi header dell’agente di una scrittura. Un ID che non è presente nel registro di questo tenant è considerato un errore e il corpo non contiene alcuna prova. Il testo della richiesta e dell’output non devono essere inclusi nell’evento. Il percorso non chiama RepoMesh. La funzione di composizione di Attestia utilizza la stessa variabile del registro eventi sul proprio volume. Ogni file ha un solo scrittore. L’immagine di RepoMesh non monta questo registro. `REPOMESH_FAIL_ON` ha come valore predefinito `unverified`: solo un esito POSITIVO attiva il processo. Impostalo su `fail` per consentire un rilascio NON VERIFICATO. L’immagine non imposta un URL del registro. L’immagine viene pubblicata su GHCR quando viene pubblicata una versione su GitHub.
 
 ---
 
@@ -140,7 +140,7 @@ Sviluppo in ambiente pubblico. Tutti i pacchetti principali sono stati implement
 | Porta | Stato |
 |------|--------|
 | Costruzione | Superamento |
-| Test | 165 superati |
+| Test | 178 superati |
 | Copertura | Superiore al 90% per quanto riguarda le politiche |
 | Controllo dei tipi | Pulito |
 | Docker | L'immagine fornisce l'API di governance. Il volume contiene il registro degli eventi e i tre snapshot. |

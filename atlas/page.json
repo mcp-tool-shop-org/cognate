@@ -96,57 +96,33 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 5,
-      "changed": 45,
+      "added": 2,
+      "changed": 13,
       "moved": 0,
-      "parts": 8,
+      "parts": 3,
       "removed": 0
     },
     "items": [
       {
-        "kind": "import-added",
-        "sentence": "node now imports repomesh-bridge.",
-        "subjects": [
-          "node",
-          "repomesh-bridge"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "Docker Publish now also checks packages/.",
-        "subjects": [
-          ".github/workflows/docker-publish.yml",
-          "packages/"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "Publish to GHCR now also checks packages/.",
-        "subjects": [
-          ".github/workflows/docker.yml",
-          "packages/"
-        ]
-      },
-      {
         "kind": "counts",
-        "sentence": "5 files added and 45 changed content, across 8 parts.",
+        "sentence": "Nothing structural changed since 2026-10-01; 2 files added and 13 changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "5087fbc035436f852152ff4c022ac69ad8ba3962",
-      "generatedAt": "2026-10-01T02:55:34.136Z"
+      "commit": "eab94300aebc3626ea4900711702b0df5d747acc",
+      "generatedAt": "2026-10-01T20:18:09.027Z"
     },
-    "unchanged": false
+    "unchanged": true
   },
   "changesTogether": [],
   "changesTogetherNote": [
     "Window: 180 days; a pair counts from 3 shared commits, since the window holds fewer than 30 qualifying commits."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "eab94300aebc3626ea4900711702b0df5d747acc",
+  "commit": "a3cbcc0ac7ab1996ff00d57f5d703812cac8cb83",
   "defaultBranch": "main",
-  "derived": "14 parts, mostly TypeScript (64 files), CSS (2), JavaScript (2) and Astro (1). Work enters through 6 doors; Docker Publish and Publish to GHCR each reach 9 parts, and Docker Publish is followed because it comes first by name. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
+  "derived": "14 parts, mostly TypeScript (66 files), CSS (2), JavaScript (2) and Astro (1). Work enters through 6 doors; Docker Publish and Publish to GHCR each reach 9 parts, and Docker Publish is followed because it comes first by name. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
   "doors": [
     {
       "builds": [
@@ -200,7 +176,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 18
+          "files": 20
         },
         {
           "boundary": "policy",
@@ -294,7 +270,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 18
+          "files": 20
         },
         {
           "boundary": "policy",
@@ -380,7 +356,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 16
+          "files": 18
         },
         {
           "boundary": "policy",
@@ -464,7 +440,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 16
+          "files": 18
         },
         {
           "boundary": "policy",
@@ -497,7 +473,7 @@
         "packages/repomesh-bridge/tests/"
       ],
       "runsCount": 7,
-      "runsMore": 9,
+      "runsMore": 10,
       "sends": [
         "publishes @mcptoolshop/cognate to npm",
         "creates a GitHub release"
@@ -645,7 +621,7 @@
   ],
   "engine": "1.24.0",
   "generated": [],
-  "generatedAt": "2026-10-01T20:18:09.027Z",
+  "generatedAt": "2026-10-01T20:39:48.116Z",
   "limits": [
     "3 writes and 15 reads go to a path their caller passes, not to this repository.",
     "There is a docker-compose.yml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.",
@@ -681,17 +657,17 @@
   ],
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 14,
+  "testFiles": 15,
   "testedBy": {
-    "agent-identity": 7,
+    "agent-identity": 8,
     "cognate": 1,
-    "model-registry": 7,
-    "node": 6,
+    "model-registry": 8,
+    "node": 7,
     "policy": 2,
-    "prompt-store": 8,
+    "prompt-store": 9,
     "repomesh-bridge": 2,
     "scripts": 0,
-    "types": 12
+    "types": 13
   },
   "unnamedWrites": 0,
   "unread": [],

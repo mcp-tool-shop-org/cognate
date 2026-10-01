@@ -115,7 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-El volumen `cognate-data` se monta en `/app/data`. El registro de eventos es `/app/data/events.jsonl`. Las instantáneas son `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` y `/app/data/cognate/prompts.json`. La configuración de Attestia utiliza la misma variable de registro de eventos en su propio volumen. Cada archivo tiene un único escritor. La imagen de RepoMesh no monta este registro. `REPOMESH_FAIL_ON` tiene como valor predeterminado `unverified`: solo se implementa una versión que supera la prueba. Establézcalo en `fail` para permitir que se implemente una versión NO VERIFICADA. La imagen no establece una URL de libro mayor. La imagen se publica en GHCR cuando se publica una versión de GitHub.
+El volumen `cognate-data` está montado en `/app/data`. El registro de eventos es `/app/data/events.jsonl`. Las instantáneas son `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` y `/app/data/cognate/prompts.json`. `GET /events/:eventId` lee ese registro y devuelve el evento registrado con una prueba de inclusión de Attestia y la raíz. El llamador envía los mismos encabezados de agente que en una operación de escritura. Un ID que no está en el registro de este arrendatario se considera un error, y el cuerpo no contiene ninguna prueba. El texto del mensaje y la respuesta no se incluyen en el evento. La ruta no llama a RepoMesh. La función de composición de Attestia utiliza la misma variable de registro de eventos en su propio volumen. Cada archivo tiene un único escritor. La imagen de RepoMesh no monta este registro. `REPOMESH_FAIL_ON` tiene como valor predeterminado `unverified`: solo se implementa una versión EXITOSA. Establézcalo en `fail` para permitir una versión NO VERIFICADA. La imagen no establece una URL de libro mayor. La imagen se publica en GHCR cuando se publica una versión en GitHub.
 
 ---
 
@@ -140,7 +140,7 @@ Desarrollando en un entorno público. Todos los paquetes principales están impl
 | Puerta de enlace | Estado |
 |------|--------|
 | Construir | Pasando |
-| Pruebas | 165 versiones que superan la prueba |
+| Pruebas | 178 aprobados |
 | Cobertura | Más del 90 % en cuanto a la política |
 | Verificación de tipos | Limpieza |
 | Docker | La imagen proporciona la API de gobernanza. El volumen contiene el registro de eventos y las tres instantáneas. |

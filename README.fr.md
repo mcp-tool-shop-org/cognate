@@ -115,7 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-Le volume `cognate-data` est monté à `/app/data`. Le journal des événements est `/app/data/events.jsonl`. Les instantanés sont `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` et `/app/data/cognate/prompts.json`. La composition d’Attestia utilise la même variable de journal des événements sur son propre volume. Chaque fichier a un seul rédacteur. L’image de RepoMesh ne monte pas ce journal. `REPOMESH_FAIL_ON` a par défaut la valeur `unverified` : seul un PASS est déployé. Définissez-la sur `fail` pour autoriser le déploiement d’une version NON VÉRIFIÉE. L’image ne définit pas d’URL de registre. L’image est publiée sur GHCR lorsqu’une version GitHub est publiée.
+Le volume `cognate-data` est monté à `/app/data`. Le journal des événements est `/app/data/events.jsonl`. Les instantanés sont `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` et `/app/data/cognate/prompts.json`. `GET /events/:eventId` lit ce journal et renvoie l’événement enregistré avec une preuve d’inclusion Attestia et la racine. L’appelant envoie les mêmes en-têtes d’agent qu’une opération d’écriture. Un identifiant qui ne figure pas dans le journal de ce locataire est considéré comme une erreur, et le corps ne contient aucune preuve. Le texte de l’invite et le texte de sortie ne sont pas inclus dans l’événement. La route n’appelle pas RepoMesh. La fonction de composition d’Attestia utilise la même variable de journal des événements sur son propre volume. Chaque fichier a un seul rédacteur. L’image de RepoMesh ne monte pas ce journal. `REPOMESH_FAIL_ON` a par défaut la valeur `unverified` : seule une opération réussie est autorisée. Définissez-la sur `fail` pour autoriser une publication non vérifiée. L’image ne définit pas d’URL de registre. L’image est publiée sur GHCR lorsqu’une publication GitHub est effectuée.
 
 ---
 
@@ -140,7 +140,7 @@ Développement en mode ouvert. Tous les principaux modules sont implémentés, t
 | Porte | État |
 |------|--------|
 | Construction | Réussite |
-| Tests | 165 : succès |
+| Tests | 178 réussies |
 | Couverture | Plus de 90 % de la politique est respectée |
 | Vérification des types | Propre |
 | Docker | L’image fournit l’API de gouvernance. Le volume contient le journal des événements et les trois instantanés. |

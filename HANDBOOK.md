@@ -105,7 +105,7 @@ curl http://localhost:4000/health
 { "status": "ok", "service": "cognate", "mode": "api" }
 ```
 
-The `cognate-data` volume mounts at `/app/data`. The event log is `/app/data/events.jsonl` (`ATTESTIA_EVENTS_FILE`). The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. Attestia's compose uses the same event-log variable on its own `attestia-data` volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL.
+The `cognate-data` volume mounts at `/app/data`. The event log is `/app/data/events.jsonl` (`ATTESTIA_EVENTS_FILE`). The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. `GET /events/:eventId` reads that log and returns the recorded event with an Attestia inclusion proof and the root. The caller sends the same agent headers as a write. An id that is not in this tenant's log is a miss, and the body has no proof. Prompt and output text stay out of the event. The route does not call RepoMesh. Attestia's compose uses the same event-log variable on its own `attestia-data` volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL.
 
 The image is pushed to `ghcr.io/mcp-tool-shop-org/cognate` when a GitHub release is published. Local builds use the same Dockerfile.
 

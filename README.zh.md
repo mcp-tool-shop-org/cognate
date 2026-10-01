@@ -115,7 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`cognate-data` 卷挂载在 `/app/data`。事件日志是 `/app/data/events.jsonl`。快照是 `/app/data/cognate/registry.json`、`/app/data/cognate/agents.json` 和 `/app/data/cognate/prompts.json`。Attestia 的 compose 使用其自身卷上的相同事件日志变量。每个文件只有一个写入者。RepoMesh 的镜像不会挂载此日志。`REPOMESH_FAIL_ON` 默认设置为 `unverified`：只有通过的发布才能部署。将其设置为 `fail` 以允许未经验证的发布通过。镜像不会设置账本 URL。当发布 GitHub 发布版本时，镜像会发布到 GHCR。
+`cognate-data` 卷已挂载到 `/app/data`。事件日志为 `/app/data/events.jsonl`。快照为 `/app/data/cognate/registry.json`、`/app/data/cognate/agents.json` 和 `/app/data/cognate/prompts.json`。`GET /events/:eventId` 读取该日志，并返回带有 Attestia 包含证明和根的已记录事件。调用方发送与写入操作相同的代理标头。如果某个 ID 不在此租户的日志中，则视为未找到，并且主体不包含证明。提示和输出文本不包含在事件中。该路由不调用 RepoMesh。Attestia 的组合使用其自身卷上的相同事件日志变量。每个文件只有一个写入者。RepoMesh 的镜像不挂载此日志。`REPOMESH_FAIL_ON` 默认设置为 `unverified`：仅允许通过的部署。将其设置为 `fail`，以允许未经验证的发布。镜像未设置账本 URL。当发布 GitHub 版本时，镜像会发布到 GHCR。
 
 ---
 
@@ -140,7 +140,7 @@ Cognate 假定以下威胁模型：
 | 门控 | 状态 |
 |------|--------|
 | 构建 | 通过 |
-| 测试 | 165 个通过 |
+| 测试 | 178 个通过 |
 | 覆盖范围 | 策略覆盖率超过 90% |
 | 类型检查 | 清理 |
 | Docker | 镜像提供治理 API。该卷包含事件日志和三个快照。 |

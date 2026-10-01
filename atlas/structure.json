@@ -173,7 +173,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 7,
+      "testedBy": 8,
       "unresolvedSites": 0
     },
     {
@@ -551,7 +551,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 7,
+      "testedBy": 8,
       "unresolvedSites": 0
     },
     {
@@ -567,6 +567,28 @@
         {
           "hash": "9c238bf5cdba0e50559763431c85fba737fff902695fb498b08e48eafe9e20d3",
           "path": "packages/node/package.json"
+        },
+        {
+          "exports": [
+            "eventVisibleToTenant",
+            "proofErrorBody",
+            "proveRecordedEvent",
+            "statusForProof"
+          ],
+          "failurePaths": [
+            {
+              "in": "attestedEvent",
+              "kind": "throw",
+              "line": 72
+            },
+            {
+              "in": "proveRecordedEvent",
+              "kind": "catch",
+              "line": 129
+            }
+          ],
+          "hash": "82983d5577e12e7789120cba15589dd8d7dc35175009ac09f61881b0e9853f50",
+          "path": "packages/node/src/event-proof.ts"
         },
         {
           "hash": "696002fde16dda4f335e932abee70b994d8f6d598f92f10f1d6330652cfe2b52",
@@ -743,35 +765,45 @@
             {
               "in": "parseBody",
               "kind": "catch",
-              "line": 85
+              "line": 90
             },
             {
               "in": "keep",
               "kind": "catch",
-              "line": 136
+              "line": 141
             },
             {
               "in": "keep",
               "kind": "throw",
-              "line": 140
+              "line": 145
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 301
+              "line": 166
+            },
+            {
+              "in": "createCognateServer",
+              "kind": "catch",
+              "line": 199
+            },
+            {
+              "in": "createCognateServer",
+              "kind": "catch",
+              "line": 366
             },
             {
               "in": "createCognateServer",
               "kind": "throw",
-              "line": 306
+              "line": 371
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 387
+              "line": 452
             }
           ],
-          "hash": "540db78dd673317b76250dca5d364bcbf4c089be8c3fd1f123bb7c7512da2b4a",
+          "hash": "7eccb77917c7c97eb074dba9264847dbd8f372a059b68265bdb85b933ef5a796",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/agent-identity/src/index.ts",
@@ -785,11 +817,13 @@
             "packages/node/src/middleware/auth.ts",
             "packages/node/src/middleware/rate-limit.ts",
             "packages/node/src/snapshot.ts",
-            "packages/node/src/release-gate.ts"
+            "packages/node/src/release-gate.ts",
+            "packages/node/src/event-proof.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/event-proof.ts",
             "packages/node/src/middleware/auth.ts",
             "packages/node/src/middleware/rate-limit.ts",
             "packages/node/src/release-gate.ts",
@@ -863,6 +897,25 @@
             "packages/prompt-store/src/index.ts"
           ],
           "path": "packages/node/tests/deploy-gate.test.ts",
+          "testFramework": "vitest"
+        },
+        {
+          "hash": "5cfc11ed6a36e3f8ffaf4457580e60d47c29f044bc15f7ed6dbeed3b7d189ed3",
+          "importOrder": [
+            "packages/agent-identity/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/prompt-store/src/index.ts",
+            "packages/node/src/event-proof.ts",
+            "packages/node/src/server.ts"
+          ],
+          "importsFiles": [
+            "packages/agent-identity/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/node/src/event-proof.ts",
+            "packages/node/src/server.ts",
+            "packages/prompt-store/src/index.ts"
+          ],
+          "path": "packages/node/tests/event-proof.test.ts",
           "testFramework": "vitest"
         },
         {
@@ -950,7 +1003,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 6,
+      "testedBy": 7,
       "unresolvedSites": 0
     },
     {
@@ -1185,7 +1238,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 8,
+      "testedBy": 9,
       "unresolvedSites": 0
     },
     {
@@ -1279,7 +1332,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "dc96e12a4c08732a36262b39f71fc035629cdcf8f6133b82d8d986aff3068000",
+          "hash": "62ce9b064645020ee8eb9ccbfdd195c92d9a7995a71a6db26fc70c7b327bdcbc",
           "path": "CHANGELOG.md"
         },
         {
@@ -1291,7 +1344,7 @@
           "path": "Dockerfile"
         },
         {
-          "hash": "5747f66315c255e4f3b405c8670fdec670917b7b274471622aefd5db7bc3b15f",
+          "hash": "3eab3fdf1a34593c39d89d809b9bab6082fc87f8725e248819b3b2740f352a52",
           "path": "HANDBOOK.md"
         },
         {
@@ -1299,35 +1352,35 @@
           "path": "LICENSE"
         },
         {
-          "hash": "fd84a03724f6db059aa185d077b43bfa0e782077fe0fac4683d44cca257eeeeb",
+          "hash": "10232492673f03e4a6a602adedb91b29031e5bd934bbd66cae122217e02a0821",
           "path": "README.es.md"
         },
         {
-          "hash": "5b4bf7e9c6ac0cab1f4fd485ab33df633f7c2e37e8bb2c4584a9eceea19b3d04",
+          "hash": "95a8e2f44c4acbb3613d03ca22950ac216d7ad0649d36b71bfd6ec664479a011",
           "path": "README.fr.md"
         },
         {
-          "hash": "9754aaa76c9af8bf1a72d2a383465edf352f85cd1a559d1d3c007f5836ddf413",
+          "hash": "89779acef41c4fb5cbcf70b63eaa42fb714200383f0cd6d4ac6e0191a0a2cf8f",
           "path": "README.hi.md"
         },
         {
-          "hash": "7823dc011c21e972e8866cbfa5a6099d4cb416b45546700971f14459b8d494bf",
+          "hash": "6155bce97850bf6d8d3e132871aa36ba588f2083a388bddaf6128c721cef0d9a",
           "path": "README.it.md"
         },
         {
-          "hash": "0fbe57a0737db47da41e2117d0a3cbe03310d99496d78562bef1e25afad2fcec",
+          "hash": "062a3b51be2330a20c8dbb1d696819f19588f49f8d25011960eda3d4ba45aeff",
           "path": "README.ja.md"
         },
         {
-          "hash": "fdf492dc779a79ee9d468f8f142c96cd5f997e60891bdabd2b10f2fd29ef3cd2",
+          "hash": "d0fe0a3091c4c5b4fc3e4d43c890f825a314eec34e5d7a72a081824078d72549",
           "path": "README.md"
         },
         {
-          "hash": "76d47358e4193184a525ab2c6627a344f35eda0e11864bcedee79eb4a66a8c4d",
+          "hash": "7436bf60c9ed559ddb520a4c59d3708ef018692cf3dd7fca343a797d0001eca5",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "97826f331dac61b42e23c3813748674129fd7c4e58b5c7885b495f82ae140c9c",
+          "hash": "6e50e9703b4f1a202b45c142ef5e897eb7352c323a77327846d85676ff37ff58",
           "path": "README.zh.md"
         },
         {
@@ -1454,11 +1507,11 @@
           "path": "site/src/content/docs/handbook/reference.md"
         },
         {
-          "hash": "578510beb79d96a39f960e8efe5572e71efd1e24533ed7aeff7df9222e518745",
+          "hash": "481b38252cc1d1a8611eadad77121eb49e07e528a611688e157dd2439de9522d",
           "path": "site/src/content/docs/handbook/security.md"
         },
         {
-          "hash": "17c67e79bec25da5eed356234d84305c2325399425ae089bf256214d842b36c6",
+          "hash": "67c9e9ce755b64f4fb9eedcb43ddcb0a746d3cc356f9e7080fdf07145e95f173",
           "path": "site/src/content/docs/handbook/usage.md"
         },
         {
@@ -1557,7 +1610,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 12,
+      "testedBy": 13,
       "unresolvedSites": 0
     }
   ],
@@ -1676,7 +1729,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 16
+          "files": 18
         },
         {
           "boundary": "policy",
@@ -1891,7 +1944,7 @@
           "config": "packages/node/vitest.config.ts",
           "coverage": true,
           "dir": "packages/node",
-          "files": 4,
+          "files": 5,
           "job": "build-and-test",
           "runner": "vitest",
           "step": "Test with coverage",
@@ -2029,7 +2082,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 18
+          "files": 20
         },
         {
           "boundary": "policy",
@@ -2308,7 +2361,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 18
+          "files": 20
         },
         {
           "boundary": "policy",
@@ -2838,7 +2891,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 16
+          "files": 18
         },
         {
           "boundary": "policy",
@@ -3089,7 +3142,7 @@
         {
           "config": "packages/node/vitest.config.ts",
           "dir": "packages/node",
-          "files": 4,
+          "files": 5,
           "job": "release",
           "runner": "vitest",
           "step": "Run tests",
@@ -3277,8 +3330,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "eab94300aebc3626ea4900711702b0df5d747acc",
-    "tracked": 139
+    "commit": "a3cbcc0ac7ab1996ff00d57f5d703812cac8cb83",
+    "tracked": 141
   },
   "landings": [
     {
@@ -3349,7 +3402,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 14,
+  "testFiles": 15,
   "unassigned": [],
   "unseen": [
     {

@@ -115,7 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-O volume `cognate-data` é montado em `/app/data`. O registo de eventos é `/app/data/events.jsonl`. Os instantâneos são `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` e `/app/data/cognate/prompts.json`. O ficheiro de composição da Attestia utiliza a mesma variável de registo de eventos no seu próprio volume. Cada ficheiro tem um único escritor. A imagem do RepoMesh não monta este registo. `REPOMESH_FAIL_ON` tem como valor predefinido `unverified`: apenas uma versão com o resultado PASS é implementada. Defina-o como `fail` para permitir que uma versão NÃO VERIFICADA seja implementada. A imagem não define uma URL de registo. A imagem é publicada no GHCR quando uma versão do GitHub é publicada.
+O volume `cognate-data` está montado em `/app/data`. O registo de eventos é `/app/data/events.jsonl`. As capturas de ecrã são `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` e `/app/data/cognate/prompts.json`. `GET /events/:eventId` lê esse registo e devolve o evento registado com uma prova de inclusão da Attestia e a raiz. O chamador envia os mesmos cabeçalhos de agente que numa operação de escrita. Um ID que não está no registo deste inquilino é considerado um erro, e o corpo não contém prova. O texto do pedido e da resposta não são incluídos no evento. A rota não chama o RepoMesh. A composição da Attestia utiliza a mesma variável de registo de eventos no seu próprio volume. Cada ficheiro tem um único escritor. A imagem do RepoMesh não monta este registo. `REPOMESH_FAIL_ON` tem como valor predefinido `unverified`: apenas uma operação PASS é permitida. Defina-o para `fail` para permitir uma versão NÃO VERIFICADA. A imagem não define uma URL de livro-razão. A imagem é publicada no GHCR quando uma versão do GitHub é publicada.
 
 ---
 
@@ -140,7 +140,7 @@ Desenvolvimento em modo aberto. Todos os pacotes principais estão implementados
 | Portão | Status |
 |------|--------|
 | Construção | Passando |
-| Testes | 165 versões aprovadas |
+| Testes | 178 aprovados |
 | Cobertura | Mais de 90% da política |
 | Verificação de tipo | Limpo |
 | Docker | A imagem disponibiliza a API de governação. O volume contém o registo de eventos e os três instantâneos. |
