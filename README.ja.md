@@ -93,7 +93,7 @@ if (result.overall === "deny") {
 }
 ```
 
-モデルバージョンを登録し、ライフサイクル全体で実行します。バージョンは`registered → evaluated → approved → deployed`に移行し、`rejected`または`retired`になります。デプロイには、バージョンに記録された承認が必要です。
+モデルのバージョンを登録し、そのライフサイクル全体を管理します。バージョンは`registered → evaluated → approved → deployed`を移動し、`rejected`または`retired`の状態になります。`transitionVersion`は、呼び出し元が保持するスナップショットを移動させます。HTTPサーバーでは、`approved → deployed`が、バージョンが登録されたときに記録された`repo`と`release`に対して`verifyRelease`を呼び出します。合格しないリリースはデプロイされず、異なるリリースを指定するリクエストもデプロイされません。拒否の記録が残ります。
 
 ```ts
 import { createRegistry, registerModel, registerVersion, transitionVersion } from "@cognate/model-registry";
@@ -103,7 +103,11 @@ import { createRegistry, registerModel, registerVersion, transitionVersion } fro
 
 ## Docker
 
-公開されたイメージは、5つのパッケージをビルドし、ヘルスエンドポイントを提供します。ガバナンスHTTP APIは、まだこのイメージには含まれていません。`/health`は、そのサービスがまだ開発中である間に、コンテナを監視できるように応答します。
+イメージは`@cognate/node`を実行し、ガバナンスAPIを提供します。`/health`は以下を返します。
+
+```json
+{ "status": "ok", "service": "cognate", "mode": "api" }
+```
 
 ```bash
 docker compose up -d
@@ -111,13 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`/health`は以下を返します。
-
-```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
-```
-
-Composeは、プロンプトとエージェントのデータを、`/app/data`にマウントされた`cognate-data`ボリュームに保存します。イメージは、GitHubリリースが公開されると、GHCRに公開されます。
+`cognate-data`ボリュームは`/app/data`にマウントされます。イベントログは`/app/data/events.jsonl`です。スナップショットは`/app/data/cognate/registry.json`、`/app/data/cognate/agents.json`、および`/app/data/cognate/prompts.json`です。Attestiaのコンポーズは、独自のボリュームで同じイベントログ変数を使用します。各ファイルには1つの書き込み元があります。RepoMeshのイメージは、このログをマウントしません。`REPOMESH_FAIL_ON`はデフォルトで`unverified`に設定されており、合格したリリースのみがデプロイされます。未検証のリリースを許可するには、`fail`に設定します。イメージは、台帳のURLを設定しません。イメージは、GitHubリリースが公開されるとGHCRに公開されます。
 
 ---
 
@@ -131,7 +129,7 @@ Cognateは、次の脅威モデルを想定しています。
 4. **プロンプトインジェクションによるポリシーの回避。** 敵対的なプロンプトが、コンテンツルールを回避しようとします。軽減策：ポリシー評価は、決定論的で、バージョン管理されており、推論の前に実行されます。ポリシーチェックに合格しないプロンプトは実行されません。
 5. **監査ログの不正な操作。** 特権のあるオペレーターがログを改ざんします。軽減策：イベントストアは追加専用であり、AttestiaのMerkleツリー証明によってバックアップされます。改ざんはチェーンハッシュを壊します。
 
-デフォルトでは、テレメトリ、分析、またはアウトバウンドネットワーク呼び出しは行われません。
+テレメトリーや分析は行いません。HTTPサーバーでのデプロイは、RepoMeshに対して、指定されたリリースが合格するかどうかを問い合わせます。ヘルスチェックやその他のルートは、このプロセスで処理されます。
 
 ---
 
@@ -142,10 +140,10 @@ Cognateは、次の脅威モデルを想定しています。
 | ゲート | ステータス |
 |------|--------|
 | ビルド | 合格 |
-| テスト | 72合格 |
+| テスト | 165件の合格 |
 | カバレッジ | ポリシーの90%以上 |
 | 型チェック | クリーン |
-| Docker | イメージのビルド。ヘルスエンドポイントはプレースホルダー |
+| Docker | イメージはガバナンスAPIを提供します。ボリュームには、イベントログと3つのスナップショットが格納されます。 |
 | 出荷チェック | このリリースに含まれるハンドブック、ランディングページ、およびリポジトリのメタデータ |
 
 ---

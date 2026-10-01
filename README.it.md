@@ -93,7 +93,7 @@ if (result.overall === "deny") {
 }
 ```
 
-Registra una versione del modello, quindi esegui il ciclo di vita. Una versione si sposta in `registered → evaluated → approved → deployed` e può essere `rejected` o `retired`. L'implementazione richiede comunque un'approvazione registrata sulla versione.
+Registra una versione del modello, quindi esegui il ciclo di vita. Una versione si sposta in `registered → evaluated → approved → deployed` e può essere `rejected` o `retired`. `transitionVersion` sposta uno snapshot che il chiamante possiede. Sul server HTTP, `approved → deployed` chiama `verifyRelease` sugli elementi `repo` e `release` registrati quando è stata registrata la versione. Un rilascio che non supera il test non viene distribuito, così come non viene distribuita una richiesta che fa riferimento a un rilascio diverso. Il rifiuto viene registrato.
 
 ```ts
 import { createRegistry, registerModel, registerVersion, transitionVersion } from "@cognate/model-registry";
@@ -103,7 +103,11 @@ import { createRegistry, registerModel, registerVersion, transitionVersion } fro
 
 ## Docker
 
-L'immagine pubblicata crea i cinque pacchetti e fornisce un endpoint di controllo dello stato. L'API HTTP di governance non è ancora presente in questa immagine. `/health` risponde in modo che il contenitore possa essere monitorato mentre quel servizio è ancora in fase di sviluppo.
+L'immagine esegue `@cognate/node` e fornisce l'API di governance. `/health` restituisce:
+
+```json
+{ "status": "ok", "service": "cognate", "mode": "api" }
+```
 
 ```bash
 docker compose up -d
@@ -111,13 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`/health` restituisce:
-
-```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
-```
-
-Compose mantiene i dati di prompt e agente sul volume `cognate-data`, montato in `/app/data`. L'immagine viene pubblicata su GHCR quando viene pubblicata una versione di GitHub.
+Il volume `cognate-data` è montato in `/app/data`. Il registro degli eventi è `/app/data/events.jsonl`. Gli snapshot sono `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` e `/app/data/cognate/prompts.json`. L'ambiente di composizione di Attestia utilizza la stessa variabile del registro degli eventi sul proprio volume. Ogni file ha un solo scrittore. L'immagine di RepoMesh non monta questo registro. `REPOMESH_FAIL_ON` ha come valore predefinito `unverified`: solo un rilascio con esito POSITIVO viene distribuito. Impostalo su `fail` per consentire la distribuzione di un rilascio NON VERIFICATO. L'immagine non imposta un URL del registro. L'immagine viene pubblicata su GHCR quando viene pubblicato un rilascio su GitHub.
 
 ---
 
@@ -131,7 +129,7 @@ Cognate presuppone il seguente modello di minaccia:
 4. **Aggiramento delle politiche tramite l'iniezione di prompt.** Un prompt dannoso tenta di aggirare le regole sui contenuti. Mitigazione: la valutazione delle politiche è deterministica, con versioni e viene eseguita prima dell'inferenza. Nessun prompt viene eseguito senza un controllo delle politiche positivo.
 5. **Abuso interno dei log di audit.** Un operatore privilegiato manomette i log. Mitigazione: l'archivio di eventi è di sola aggiunta ed è supportato dalle prove ad albero di Merkle di Attestia. La manomissione interrompe la catena di hash.
 
-Per impostazione predefinita, non vengono effettuate telemetrie, analisi o chiamate di rete in uscita.
+Nessun dato di telemetria o analisi. Una distribuzione sul server HTTP chiede a RepoMesh se il rilascio specificato supera il test. Lo stato di salute e le altre route rimangono in questo processo.
 
 ---
 
@@ -142,10 +140,10 @@ Sviluppo in ambiente pubblico. Tutti i pacchetti principali sono stati implement
 | Porta | Stato |
 |------|--------|
 | Costruzione | Superamento |
-| Test | 72 superati |
+| Test | 165 superati |
 | Copertura | Superiore al 90% per quanto riguarda le politiche |
 | Controllo dei tipi | Pulito |
-| Docker | Creazione delle immagini. L’endpoint di controllo dello stato è un segnaposto |
+| Docker | L'immagine fornisce l'API di governance. Il volume contiene il registro degli eventi e i tre snapshot. |
 | Controllo prima della distribuzione | Manuale, pagina di destinazione e metadati del repository inclusi in questa versione |
 
 ---

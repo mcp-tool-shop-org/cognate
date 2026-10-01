@@ -140,7 +140,7 @@ Building in public. All core packages are implemented, tested, and building. Ins
 | Gate | Status |
 |------|--------|
 | Build | Passing |
-| Tests | 72 passing |
+| Tests | 165 passing |
 | Coverage | >90% on policy |
 | Typecheck | Clean |
 | Docker | Image serves the governance API. The volume holds the event log and the three snapshots |

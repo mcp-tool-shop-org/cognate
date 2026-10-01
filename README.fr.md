@@ -93,7 +93,7 @@ if (result.overall === "deny") {
 }
 ```
 
-Enregistrer une version du modèle, puis la faire passer par le cycle de vie. Une version passe par `registered → evaluated → approved → deployed`, et elle peut être `rejected` ou `retired`. Le déploiement nécessite toujours une approbation enregistrée sur la version.
+Enregistrez une version du modèle, puis faites-la passer par le cycle de vie. Une version évolue `registered → evaluated → approved → deployed`, et elle peut être `rejected` ou `retired`. `transitionVersion` déplace un instantané que l’appelant conserve. Sur le serveur HTTP, `approved → deployed` appelle `verifyRelease` sur les éléments `repo` et `release` enregistrés lors de l’enregistrement de la version. Une version qui ne passe pas n’est pas déployée, et une requête qui fait référence à une version différente ne l’est pas non plus. Le refus est enregistré.
 
 ```ts
 import { createRegistry, registerModel, registerVersion, transitionVersion } from "@cognate/model-registry";
@@ -103,7 +103,11 @@ import { createRegistry, registerModel, registerVersion, transitionVersion } fro
 
 ## Docker
 
-L’image publiée construit les cinq paquets et sert un point de terminaison de contrôle d’intégrité. L’API HTTP de gouvernance n’est pas encore présente dans cette image. `/health` répond afin que le conteneur puisse être surveillé pendant que ce service est encore en développement.
+L’image exécute `@cognate/node` et fournit l’API de gouvernance. `/health` renvoie :
+
+```json
+{ "status": "ok", "service": "cognate", "mode": "api" }
+```
 
 ```bash
 docker compose up -d
@@ -111,13 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`/health` renvoie :
-
-```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
-```
-
-Compose conserve les données des invites et des agents sur le volume `cognate-data`, monté à `/app/data`. L’image est publiée sur GHCR lorsqu’une version GitHub est publiée.
+Le volume `cognate-data` est monté à `/app/data`. Le journal des événements est `/app/data/events.jsonl`. Les instantanés sont `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` et `/app/data/cognate/prompts.json`. La composition d’Attestia utilise la même variable de journal des événements sur son propre volume. Chaque fichier a un seul rédacteur. L’image de RepoMesh ne monte pas ce journal. `REPOMESH_FAIL_ON` a par défaut la valeur `unverified` : seul un PASS est déployé. Définissez-la sur `fail` pour autoriser le déploiement d’une version NON VÉRIFIÉE. L’image ne définit pas d’URL de registre. L’image est publiée sur GHCR lorsqu’une version GitHub est publiée.
 
 ---
 
@@ -131,7 +129,7 @@ Cognate suppose le modèle de menace suivant :
 4. **Contournement de la politique par injection d’invite.** Une invite malveillante tente de contourner les règles de contenu. Atténuation : l’évaluation de la politique est déterministe, versionnée et s’effectue avant l’inférence. Aucune invite n’est exécutée sans qu’un contrôle de politique réussi ne soit effectué.
 5. **Abus interne des journaux d’audit.** Un opérateur privilégié manipule les journaux. Atténuation : le magasin d’événements est en lecture seule et est sauvegardé par les preuves d’arbres de Merkle d’Attestia. La manipulation brise la chaîne de hachage.
 
-Par défaut, aucune télémétrie, analyse ou appel réseau sortant n’est effectuée.
+Aucune télémétrie ou analyse. Un déploiement sur le serveur HTTP demande à RepoMesh si la version spécifiée passe les tests. L’état de santé et les autres routes restent sur ce processus.
 
 ---
 
@@ -142,10 +140,10 @@ Développement en mode ouvert. Tous les principaux modules sont implémentés, t
 | Porte | État |
 |------|--------|
 | Construction | Réussite |
-| Tests | 72 tests réussis |
+| Tests | 165 : succès |
 | Couverture | Plus de 90 % de la politique est respectée |
 | Vérification des types | Propre |
-| Docker | Création des images. Le point de terminaison de contrôle de l’état est un espace réservé |
+| Docker | L’image fournit l’API de gouvernance. Le volume contient le journal des événements et les trois instantanés. |
 | Vérification avant la mise en production | Manuel, page d’accueil et métadonnées du dépôt inclus dans cette version |
 
 ---

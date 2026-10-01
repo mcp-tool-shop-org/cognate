@@ -93,7 +93,7 @@ if (result.overall === "deny") {
 }
 ```
 
-Registre uma versão do modelo e, em seguida, execute-a durante o ciclo de vida. Uma versão se move para `registered → evaluated → approved → deployed` e pode ser `rejected` ou `retired`. A implementação ainda requer uma aprovação registrada na versão.
+Registe uma versão do modelo e, em seguida, execute-a ao longo do seu ciclo de vida. Uma versão é movida para `registered → evaluated → approved → deployed` e pode ser `rejected` ou `retired`. `transitionVersion` move um instantâneo que o chamador possui. No servidor HTTP, `approved → deployed` chama `verifyRelease` no `repo` e `release` registados quando a versão foi registada. Uma versão que não passa não é implementada, nem o é um pedido que nomeia uma versão diferente. A recusa é registada.
 
 ```ts
 import { createRegistry, registerModel, registerVersion, transitionVersion } from "@cognate/model-registry";
@@ -103,7 +103,11 @@ import { createRegistry, registerModel, registerVersion, transitionVersion } fro
 
 ## Docker
 
-A imagem publicada cria os cinco pacotes e serve um endpoint de integridade. A API HTTP de governança ainda não está nesta imagem. `/health` responde para que o contêiner possa ser supervisionado enquanto esse serviço ainda está em desenvolvimento.
+A imagem executa `@cognate/node` e disponibiliza a API de governação. `/health` retorna:
+
+```json
+{ "status": "ok", "service": "cognate", "mode": "api" }
+```
 
 ```bash
 docker compose up -d
@@ -111,13 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`/health` retorna:
-
-```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
-```
-
-O Compose mantém os dados de prompt e agente no volume `cognate-data`, montado em `/app/data`. A imagem é publicada no GHCR quando um lançamento do GitHub é publicado.
+O volume `cognate-data` é montado em `/app/data`. O registo de eventos é `/app/data/events.jsonl`. Os instantâneos são `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` e `/app/data/cognate/prompts.json`. O ficheiro de composição da Attestia utiliza a mesma variável de registo de eventos no seu próprio volume. Cada ficheiro tem um único escritor. A imagem do RepoMesh não monta este registo. `REPOMESH_FAIL_ON` tem como valor predefinido `unverified`: apenas uma versão com o resultado PASS é implementada. Defina-o como `fail` para permitir que uma versão NÃO VERIFICADA seja implementada. A imagem não define uma URL de registo. A imagem é publicada no GHCR quando uma versão do GitHub é publicada.
 
 ---
 
@@ -131,7 +129,7 @@ Cognate assume o seguinte modelo de ameaças:
 4. **Desvio da política por meio de injeção de prompt.** Um prompt adversário tenta contornar as regras de conteúdo. Mitigação: a avaliação da política é determinística, versionada e ocorre antes da inferência. Nenhum prompt é executado sem uma verificação de política aprovada.
 5. **Abuso interno dos logs de auditoria.** Um operador privilegiado adultera os logs. Mitigação: o armazenamento de eventos é apenas anexado e apoiado pelas provas de árvore de Merkle do Attestia. A adulteração quebra o hash da cadeia.
 
-Por padrão, nenhuma telemetria, análise ou chamadas de rede de saída são feitas.
+Sem telemetria ou análise. Uma implementação no servidor HTTP pergunta ao RepoMesh se a versão nomeada passa. A saúde e as outras rotas permanecem neste processo.
 
 ---
 
@@ -142,10 +140,10 @@ Desenvolvimento em modo aberto. Todos os pacotes principais estão implementados
 | Portão | Status |
 |------|--------|
 | Construção | Passando |
-| Testes | 72 aprovados |
+| Testes | 165 versões aprovadas |
 | Cobertura | Mais de 90% da política |
 | Verificação de tipo | Limpo |
-| Docker | Criação de imagens. O ponto de extremidade de saúde é um espaço reservado |
+| Docker | A imagem disponibiliza a API de governação. O volume contém o registo de eventos e os três instantâneos. |
 | Verificação de envio | Manual, página de destino e metadados do repositório nesta versão |
 
 ---

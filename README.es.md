@@ -93,7 +93,7 @@ if (result.overall === "deny") {
 }
 ```
 
-Registre una versión del modelo y luego haga que recorra el ciclo de vida. Una versión se mueve a `registered → evaluated → approved → deployed`, y puede ser `rejected` o `retired`. La implementación aún requiere una aprobación registrada en la versión.
+Registre una versión del modelo y, a continuación, ejecútela a lo largo de su ciclo de vida. Una versión se mueve a `registered → evaluated → approved → deployed` y puede ser `rejected` o `retired`. `transitionVersion` mueve una instantánea que posee el llamador. En el servidor HTTP, `approved → deployed` llama a `verifyRelease` en el `repo` y el `release` registrados cuando se registró la versión. Una versión que no supera la prueba no se implementa, y tampoco se implementa una solicitud que haga referencia a una versión diferente. El rechazo se registra.
 
 ```ts
 import { createRegistry, registerModel, registerVersion, transitionVersion } from "@cognate/model-registry";
@@ -103,7 +103,11 @@ import { createRegistry, registerModel, registerVersion, transitionVersion } fro
 
 ## Docker
 
-La imagen publicada construye los cinco paquetes y sirve un punto final de estado. La API HTTP de gobernanza aún no está en esta imagen. `/health` responde para que se pueda supervisar el contenedor mientras ese servicio aún está en desarrollo.
+La imagen ejecuta `@cognate/node` y proporciona la API de gobernanza. `/health` devuelve:
+
+```json
+{ "status": "ok", "service": "cognate", "mode": "api" }
+```
 
 ```bash
 docker compose up -d
@@ -111,13 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`/health` devuelve:
-
-```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
-```
-
-Compose mantiene los datos de solicitud y agente en el volumen `cognate-data`, montado en `/app/data`. La imagen se publica en GHCR cuando se publica una versión de GitHub.
+El volumen `cognate-data` se monta en `/app/data`. El registro de eventos es `/app/data/events.jsonl`. Las instantáneas son `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json` y `/app/data/cognate/prompts.json`. La configuración de Attestia utiliza la misma variable de registro de eventos en su propio volumen. Cada archivo tiene un único escritor. La imagen de RepoMesh no monta este registro. `REPOMESH_FAIL_ON` tiene como valor predeterminado `unverified`: solo se implementa una versión que supera la prueba. Establézcalo en `fail` para permitir que se implemente una versión NO VERIFICADA. La imagen no establece una URL de libro mayor. La imagen se publica en GHCR cuando se publica una versión de GitHub.
 
 ---
 
@@ -131,7 +129,7 @@ Cognate asume el siguiente modelo de amenazas:
 4. **Omisión de la política mediante la inyección de solicitudes.** Una solicitud adversaria intenta eludir las reglas de contenido. Mitigación: la evaluación de la política es determinista, tiene versiones y se ejecuta antes de la inferencia. Ninguna solicitud se ejecuta sin una verificación de política aprobatoria.
 5. **Abuso interno de los registros de auditoría.** Un operador con privilegios manipula los registros. Mitigación: el almacén de eventos es de solo agregado y está respaldado por las pruebas de árbol de Merkle de Attestia. La manipulación rompe la cadena hash.
 
-De forma predeterminada, no se realizan telemetría, análisis ni llamadas de red salientes.
+No se recopila telemetría ni datos analíticos. Una implementación en el servidor HTTP pregunta a RepoMesh si la versión especificada supera la prueba. La supervisión y las demás rutas permanecen en este proceso.
 
 ---
 
@@ -142,10 +140,10 @@ Desarrollando en un entorno público. Todos los paquetes principales están impl
 | Puerta de enlace | Estado |
 |------|--------|
 | Construir | Pasando |
-| Pruebas | 72 aprobadas |
+| Pruebas | 165 versiones que superan la prueba |
 | Cobertura | Más del 90 % en cuanto a la política |
 | Verificación de tipos | Limpieza |
-| Docker | Se crean imágenes. El punto final de estado es un marcador de posición |
+| Docker | La imagen proporciona la API de gobernanza. El volumen contiene el registro de eventos y las tres instantáneas. |
 | Verificación de envío | Manual, página de destino y metadatos del repositorio en esta versión |
 
 ---

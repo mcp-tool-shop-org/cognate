@@ -93,7 +93,7 @@ if (result.overall === "deny") {
 }
 ```
 
-注册模型版本，然后将其应用于生命周期。一个版本会移动 `registered → evaluated → approved → deployed`，并且它可以是 `rejected` 或 `retired`。部署仍然需要记录在版本上的批准。
+注册一个模型版本，然后让它经历整个生命周期。一个版本会移动到 `registered → evaluated → approved → deployed`，并且它可以是 `rejected` 或 `retired`。`transitionVersion` 移动调用方持有的快照。在 HTTP 服务器上，`approved → deployed` 会在版本注册时记录的 `repo` 和 `release` 上调用 `verifyRelease`。如果发布未能通过，则不会部署，并且如果请求指定了不同的发布版本，也不会部署。拒绝会被记录。
 
 ```ts
 import { createRegistry, registerModel, registerVersion, transitionVersion } from "@cognate/model-registry";
@@ -103,7 +103,11 @@ import { createRegistry, registerModel, registerVersion, transitionVersion } fro
 
 ## Docker
 
-发布的镜像构建了五个包并提供了一个健康端点。治理 HTTP API 尚未包含在此镜像中。 `/health` 响应，以便可以监视容器，同时该服务仍在开发中。
+镜像运行 `@cognate/node` 并提供治理 API。`/health` 返回：
+
+```json
+{ "status": "ok", "service": "cognate", "mode": "api" }
+```
 
 ```bash
 docker compose up -d
@@ -111,13 +115,7 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-`/health` 返回：
-
-```json
-{ "status": "ok", "service": "cognate", "mode": "placeholder" }
-```
-
-Compose 将提示和代理数据保存在 `cognate-data` 卷上，并将其挂载到 `/app/data`。当发布 GitHub 发布时，镜像会发布到 GHCR。
+`cognate-data` 卷挂载在 `/app/data`。事件日志是 `/app/data/events.jsonl`。快照是 `/app/data/cognate/registry.json`、`/app/data/cognate/agents.json` 和 `/app/data/cognate/prompts.json`。Attestia 的 compose 使用其自身卷上的相同事件日志变量。每个文件只有一个写入者。RepoMesh 的镜像不会挂载此日志。`REPOMESH_FAIL_ON` 默认设置为 `unverified`：只有通过的发布才能部署。将其设置为 `fail` 以允许未经验证的发布通过。镜像不会设置账本 URL。当发布 GitHub 发布版本时，镜像会发布到 GHCR。
 
 ---
 
@@ -131,7 +129,7 @@ Cognate 假定以下威胁模型：
 4. **通过提示注入绕过策略。** 恶意提示试图规避内容规则。缓解措施：策略评估是确定性的、版本化的，并且在推理之前运行。没有提示会在没有通过策略检查的情况下执行。
 5. **滥用审计日志的内部人员。** 具有特权的操作员篡改日志。缓解措施：事件存储是追加写入的，并由 Attestia 的 Merkle 树证明进行支持。篡改会破坏链哈希。
 
-默认情况下，不会进行任何遥测、分析或出站网络调用。
+不收集遥测数据或分析数据。在 HTTP 服务器上进行的部署会询问 RepoMesh，指定的发布版本是否通过。健康状况和其他路由仍然保留在此进程中。
 
 ---
 
@@ -142,10 +140,10 @@ Cognate 假定以下威胁模型：
 | 门控 | 状态 |
 |------|--------|
 | 构建 | 通过 |
-| 测试 | 72 个通过 |
+| 测试 | 165 个通过 |
 | 覆盖范围 | 策略覆盖率超过 90% |
 | 类型检查 | 清理 |
-| Docker | 镜像构建。健康状态端点仅为占位符 |
+| Docker | 镜像提供治理 API。该卷包含事件日志和三个快照。 |
 | 发布检查 | 本版本包含手册、登录页面和代码仓库元数据 |
 
 ---
