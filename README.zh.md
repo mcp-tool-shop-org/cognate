@@ -16,7 +16,9 @@
 
 Cognate 是构建在 [Attestia](https://github.com/mcp-tool-shop-org/attestia) 之上的 AI 治理层。Attestia 证明某个事件发生了——例如，某个事件、交易或状态转换——并将该证明与链绑定。Cognate 使用相同的证明机制来管理 AI 系统：模型被允许做什么、实际做了什么以及谁授权了它。
 
-Attestia 证明金融领域的真实性，而 Cognate 证明 AI 领域的真实性——模型溯源、策略决策、代理能力以及提示/输出的完整性。使用的都是相同的默克尔树。使用的都是相同的只追加事件存储。只是应用领域不同。
+同源性证明了人工智能的真实性：模型血统、策略决策、代理能力以及提示和输出的完整性。相同的默克尔证明。相同的仅追加事件存储。不同的领域。
+
+Attestia、Cognate 和 RepoMesh 是三种产品。Attestia 在这些基本要素之上，为金融领域（个人保险库、组织金库、注册表）提供服务。RepoMesh 是发布网络：签名事件、节点清单以及基于 XRPL 的信任时钟，它使用自己的 RFC 6962 分散账本。它不使用 Attestia 的默克尔树。当 Cognate 需要证明时，它会调用 Attestia；当它需要检查发布时，它会调用 RepoMesh。`@cognate/repomesh-bridge` 就是该检查。
 
 ---
 

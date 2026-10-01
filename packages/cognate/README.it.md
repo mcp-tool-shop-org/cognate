@@ -10,7 +10,9 @@
 
 Cognate è il livello di governance dell’IA, costruito su [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia dimostra che qualcosa è accaduto: un evento, una transazione, una transizione di stato, e lega tale prova a una catena. Cognate utilizza gli stessi elementi di attestazione per governare i sistemi di IA: cosa un modello era autorizzato a fare, cosa ha effettivamente fatto e chi lo ha autorizzato.
 
-Mentre Attestia attesta la veridicità finanziaria, Cognate attesta la veridicità dell’IA: la genealogia del modello, le decisioni politiche, le capacità dell’agente e l’integrità dei prompt/output. Gli stessi alberi di Merkle. Lo stesso archivio di eventi in sola aggiunta. Un dominio diverso.
+Un elemento correlato attesta la veridicità dell’IA: la genealogia del modello, le decisioni politiche, le capacità dell’agente e l’integrità dei prompt e degli output. Gli stessi proof di Merkle. Lo stesso archivio di eventi con aggiunte consentite. Dominio diverso.
+
+Attestia implementa il dominio finanziario utilizzando questi elementi di base. RepoMesh è la rete di rilascio, con il proprio registro basato su RFC 6962. Questo pacchetto chiama Attestia per ottenere una prova e RepoMesh, tramite `@cognate/repomesh-bridge`, quando è necessario verificare un rilascio.
 
 ## Installazione
 
@@ -18,7 +20,7 @@ Mentre Attestia attesta la veridicità finanziaria, Cognate attesta la veridicit
 npm install @mcptoolshop/cognate
 ```
 
-Node 22 o versione successiva. Le cinque librerie sono contenute in questo unico pacchetto. I nomi interni `@cognate/*` non sono pubblicati.
+Nodo 22 o successivo. Le librerie sono contenute in questo unico pacchetto, inclusa la verifica dei rilasci di RepoMesh. I nomi interni `@cognate/*` non vengono pubblicati.
 
 ```ts
 import { policy } from "@mcptoolshop/cognate";

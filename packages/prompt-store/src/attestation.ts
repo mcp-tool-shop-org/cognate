@@ -5,18 +5,34 @@
  * Each log operation is mirrored as an append-only Attestia event.
  */
 
+import { randomUUID } from "node:crypto";
 import type { Prompt, Output } from "@cognate/types";
+import type { DomainEvent, EventStore } from "@mcptoolshop/attestia/event-store";
 import type { PromptStoreState, StoreResult, StoreError } from "./store.js";
 import { logPrompt, logOutput } from "./store.js";
 
-// Local interface matching Attestia's EventStore shape
-// (runtime module resolution works; types are bundled inline)
-interface EventStore {
-  append(streamId: string, events: unknown | unknown[], options?: unknown): Promise<unknown>;
+function cognateEvent(
+  type: string,
+  actor: string,
+  timestamp: string,
+  correlationId: string,
+  payload: Record<string, unknown>,
+): DomainEvent {
+  return {
+    type,
+    metadata: {
+      eventId: randomUUID(),
+      timestamp,
+      actor,
+      correlationId,
+      source: "external",
+    },
+    payload,
+  };
 }
 
 export interface AttestLogConfig {
-  readonly eventStore: EventStore;
+  readonly eventStore: Pick<EventStore, "append">;
   readonly tenantId: string;
   readonly streamPrefix?: string;
 }
@@ -48,17 +64,21 @@ export async function attestLogPrompt(
   try {
     await config.eventStore.append(
       makeStreamId(config, "prompts"),
-      {
-        type: "cognate.prompt.logged",
-        payload: {
-          promptId: prompt.id,
-          tenantId: prompt.tenantId,
-          modelVersionId: prompt.modelVersionId,
-          plaintextHash: prompt.plaintextHash,
-          submittedAt: prompt.submittedAt,
-        },
-        timestamp: prompt.submittedAt,
-      }
+      [
+        cognateEvent(
+          "cognate.prompt.logged",
+          prompt.tenantId,
+          prompt.submittedAt,
+          prompt.id,
+          {
+            promptId: prompt.id,
+            tenantId: prompt.tenantId,
+            modelVersionId: prompt.modelVersionId,
+            plaintextHash: prompt.plaintextHash,
+            submittedAt: prompt.submittedAt,
+          },
+        ),
+      ],
     );
   } catch (err) {
     return {
@@ -89,18 +109,22 @@ export async function attestLogOutput(
   try {
     await config.eventStore.append(
       makeStreamId(config, "outputs"),
-      {
-        type: "cognate.output.logged",
-        payload: {
-          outputId: output.id,
-          tenantId: output.tenantId,
-          promptId: output.promptId,
-          modelVersionId: output.modelVersionId,
-          plaintextHash: output.plaintextHash,
-          generatedAt: output.generatedAt,
-        },
-        timestamp: output.generatedAt,
-      }
+      [
+        cognateEvent(
+          "cognate.output.logged",
+          output.tenantId,
+          output.generatedAt,
+          output.id,
+          {
+            outputId: output.id,
+            tenantId: output.tenantId,
+            promptId: output.promptId,
+            modelVersionId: output.modelVersionId,
+            plaintextHash: output.plaintextHash,
+            generatedAt: output.generatedAt,
+          },
+        ),
+      ],
     );
   } catch (err) {
     return {

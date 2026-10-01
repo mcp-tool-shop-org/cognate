@@ -53,8 +53,9 @@ describe("attestia prompt log", () => {
 
     expect(result.ok).toBe(true);
     expect(appended[0]).toBe("cognate-tenant-1-prompts");
-    const ev = appended[1] as { type: string };
+    const ev = (appended[1] as Array<{ type: string; metadata: { source: string } }>)[0];
     expect(ev.type).toBe("cognate.prompt.logged");
+    expect(ev.metadata.source).toBe("external");
   });
 
   it("uses a custom stream prefix", async () => {
@@ -122,8 +123,9 @@ describe("attestia prompt log", () => {
 
     expect(result.ok).toBe(true);
     expect(appended[0]).toBe("cognate-tenant-1-outputs");
-    const ev = appended[1] as { type: string };
+    const ev = (appended[1] as Array<{ type: string; metadata: { source: string } }>)[0];
     expect(ev.type).toBe("cognate.output.logged");
+    expect(ev.metadata.source).toBe("external");
   });
 
   it("returns store error when output prompt not found", async () => {

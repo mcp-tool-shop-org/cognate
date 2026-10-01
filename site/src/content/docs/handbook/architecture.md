@@ -5,7 +5,9 @@ sidebar:
   order: 3
 ---
 
-Attestia proves that something happened and binds that proof to a chain: append-only events and Merkle trees. Cognate does not build a second store. It uses that one for AI — model lineage, policy decisions, agent capabilities, and prompt integrity.
+Attestia proves that an event, a transaction, or a state transition happened, and binds that proof to a chain: an append-only event store and Merkle proofs. Cognate does not build a second store. It uses that one for AI — model lineage, policy decisions, agent capabilities, and prompt integrity.
+
+RepoMesh is the other neighbour. It is the release network: signed events, node manifests, and an XRPL-anchored trust clock, on its own RFC 6962 ledger. `@cognate/repomesh-bridge` calls that ledger to check a release. It does not use Attestia's Merkle tree.
 
 ```
 policy  ── evaluate before inference

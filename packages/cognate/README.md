@@ -10,7 +10,9 @@
 
 Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia proves that something happened — an event, a transaction, a state transition — and binds that proof to a chain. Cognate uses those same attestation primitives to govern AI systems: what a model was permitted to do, what it actually did, and who authorized it.
 
-Where Attestia attests to financial truth, Cognate attests to AI truth — model lineage, policy decisions, agent capabilities, and prompt/output integrity. Same Merkle trees. Same append-only event store. Different domain.
+Cognate attests to AI truth: model lineage, policy decisions, agent capabilities, and prompt and output integrity. Same Merkle proofs. Same append-only event store. Different domain.
+
+Attestia ships the financial domain on those primitives. RepoMesh is the release network, on its own RFC 6962 ledger. This package calls Attestia for a proof and RepoMesh, through `@cognate/repomesh-bridge`, when a release needs checking.
 
 ## Install
 
@@ -18,7 +20,7 @@ Where Attestia attests to financial truth, Cognate attests to AI truth — model
 npm install @mcptoolshop/cognate
 ```
 
-Node 22 or newer. The five libraries are in this one package. The internal `@cognate/*` names are not published.
+Node 22 or newer. The libraries are in this one package, including the RepoMesh release check. The internal `@cognate/*` names are not published.
 
 ```ts
 import { policy } from "@mcptoolshop/cognate";

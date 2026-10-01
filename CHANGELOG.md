@@ -2,6 +2,12 @@
 
 All notable changes to Cognate are documented in this file.
 
+## [0.1.5] - 2026-10-01
+
+### Changed
+- Model-registry and prompt-store appends write an Attestia `DomainEvent` (`source: "external"`) through the published `EventStore` type. The local `EventStore` interface and the `MerkleTree` `@ts-ignore` are gone.
+- READMEs, the handbook, and the package description name Attestia, Cognate, and RepoMesh as three products. RepoMesh keeps its own ledger. `@cognate/repomesh-bridge` is the release check.
+
 ## [0.1.1] — 2026-09-28
 
 ### Added

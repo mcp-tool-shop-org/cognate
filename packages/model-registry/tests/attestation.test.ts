@@ -46,6 +46,10 @@ describe("attestia transition log", () => {
     );
     expect(next.versions["v1"].status).toBe("evaluated");
     expect(appended[0]).toBe("cognate-tenant-1-transitions");
+    const events = appended[1] as Array<{ type: string; metadata: { source: string; correlationId: string } }>;
+    expect(events[0].type).toBe("cognate.model.transitioned");
+    expect(events[0].metadata.source).toBe("external");
+    expect(events[0].metadata.correlationId).toBe("v1");
     const proof = buildTransitionProof(next, "v1");
     expect(proof?.count).toBe(1);
     expect(proof?.root).toMatch(/^[0-9a-f]{64}$/);

@@ -1,8 +1,8 @@
 {
   "name": "cognate",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
-  "description": "AI governance attestation layer \u2014 structural truth for autonomous systems",
+  "description": "AI governance attestation on Attestia's proof primitives — model lineage, policy, agent identity, and prompt integrity — with RepoMesh release checks.",
   "type": "module",
   "engines": {
     "node": ">=22"

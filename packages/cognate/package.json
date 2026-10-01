@@ -1,7 +1,7 @@
 {
   "name": "@mcptoolshop/cognate",
-  "version": "0.1.4",
-  "description": "Structural governance for autonomous intelligence. One package for Cognate's model lineage, policy decisions, agent capabilities, and prompt integrity.",
+  "version": "0.1.5",
+  "description": "AI governance attestation on Attestia's proof primitives — model lineage, policy, agent identity, and prompt integrity — with RepoMesh release checks.",
   "type": "module",
   "license": "MIT",
   "author": "mcp-tool-shop-org",

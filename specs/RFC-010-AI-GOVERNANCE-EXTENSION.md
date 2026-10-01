@@ -10,13 +10,13 @@
 
 ## Summary
 
-Extend Attestia's structural governance primitives into an AI-native domain: model registry, policy evaluation, agent identity, and prompt/output attestation. The AI governance layer sits *beside* Vault and Treasury, not inside them. It consumes Attestia's event store, proof, verify, and registrum patterns. It adds domain types and a policy engine that Attestia does not have.
+Extend Attestia's proof primitives into an AI-native domain: model registry, policy evaluation, agent identity, and prompt/output attestation. The AI governance layer sits beside Vault and Treasury, not inside them. It consumes Attestia's event store and Merkle proofs. It adds domain types and a policy engine that Attestia does not have. Release checks go to RepoMesh, which keeps its own RFC 6962 ledger.
 
 ---
 
 ## Motivation
 
-Web 3.0 convergence means agents (human and AI) hold wallets, sign transactions, and manage treasuries. Attestia proves financial truth. Cognate proves AI truth. The same structural governance — append-only events, human approval gates, cryptographic attestation — applies to both. But the domain model differs: financial events are ledger entries; AI events are prompts, outputs, model versions, and policy evaluations.
+Web 3.0 convergence means agents (human and AI) hold wallets, sign transactions, and manage treasuries. Attestia proves that an event, a transaction, or a state transition happened, and binds that proof to a chain. The domain Attestia ships is financial truth. Cognate proves AI truth on the same event store and Merkle proofs: prompts, outputs, model versions, and policy evaluations. RepoMesh is not that store. It is the release network and XRPL trust clock.
 
 Regulatory drivers:
 - EU AI Act Article 12: automatic recording of events over system lifetime

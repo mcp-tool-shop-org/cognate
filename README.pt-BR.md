@@ -16,7 +16,9 @@
 
 Cognate é a camada de governança de IA construída sobre o [Attestia](https://github.com/mcp-tool-shop-org/attestia). O Attestia comprova que algo aconteceu — um evento, uma transação, uma mudança de estado — e vincula essa prova a uma cadeia. O Cognate utiliza os mesmos princípios de atestação para governar sistemas de IA: o que um modelo tinha permissão para fazer, o que ele realmente fez e quem o autorizou.
 
-Enquanto o Attestia atesta a veracidade financeira, o Cognate atesta a veracidade da IA — linhagem do modelo, decisões de política, capacidades do agente e integridade do prompt/resultado. As mesmas árvores de Merkle. O mesmo armazenamento de eventos com adição exclusiva. Domínio diferente.
+Cognate comprova a veracidade da IA: linhagem do modelo, decisões de política, capacidades do agente e integridade do prompt e da saída. As mesmas provas de Merkle. O mesmo repositório de eventos com apenas anexação. Domínio diferente.
+
+Attestia, Cognate e RepoMesh são três produtos. Attestia implementa o domínio financeiro (cofre pessoal, tesouraria da organização, registo) com base nesses elementos básicos. RepoMesh é a rede de lançamento: eventos assinados, manifestos de nó e um relógio de confiança ancorado no XRPL, em seu próprio livro-razão RFC 6962. Não utiliza a árvore de Merkle do Attestia. Cognate chama o Attestia quando precisa de uma prova e o RepoMesh quando precisa que um lançamento seja verificado. `@cognate/repomesh-bridge` é essa verificação.
 
 ---
 

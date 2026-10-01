@@ -5,22 +5,36 @@
  * and Merkle-tree hashing for version lineage proof.
  */
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { ModelVersionStatus } from "@cognate/types";
+import type { DomainEvent, EventStore } from "@mcptoolshop/attestia/event-store";
+import { MerkleTree } from "@mcptoolshop/attestia/proof";
 import type { RegistryState, TransitionEvent } from "./types.js";
 import { RegistryError } from "./types.js";
 import { transitionVersion } from "./registry.js";
-// Attestia's published proof types do not currently name MerkleTree.
-// @ts-ignore — runtime export is MerkleTree.build / getRoot
-import { MerkleTree } from "@mcptoolshop/attestia/proof";
 
-// Local interface matching Attestia's EventStore shape
-interface EventStore {
-  append(streamId: string, events: unknown | unknown[], options?: unknown): Promise<unknown>;
+function cognateEvent(
+  type: string,
+  actor: string,
+  timestamp: string,
+  correlationId: string,
+  payload: Record<string, unknown>,
+): DomainEvent {
+  return {
+    type,
+    metadata: {
+      eventId: randomUUID(),
+      timestamp,
+      actor,
+      correlationId,
+      source: "external",
+    },
+    payload,
+  };
 }
 
 export interface AttestTransitionConfig {
-  readonly eventStore: EventStore;
+  readonly eventStore: Pick<EventStore, "append">;
   readonly tenantId: string;
   readonly streamPrefix?: string;
 }
@@ -60,18 +74,22 @@ export async function attestTransitionVersion(
   try {
     await config.eventStore.append(
       makeStreamId(config),
-      {
-        type: "cognate.model.transitioned",
-        payload: {
-          modelVersionId: event.modelVersionId,
-          from: event.from,
-          to: event.to,
-          actorId: event.actorId,
-          reason: event.reason,
-          timestamp: event.timestamp,
-        },
-        timestamp: event.timestamp,
-      }
+      [
+        cognateEvent(
+          "cognate.model.transitioned",
+          event.actorId,
+          event.timestamp,
+          event.modelVersionId,
+          {
+            modelVersionId: event.modelVersionId,
+            from: event.from,
+            to: event.to,
+            actorId: event.actorId,
+            reason: event.reason,
+            timestamp: event.timestamp,
+          },
+        ),
+      ],
     );
   } catch (err) {
     throw new RegistryError({
