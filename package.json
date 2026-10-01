@@ -1,6 +1,6 @@
 {
   "name": "cognate",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "description": "AI governance attestation on Attestia's proof primitives — model lineage, policy, agent identity, and prompt integrity — with RepoMesh release checks.",
   "type": "module",

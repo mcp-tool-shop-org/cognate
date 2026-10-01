@@ -47,7 +47,7 @@
 
 | Package | Version | Status |
 |---------|---------|--------|
-| @mcptoolshop/cognate | 0.1.6 | Published |
+| @mcptoolshop/cognate | 0.1.7 | Published |
 
 ## Handbook
 

@@ -121,4 +121,4 @@ No package sends telemetry. There is no analytics switch to turn off, because th
 
 ## What v0.1.0 does not include
 
-`@mcptoolshop/cognate` is on npm at 0.1.6. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.
+`@mcptoolshop/cognate` is on npm at 0.1.7. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.

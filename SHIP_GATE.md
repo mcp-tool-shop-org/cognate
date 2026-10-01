@@ -38,4 +38,4 @@
 ---
 
 **Hard gates (A–D):** Must pass before v1.0.0 is tagged.
-**Current status:** `@mcptoolshop/cognate@0.1.6` is on npm. Handbook, landing page, logo, and GitHub metadata are set. `@cognate/node` serves `/health` with `mode: api`.
+**Current status:** `@mcptoolshop/cognate@0.1.7` is on npm. Handbook, landing page, logo, and GitHub metadata are set. `@cognate/node` serves `/health` with `mode: api`.
