@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@mcptoolshop/attestia':
-        specifier: ^2.0.2
-        version: 2.0.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        specifier: ^2.0.5
+        version: 2.0.5(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^1.6.1
@@ -81,8 +81,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@mcptoolshop/attestia':
-        specifier: ^2.0.2
-        version: 2.0.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        specifier: ^2.0.5
+        version: 2.0.5(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -150,8 +150,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@mcptoolshop/attestia':
-        specifier: ^2.0.2
-        version: 2.0.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        specifier: ^2.0.5
+        version: 2.0.5(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -545,8 +545,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mcptoolshop/attestia@2.0.2':
-    resolution: {integrity: sha512-1E1lF7dgGH70tryD0udRRAXWFD7evAyy1owpcXqDwkTtAQ8ViX8Morsx2Gnu8hFvj3goc8oQogaym6Gskk+xsQ==}
+  '@mcptoolshop/attestia@2.0.5':
+    resolution: {integrity: sha512-JIbV9kk+LQK5V6TX2Kupvjethqpoh7K5xsqfM6czwKBKGPvKYk67eaJ1uJOKr0GSgpTrtrA7xaf5XbQximk8IA==}
     engines: {node: '>=22'}
 
   '@mcptoolshop/repomesh@2.3.1':
@@ -803,8 +803,8 @@ packages:
   '@types/ws@7.4.7':
     resolution: {integrity: sha512-JQbbmxZTZehdc2iszGKs5oC3NFnjeay7mtAWrdt7qNtAVK0g19muApzAy4bm9byz79xa2ZnO/BOBC2R8RC5Lww==}
 
-  '@types/ws@8.18.1':
-    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@vitest/coverage-v8@1.6.1':
     resolution: {integrity: sha512-6YeRZwuO4oTGKxD3bijok756oktHSIm3eczVVzNe3scqzuhLwltIF3S9ZL/vwOVIpURmU6SnZhziXXAfw8/Qlw==}
@@ -1498,8 +1498,8 @@ packages:
     deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
-  viem@2.56.9:
-    resolution: {integrity: sha512-UC1G0Qz+RbPKqwl6yRrp3dH6ltrOmUcFJMTcOyE1Mg0nO5lxrEBTONh/8OFWPnALGuN/O7LkNcz/IsSj83Svqw==}
+  viem@2.57.2:
+    resolution: {integrity: sha512-ZbPvu+5fvRsbFh+OymDz0GyEySsSco8GWrEAiHM4ckhEY1vJTPy0tcLVkn0cs70dPiUOjLxkQBnfVyt9YkJ7cA==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
@@ -1827,12 +1827,12 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@mcptoolshop/attestia@2.0.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@mcptoolshop/attestia@2.0.5(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
     dependencies:
       '@solana/web3.js': 1.99.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       json-canonicalize: 2.0.0
       ripple-keypairs: 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      viem: 2.56.9(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      viem: 2.57.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       xrpl: 4.6.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - bufferutil
@@ -1953,7 +1953,7 @@ snapshots:
 
   '@scure/bip32@1.7.0':
     dependencies:
-      '@noble/curves': 1.9.7
+      '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 
@@ -2027,7 +2027,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.20.4
+      '@types/node': 12.20.55
 
   '@types/estree@1.0.9': {}
 
@@ -2040,17 +2040,16 @@ snapshots:
   '@types/node@26.6.3':
     dependencies:
       undici-types: 8.9.0
-    optional: true
 
   '@types/uuid@10.0.0': {}
 
   '@types/ws@7.4.7':
     dependencies:
-      '@types/node': 22.20.4
+      '@types/node': 12.20.55
 
-  '@types/ws@8.18.1':
+  '@types/ws@8.18.2':
     dependencies:
-      '@types/node': 22.20.4
+      '@types/node': 26.6.3
 
   '@vitest/coverage-v8@1.6.1(vitest@1.6.1(@types/node@22.20.4))':
     dependencies:
@@ -2689,7 +2688,7 @@ snapshots:
     dependencies:
       '@swc/helpers': 0.5.23
       '@types/uuid': 10.0.0
-      '@types/ws': 8.18.1
+      '@types/ws': 8.18.2
       buffer: 6.0.3
       eventemitter3: 5.0.4
       uuid: 14.0.2
@@ -2821,8 +2820,7 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@8.9.0:
-    optional: true
+  undici-types@8.9.0: {}
 
   utf-8-validate@6.0.6:
     dependencies:
@@ -2833,7 +2831,7 @@ snapshots:
 
   uuid@8.3.2: {}
 
-  viem@2.56.9(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6):
+  viem@2.57.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6):
     dependencies:
       '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0

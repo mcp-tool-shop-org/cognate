@@ -38,6 +38,6 @@
     "typescript": "^5.4.0"
   },
   "dependencies": {
-    "@mcptoolshop/attestia": "^2.0.2"
+    "@mcptoolshop/attestia": "^2.0.5"
   }
 }

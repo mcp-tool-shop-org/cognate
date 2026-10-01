@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@cognate/types": "workspace:*",
-    "@mcptoolshop/attestia": "^2.0.2"
+    "@mcptoolshop/attestia": "^2.0.5"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
