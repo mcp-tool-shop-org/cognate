@@ -37,7 +37,11 @@ export function evaluatePolicy(
 
   // Deterministic overall action: highest-precedence action wins
   // precedence: deny > quarantine > require-human-review > allow
-  const overall = resolveOverallAction(matchedRules);
+  // A regex that ran out of time fails closed: whoever controls only the text can make
+  // a legitimate pattern time out, and "no match" would let that text past a deny rule.
+  const overall = ruleResults.some((r) => r.timedOut)
+    ? "deny"
+    : resolveOverallAction(matchedRules);
 
   return {
     policyId: policy.id,
@@ -76,6 +80,7 @@ function evaluateRule(rule: PolicyRule, context: EvaluationContext): RuleResult 
     severity: rule.severity,
     action: rule.action,
     reason: conditionResult.reason,
+    ...(conditionResult.timedOut ? { timedOut: true } : {}),
   };
 }
 
@@ -101,6 +106,8 @@ function evaluateTarget(target: PolicyTarget, context: EvaluationContext): boole
 interface ConditionResult {
   readonly matched: boolean;
   readonly reason: string;
+  /** A regex in this condition was stopped by the time limit. */
+  readonly timedOut?: boolean;
 }
 
 function evaluateCondition(
@@ -235,7 +242,7 @@ function evaluateRegex(pattern: string, context: EvaluationContext): ConditionRe
     regexSandbox.text = text;
     matched = regexScript.runInContext(regexSandbox, { timeout: REGEX_TIMEOUT_MS }) as boolean;
   } catch {
-    return { matched: false, reason: `Regex rejected: evaluation exceeded ${REGEX_TIMEOUT_MS} ms: /${pattern}/` };
+    return { matched: false, timedOut: true, reason: `regex timed out: evaluation exceeded ${REGEX_TIMEOUT_MS} ms: /${pattern}/` };
   } finally {
     regexSandbox.re = null;
     regexSandbox.text = "";
@@ -329,7 +336,7 @@ function evaluateCompositeAnd(
   for (const cond of conditions) {
     const result = evaluateCondition(cond, context);
     if (!result.matched) {
-      return { matched: false, reason: `AND failed: ${result.reason}` };
+      return { matched: false, reason: `AND failed: ${result.reason}`, ...(result.timedOut ? { timedOut: true } : {}) };
     }
   }
   return { matched: true, reason: "All AND conditions matched" };
@@ -339,13 +346,15 @@ function evaluateCompositeOr(
   conditions: readonly PolicyCondition[],
   context: EvaluationContext
 ): ConditionResult {
+  let timedOut = false;
   for (const cond of conditions) {
     const result = evaluateCondition(cond, context);
+    if (result.timedOut) timedOut = true;
     if (result.matched) {
-      return { matched: true, reason: `OR matched: ${result.reason}` };
+      return { matched: true, reason: `OR matched: ${result.reason}`, ...(timedOut ? { timedOut: true } : {}) };
     }
   }
-  return { matched: false, reason: "No OR condition matched" };
+  return { matched: false, reason: "No OR condition matched", ...(timedOut ? { timedOut: true } : {}) };
 }
 
 // ─── Overall Action Resolution ───

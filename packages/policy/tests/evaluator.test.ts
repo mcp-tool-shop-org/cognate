@@ -617,7 +617,7 @@ describe("evaluatePolicy", () => {
 });
 
 describe("regex conditions with untrusted patterns", () => {
-  function regexPolicy(pattern: string): Policy {
+  function regexPolicy(pattern: string, action = "deny", condition?: object): Policy {
     return {
       id: "policy-1",
       tenantId: "tenant-1",
@@ -628,8 +628,8 @@ describe("regex conditions with untrusted patterns", () => {
           id: "rule-1",
           type: "content-filter",
           target: { kind: "global" },
-          condition: { kind: "regex", pattern },
-          action: "deny",
+          condition: condition ?? { kind: "regex", pattern },
+          action,
           severity: "block",
         },
       ],
@@ -663,18 +663,52 @@ describe("regex conditions with untrusted patterns", () => {
     expect(reason).toContain("backreferences");
   });
 
-  it("stops a repeated alternation with overlapping branches within the time limit", () => {
+  it("stops a repeated alternation with overlapping branches within the time limit, and denies", () => {
     const { result, ms, reason } = run("(a|aa)+$", longMiss);
     expect(ms).toBeLessThan(1000);
-    expect(result.overall).toBe("allow");
-    expect(reason).toContain("exceeded");
+    expect(result.overall).toBe("deny");
+    expect(reason).toContain("regex timed out");
+    expect(result.ruleResults[0].timedOut).toBe(true);
   });
 
-  it("stops a polynomial pattern the static check lets through", () => {
+  it("stops a polynomial pattern the static check lets through, and denies", () => {
     const { result, ms, reason } = run(".*.*.*.*x", "a".repeat(50_000));
     expect(ms).toBeLessThan(1000);
+    expect(result.overall).toBe("deny");
+    expect(reason).toContain("regex timed out");
+  });
+
+  it("denies when a long text makes a legitimate deny rule's pattern time out", () => {
+    // The author wrote a valid pattern; only the text is hostile. "No match" here would walk the text past the rule.
+    const { result } = run(".*.*.*.*x", "a".repeat(50_000));
+    expect(result.matchedRules).toHaveLength(0);
+    expect(result.overall).toBe("deny");
+  });
+
+  it("denies when a rule with a non-deny action times out", () => {
+    const policy = regexPolicy(".*.*.*.*x", "allow");
+    const result = evaluatePolicy(policy, baseContext({ promptText: "a".repeat(50_000) }));
+    expect(result.overall).toBe("deny");
+    expect(result.ruleResults[0].reason).toContain("regex timed out");
+  });
+
+  it("denies when a timeout sits inside AND or OR, whether or not the rest matches", () => {
+    const slow = { kind: "regex", pattern: ".*.*.*.*x" };
+    const hit = { kind: "keyword", words: ["aaa"] };
+    for (const condition of [
+      { kind: "composite-and", conditions: [slow, hit] },
+      { kind: "composite-or", conditions: [slow, hit] },
+      { kind: "composite-and", conditions: [hit, slow] },
+    ]) {
+      const result = evaluatePolicy(regexPolicy("unused", "allow", condition), baseContext({ promptText: "a".repeat(50_000) }));
+      expect(result.overall).toBe("deny");
+    }
+  });
+
+  it("does not deny for a rejected pattern, which is the author's own mistake", () => {
+    const { result } = run("(a+)+$", longMiss);
     expect(result.overall).toBe("allow");
-    expect(reason).toContain("exceeded");
+    expect(result.ruleResults[0].timedOut).toBeUndefined();
   });
 
   it("rejects an oversized pattern", () => {

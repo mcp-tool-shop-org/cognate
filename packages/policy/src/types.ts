@@ -54,6 +54,11 @@ export interface RuleResult {
   readonly severity: "block" | "flag" | "log";
   readonly action: PolicyAction;
   readonly reason: string;
+  /**
+   * Set when a regex condition of this rule was stopped by the time limit. The
+   * overall decision is then `deny` whatever this rule's own action is.
+   */
+  readonly timedOut?: boolean;
 }
 
 /** Aggregate result of evaluating a full policy. */
