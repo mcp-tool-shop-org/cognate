@@ -221,7 +221,7 @@
           "path": "packages/cognate/README.zh.md"
         },
         {
-          "hash": "01a8721aa2aadf583493c5264b2f97414aa2c9cd0a64131012921bc529aa406a",
+          "hash": "873c101eed6e3fe61a847873af3d276a74d4dbd1e6eb5366f590d4147dcc3f9a",
           "path": "packages/cognate/package.json"
         },
         {
@@ -1017,7 +1017,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "61f900f4508554a10619834246bf436f6d3ebded613d52d045000288f1659ad7",
+          "hash": "4a3f6443a7c249a6c8cad77095377b04ec6ffce187ea64077d265d605c3a9d9d",
           "path": "packages/policy/package.json"
         },
         {
@@ -1030,10 +1030,15 @@
             {
               "in": "evaluateRegex",
               "kind": "catch",
-              "line": 134
+              "line": 220
+            },
+            {
+              "in": "evaluateRegex",
+              "kind": "catch",
+              "line": 237
             }
           ],
-          "hash": "15f967f004fb27ecd7d8395990c3e9108f95d00d270e5ece52a223d11f35965b",
+          "hash": "5ec6ce20a4c49107d478f9754aab2cb455d3943ae627ad894b31c61275ba0f97",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/policy/src/types.ts"
@@ -1061,7 +1066,7 @@
           "path": "packages/policy/src/types.ts"
         },
         {
-          "hash": "9c8c794ae3bb510ef35668d38b9f331c68e07c24cb8b43b80105684d7dd3a18c",
+          "hash": "98087612e0b5b593d69c568c09f7a6e36e9c216978a1a082166005abb7879034",
           "importsFiles": [
             "packages/policy/src/evaluator.ts",
             "packages/policy/src/index.ts"
@@ -1332,7 +1337,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "62ce9b064645020ee8eb9ccbfdd195c92d9a7995a71a6db26fc70c7b327bdcbc",
+          "hash": "642c02eca43d61528d76b3f34fdf4a9d3c3972e733e74bf48f410c0a857aca71",
           "path": "CHANGELOG.md"
         },
         {
@@ -1344,7 +1349,7 @@
           "path": "Dockerfile"
         },
         {
-          "hash": "3eab3fdf1a34593c39d89d809b9bab6082fc87f8725e248819b3b2740f352a52",
+          "hash": "2bc1109dde8b2d3fea35ebe0c47248b06638380def170a257a6cc8bc1ac4c117",
           "path": "HANDBOOK.md"
         },
         {
@@ -1384,7 +1389,7 @@
           "path": "README.zh.md"
         },
         {
-          "hash": "0e928ce0e5718d7c5345347e0be340d5ef139645dda95491b31ac551c1e78f2e",
+          "hash": "9b4529f2eca3175e4ece2f671d4724736312fa60290240590394bdae7dcb2c29",
           "path": "SCORECARD.md"
         },
         {
@@ -1392,7 +1397,7 @@
           "path": "SECURITY.md"
         },
         {
-          "hash": "51db00b791c23abae100e61d977c880808e16fe67f80d70ac079c4934dbe2731",
+          "hash": "297f5c841e70e54de226562f1718072c1a3a77232659ae156f060112ab00b556",
           "path": "SHIP_GATE.md"
         },
         {
@@ -1408,11 +1413,11 @@
           "path": "node.json"
         },
         {
-          "hash": "fd73f7659f8ae377f2cc82630caca8f0773b72a3c1c63245f138d49731f97324",
+          "hash": "086bba88ba76f2043727067c8f8f876a368783dc2ebcebce5d1320c9dec797f1",
           "path": "package.json"
         },
         {
-          "hash": "9812863605d76899cfe60db5f286d3c96884a99354cac44695e0cd03e8380917",
+          "hash": "e53afda314ce6036817e0192603a1552fa29c5d100a017d052b014ba7b70f9ac",
           "path": "pnpm-lock.yaml"
         },
         {
@@ -1503,7 +1508,7 @@
           "path": "site/src/content/docs/handbook/index.md"
         },
         {
-          "hash": "ca41f6f13e5ffaca9adb5080b4a3139e98a72dfb84de9d6fd8c746bc6fa22f62",
+          "hash": "071730b23de14c60d32570c6a0cc7f5d72dba97052ba2c44dfb8760effc21695",
           "path": "site/src/content/docs/handbook/reference.md"
         },
         {
@@ -3330,7 +3335,7 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "a3cbcc0ac7ab1996ff00d57f5d703812cac8cb83",
+    "commit": "324888396a110aae607bb84e9996c320de45eed9",
     "tracked": 141
   },
   "landings": [
