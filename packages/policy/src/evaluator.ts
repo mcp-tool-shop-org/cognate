@@ -5,6 +5,7 @@
  * All state needed for evaluation must be provided in the context.
  */
 
+import { Script, createContext } from "node:vm";
 import type {
   Capability,
   CapabilityKind,
@@ -122,18 +123,127 @@ function evaluateCondition(
   }
 }
 
+// Policies arrive in request bodies, so the pattern is attacker-controlled. Three
+// bounds apply, cheapest first: a length cap on the pattern, a static rejection of
+// shapes that backtrack exponentially, and a wall-clock limit for the polynomial
+// shapes the static check cannot rule out (`.*.*.*x`). The last needs vm: a plain
+// RegExp.test cannot be interrupted. The text is not capped: a rule that stopped
+// matching long input would let anyone pad a prompt past a deny rule.
+const MAX_REGEX_PATTERN_LENGTH = 1_000;
+const REGEX_TIMEOUT_MS = 100;
+
+const regexSandbox: { re: RegExp | null; text: string } = { re: null, text: "" };
+createContext(regexSandbox);
+const regexScript = new Script("re.test(text)");
+
+/**
+ * Cheap check for the common shapes that backtrack catastrophically:
+ * backreferences, and a group that is itself repeated while containing a
+ * repetition, such as `(a+)+` or `((ab)+)*`. A repeated alternation such as
+ * `(foo|bar)+` is allowed, because most are harmless; one whose branches
+ * overlap (`(a|aa)+`) is left to the time limit.
+ */
+function unsafeRegexReason(pattern: string): string | null {
+  // One frame per open group, plus the root; `carrier` is true once the group
+  // holds a repetition.
+  const frames: { carrier: boolean }[] = [{ carrier: false }];
+  // Set when the previous token closed a group: whether that group is a carrier.
+  let closed: boolean | null = null;
+  let inClass = false;
+
+  // The closed group was not repeated, so it is just an atom of its parent.
+  const flush = () => {
+    if (closed === true) frames[frames.length - 1].carrier = true;
+    closed = null;
+  };
+
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+
+    if (c === "\\") {
+      flush();
+      const next = pattern[i + 1] ?? "";
+      if (!inClass && (/[1-9]/.test(next) || (next === "k" && pattern[i + 2] === "<"))) {
+        return "backreferences are not allowed";
+      }
+      i++;
+      continue;
+    }
+    if (inClass) {
+      if (c === "]") inClass = false;
+      continue;
+    }
+
+    let repeats = false;
+    let quantifier = false;
+    if (c === "*" || c === "+") {
+      quantifier = repeats = true;
+    } else if (c === "?") {
+      quantifier = true;
+    } else if (c === "{") {
+      const m = /^\{(\d+)(?:,(\d*))?\}/.exec(pattern.slice(i));
+      if (m) {
+        quantifier = true;
+        repeats = m[2] === "" || Number(m[2] ?? m[1]) > 1;
+        i += m[0].length - 1;
+      }
+    }
+
+    if (quantifier) {
+      if (repeats) {
+        if (closed === true) return "nested repetition can backtrack catastrophically";
+        closed = null;
+        frames[frames.length - 1].carrier = true;
+      } else {
+        flush();
+      }
+      continue;
+    }
+
+    flush();
+    if (c === "[") {
+      inClass = true;
+    } else if (c === "(") {
+      frames.push({ carrier: false });
+    } else if (c === ")" && frames.length > 1) {
+      closed = frames.pop()!.carrier;
+    }
+  }
+  return null;
+}
+
 function evaluateRegex(pattern: string, context: EvaluationContext): ConditionResult {
   const text = context.promptText ?? context.outputText ?? "";
+  let regex: RegExp;
   try {
-    const regex = new RegExp(pattern, "i"); // case-insensitive
-    const matched = regex.test(text);
-    return {
-      matched,
-      reason: matched ? `Regex matched: /${pattern}/i` : `Regex did not match: /${pattern}/i`,
-    };
+    regex = new RegExp(pattern, "i"); // case-insensitive
   } catch {
     return { matched: false, reason: `Invalid regex: /${pattern}/` };
   }
+
+  if (pattern.length > MAX_REGEX_PATTERN_LENGTH) {
+    return { matched: false, reason: `Regex rejected: pattern longer than ${MAX_REGEX_PATTERN_LENGTH} characters` };
+  }
+  const unsafe = unsafeRegexReason(pattern);
+  if (unsafe !== null) {
+    return { matched: false, reason: `Regex rejected: ${unsafe}: /${pattern}/` };
+  }
+
+  let matched: boolean;
+  try {
+    regexSandbox.re = regex;
+    regexSandbox.text = text;
+    matched = regexScript.runInContext(regexSandbox, { timeout: REGEX_TIMEOUT_MS }) as boolean;
+  } catch {
+    return { matched: false, reason: `Regex rejected: evaluation exceeded ${REGEX_TIMEOUT_MS} ms: /${pattern}/` };
+  } finally {
+    regexSandbox.re = null;
+    regexSandbox.text = "";
+  }
+  return {
+    matched,
+    reason: matched ? `Regex matched: /${pattern}/i` : `Regex did not match: /${pattern}/i`,
+  };
 }
 
 function evaluateKeyword(

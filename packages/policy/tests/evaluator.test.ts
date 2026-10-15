@@ -615,3 +615,98 @@ describe("evaluatePolicy", () => {
     expect(result.ruleResults[0].reason).toBe('Target mismatch');
   });
 });
+
+describe("regex conditions with untrusted patterns", () => {
+  function regexPolicy(pattern: string): Policy {
+    return {
+      id: "policy-1",
+      tenantId: "tenant-1",
+      name: "Regex Bounds",
+      version: 1,
+      rules: [
+        {
+          id: "rule-1",
+          type: "content-filter",
+          target: { kind: "global" },
+          condition: { kind: "regex", pattern },
+          action: "deny",
+          severity: "block",
+        },
+      ],
+      createdAt: now,
+      approvedBy: "admin",
+      status: "active",
+    } as unknown as Policy;
+  }
+
+  function run(pattern: string, promptText: string) {
+    const start = performance.now();
+    const result = evaluatePolicy(regexPolicy(pattern), baseContext({ promptText }));
+    return { result, ms: performance.now() - start, reason: result.ruleResults[0].reason };
+  }
+
+  const longMiss = "a".repeat(50) + "b";
+
+  it.each(["(a+)+$", "(a*)*$", "((ab)+)+c", "(?:x+x+)+y"])(
+    "rejects nested repetition %s without running it",
+    (pattern) => {
+      const { result, ms, reason } = run(pattern, longMiss);
+      expect(ms).toBeLessThan(500);
+      expect(result.overall).toBe("allow");
+      expect(reason).toContain("Regex rejected");
+    }
+  );
+
+  it("rejects backreferences", () => {
+    const { result, reason } = run("(a+)\\1$", longMiss);
+    expect(result.overall).toBe("allow");
+    expect(reason).toContain("backreferences");
+  });
+
+  it("stops a repeated alternation with overlapping branches within the time limit", () => {
+    const { result, ms, reason } = run("(a|aa)+$", longMiss);
+    expect(ms).toBeLessThan(1000);
+    expect(result.overall).toBe("allow");
+    expect(reason).toContain("exceeded");
+  });
+
+  it("stops a polynomial pattern the static check lets through", () => {
+    const { result, ms, reason } = run(".*.*.*.*x", "a".repeat(50_000));
+    expect(ms).toBeLessThan(1000);
+    expect(result.overall).toBe("allow");
+    expect(reason).toContain("exceeded");
+  });
+
+  it("rejects an oversized pattern", () => {
+    const { result, reason } = run("a".repeat(1_001), "a");
+    expect(result.overall).toBe("allow");
+    expect(reason).toContain("pattern longer than");
+  });
+
+  it("still evaluates long text, so padding a prompt cannot get past a rule", () => {
+    const { result } = run("needle", "x".repeat(200_000) + "needle");
+    expect(result.overall).toBe("deny");
+  });
+
+  it("still reports an invalid pattern as invalid", () => {
+    const { reason } = run("[invalid", "anything");
+    expect(reason).toContain("Invalid regex");
+  });
+
+  it.each([
+    ["investment advice", "Please give me INVESTMENT ADVICE now", true],
+    [".*", "anything", true],
+    ["^bad$", "bad", true],
+    ["\\d{3}-\\d{4}", "call 555-1234", true],
+    ["(?:ssn|social security)\\s+number", "my Social Security number is", true],
+    ["(ab)+c", "xababc", true],
+    ["colou?r", "what colour", true],
+    ["(foo|bar)+baz", "xfoobarbaz", true],
+    ["(?:foo|bar)+", "a bar", true],
+    ["[a-z]+@[a-z]+\\.com", "mail bob@example.com", true],
+    ["investment advice", "nothing relevant", false],
+  ])("keeps ordinary pattern %s working", (pattern, text, expected) => {
+    const { result } = run(pattern, text);
+    expect(result.overall).toBe(expected ? "deny" : "allow");
+  });
+});

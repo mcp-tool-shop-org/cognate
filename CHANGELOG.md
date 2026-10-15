@@ -4,6 +4,12 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-10-14
+
+### Security
+
+- **`/policy/evaluate` can no longer be made to hang on a pattern.** The policy's regex `pattern` comes from the request body and ran on the server's event loop with no bound, so a pattern such as `(a+)+$` against a long run of `a` blocked every request. A pattern longer than 1,000 characters, a backreference, and a repeated group that contains a repetition (`(a+)+`, `((ab)+)*`) are now rejected before they run, and any other match is stopped after 100 ms. A rejected or stopped pattern does not match, as an invalid pattern already did, and the reason is in the rule result. Ordinary patterns, including repeated alternations such as `(foo|bar)+`, are unchanged, and the text is not capped. `@cognate/policy` gains `@types/node` as a dev dependency for `node:vm`. (CodeQL `js/regex-injection`.)
+
 ## [0.1.7] - 2026-10-01
 
 ### Added
