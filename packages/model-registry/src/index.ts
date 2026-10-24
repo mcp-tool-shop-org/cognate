@@ -11,6 +11,8 @@ export {
   registerModel,
   registerVersion,
   transitionVersion,
+  recordEvaluation,
+  getEvaluations,
   getVersionHistory,
   getCurrentDeployedVersion,
   isSha256Hex,
@@ -23,7 +25,7 @@ export {
   getRunOutcomes,
 } from "./registry.js";
 
-export type { RegistryState, TransitionEvent } from "./types.js";
+export type { RegistryState, RequireEvaluationCitations, TransitionEvent, TransitionOptions } from "./types.js";
 export { RegistryError } from "./types.js";
 
 export type {
@@ -32,6 +34,7 @@ export type {
   AttestedRunEvent,
 } from "./attestation.js";
 export {
+  attestEvaluation,
   attestTransitionVersion,
   attestRunPreRegistered,
   attestRunCompleted,

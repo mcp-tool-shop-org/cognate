@@ -95,6 +95,8 @@ if (result.overall === "deny") {
 
 Register a model version, then walk it through the lifecycle. A version moves `registered → evaluated → approved → deployed`, and it can be `rejected` or `retired`. `transitionVersion` moves a snapshot the caller holds. On the HTTP server, `approved → deployed` calls `verifyRelease` on the `repo` and `release` recorded when the version was registered. A release that does not pass does not deploy, and neither does a request that names a different release. The refusal is recorded.
 
+Evaluations attach to a version, as many as you have: a run, its replication, a pooled result. **Record an evaluation, then transition citing it.** `recordEvaluation` (or `attestEvaluation`, which also appends `cognate.evaluation.recorded`) never moves the version itself, so every call is one append. A transition's `evaluationIds` names the evaluations the decision rests on. Each must be recorded on that version, and the ids are bound into the transition's lineage hash. An approved version can still be rejected before it deploys. Whether transitions must cite is a setting, `requireEvaluationCitations`: `false` (the default), `"decisions"` (approve and reject must cite) or `"all"`. The HTTP server reads it from `COGNATE_REQUIRE_EVALUATION_CITATIONS` and refuses to start on any other value.
+
 Pre-register a run before it launches and record its outcome on the `cognate-<tenant>-runs` stream. Account-naming identifiers (`ggufRepoSha256`, `hostedRepoSha256`, `repoSha256`, `ggufSourceSha256`, `hfRepoSha256`, `githubOwnerSha256`, `emailSha256`, `homePathSha256`) are stored only as 64-character lowercase hex SHA-256 digests, and a run records its own `cost` (`unitsSpent`, `rate`, `basis`) rather than account balances.
 
 ```ts
@@ -102,6 +104,7 @@ import {
   createRegistry,
   registerModel,
   registerVersion,
+  recordEvaluation,
   transitionVersion,
   preRegisterRun,
   recordRunOutcome,
@@ -151,8 +154,8 @@ Building in public. All core packages are implemented, tested, and building. Ins
 | Gate | Status |
 |------|--------|
 | Build | Passing |
-| Tests | 220 passing |
-| Coverage | >90% on policy, >98% on model-registry |
+| Tests | 253 passing |
+| Coverage | Over 90% of lines in policy, node, agent-identity and prompt-store, and over 98% in model-registry; model-registry enforces 98% lines and node a 90% floor |
 | Typecheck | Clean |
 | Docker | Image serves the governance API. The volume holds the event log and the three snapshots |
 | Shipcheck | Handbook, landing page, and repo metadata in this release |

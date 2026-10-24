@@ -8,7 +8,7 @@
 import type { StoredEvent } from "@mcptoolshop/attestia/event-store";
 import { hashAttestation, MerkleTree, type MerkleProof } from "@mcptoolshop/attestia/proof";
 
-const STREAM_SUFFIXES = ["policy", "transitions", "prompts", "outputs", "releases"] as const;
+const STREAM_SUFFIXES = ["policy", "transitions", "prompts", "outputs", "releases", "evaluations"] as const;
 const PLAINTEXT_KEYS = ["plaintext", "promptText", "outputText"] as const;
 
 export interface RecordedEvent {
