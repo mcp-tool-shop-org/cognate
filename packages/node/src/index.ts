@@ -6,6 +6,7 @@
 
 import { verifyRelease } from "@cognate/repomesh-bridge";
 import { releaseConfigFromEnv } from "./release-gate.js";
+import { citationRuleFromEnv } from "./routes/evaluations.js";
 import { openRuntime } from "./runtime.js";
 import { createCognateServer, type ServerContext } from "./server.js";
 
@@ -21,6 +22,7 @@ const ctx: ServerContext = {
   eventStore: runtime.eventStore,
   snapshots: runtime.snapshots,
   releaseFailOn: release.failOn,
+  requireEvaluationCitations: citationRuleFromEnv(process.env),
   verifyRelease: (repo, version) => verifyRelease(repo, version, release.repomesh),
 };
 

@@ -6,7 +6,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import type { ActorId, ModelVersionStatus } from "@cognate/types";
 import type { DomainEvent, EventStore } from "@mcptoolshop/attestia/event-store";
 import { getAgent } from "@cognate/agent-identity";
-import { attestEvaluation, attestTransitionVersion } from "@cognate/model-registry";
+import { attestEvaluation, attestTransitionVersion, type RequireEvaluationCitations } from "@cognate/model-registry";
 import { RegistryError } from "@cognate/model-registry";
 import { attestLogOutput, attestLogPrompt } from "@cognate/prompt-store";
 import type { Output, Prompt } from "@cognate/types";
@@ -42,6 +42,11 @@ export interface ServerContext {
   readonly verifyRelease?: (repo: string, version: string) => Promise<{ status: string }>;
   /** `fail` allows UNVERIFIED. Omission allows only PASS. */
   readonly releaseFailOn?: ReleaseFailOn;
+  /**
+   * Which version transitions must cite recorded evaluations: `false` (default, none), `"decisions"` (approve and
+   * reject) or `"all"`. The entry point reads it from COGNATE_REQUIRE_EVALUATION_CITATIONS.
+   */
+  readonly requireEvaluationCitations?: RequireEvaluationCitations;
 }
 
 const rateLimitBuckets = new Map<string, ReturnType<typeof createRateLimitState>>();
@@ -381,9 +386,12 @@ export function createCognateServer(ctx: ServerContext) {
               transition.to,
               transition.actorId,
               transition.reason,
-              Array.isArray(transition.evaluationIds)
-                ? { evaluationIds: transition.evaluationIds.map((id) => String(id)) }
-                : {},
+              {
+                requireEvaluationCitations: ctx.requireEvaluationCitations ?? false,
+                ...(Array.isArray(transition.evaluationIds)
+                  ? { evaluationIds: transition.evaluationIds.map((id) => String(id)) }
+                  : {}),
+              },
             );
             keep({ ...mutableState, registry: next });
             sendJson(res, 200, {

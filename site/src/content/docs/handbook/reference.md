@@ -26,12 +26,19 @@ sidebar:
 | `createRegistry` | Empty registry state |
 | `registerModel` | Record a model and its owner |
 | `registerVersion` | Record weights, config, and manifest hashes |
-| `transitionVersion` | Move a version through the lifecycle |
+| `transitionVersion` | Move a version through the lifecycle, optionally citing `evaluationIds` |
+| `recordEvaluation` | Attach an evaluation to a version; not a transition |
+| `attestEvaluation` | `recordEvaluation` plus one `cognate.evaluation.recorded` append |
+| `getEvaluations` | A version's evaluations, in recorded order |
 | `getVersionHistory` | Prior transitions |
 | `getCurrentDeployedVersion` | The version whose state is `deployed` |
 | `RegistryError` | `code`, `message`, `hint` |
 
-Version states: `registered`, `evaluated`, `approved`, `deployed`, `rejected`, `retired`.
+Version states: `registered`, `evaluated`, `approved`, `deployed`, `rejected`, `retired`. `approved` can move to `deployed` or `rejected`.
+
+`requireEvaluationCitations` (transition option; server env `COGNATE_REQUIRE_EVALUATION_CITATIONS`): `false` (default), `"decisions"` or `"all"`.
+
+Errors added with evaluations: `EVALUATION_ALREADY_RECORDED`, `EVALUATION_TENANT_MISMATCH`, `EVALUATION_ON_CLOSED_VERSION`, `EVALUATION_NOT_FOUND`, `EVALUATION_IDS_EMPTY`, `EVALUATION_CITATION_REQUIRED`, `INVALID_CITATION_RULE`.
 
 ## @cognate/agent-identity
 

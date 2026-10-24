@@ -31,10 +31,33 @@ import {
   createRegistry,
   registerModel,
   registerVersion,
+  recordEvaluation,
   transitionVersion,
   getCurrentDeployedVersion,
 } from "@cognate/model-registry";
 ```
+
+**Record an evaluation, then transition citing it.** A version takes any number of evaluations: a run, its replication, a pooled result. Recording one never moves the version, so each call makes one append and the log can't be left half-written. The transition names what it rests on:
+
+```ts
+let s = recordEvaluation(state, run);          // run.modelVersionId === "v1"
+s = recordEvaluation(s, replication);
+s = transitionVersion(s, "v1", "registered", "evaluated", "rnd", "both runs in", {
+  evaluationIds: [run.id, replication.id],
+});
+```
+
+Each cited id must be an evaluation recorded on that version. The ids go into the transition, its event and its lineage hash. A transition that cites nothing is recorded and hashed exactly as before. An approved version can be rejected before it deploys, for example when a replication reverses the run the approval rested on.
+
+`requireEvaluationCitations` decides which transitions must cite:
+
+| Value | Must cite |
+|-------|-----------|
+| `false` (default) | none |
+| `"decisions"` | moves to `approved` or `rejected` |
+| `"all"` | every transition |
+
+The HTTP server reads it from `COGNATE_REQUIRE_EVALUATION_CITATIONS` and won't start on any other value. `POST /registry/versions/:id/evaluations` records an evaluation and returns its event id, and `GET /events/:eventId` proves it.
 
 A version stores three hashes: weights, config, and manifest. `getCurrentDeployedVersion` is the deployed version, which is not automatically the newest one. `RegistryError` carries `code`, `message`, and `hint`.
 

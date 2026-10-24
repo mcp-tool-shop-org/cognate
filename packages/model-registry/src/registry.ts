@@ -137,6 +137,22 @@ export function transitionVersion(
   }
 
   const cited = options.evaluationIds;
+  const rule = options.requireEvaluationCitations ?? false;
+  if (rule !== false && rule !== "decisions" && rule !== "all") {
+    throw new RegistryError({
+      code: "INVALID_CITATION_RULE",
+      message: `requireEvaluationCitations must be false, "decisions" or "all", not ${JSON.stringify(rule)}.`,
+      hint: "Use false (the default), \"decisions\" (approve and reject must cite) or \"all\" (every transition must cite).",
+    });
+  }
+  const mustCite = rule === "all" || (rule === "decisions" && (to === "approved" || to === "rejected"));
+  if (mustCite && cited === undefined) {
+    throw new RegistryError({
+      code: "EVALUATION_CITATION_REQUIRED",
+      message: `Transition of "${modelVersionId}" to "${to}" must cite the evaluations it rests on.`,
+      hint: "Record the evaluations on this version, then pass their ids as evaluationIds.",
+    });
+  }
   if (cited !== undefined) {
     if (cited.length === 0) {
       throw new RegistryError({

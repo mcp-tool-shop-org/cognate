@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { InMemoryEventStore } from "@mcptoolshop/attestia/event-store";
 import { createCognateServer } from "../src/server.js";
 import { eventVisibleToTenant, proveRecordedEvent } from "../src/event-proof.js";
-import { createRegistry as createModelRegistry } from "@cognate/model-registry";
+import { createRegistry as createModelRegistry, type RequireEvaluationCitations } from "@cognate/model-registry";
+import { citationRuleFromEnv } from "../src/routes/evaluations.js";
 import { createRegistry as createIdentityRegistry, registerAgent } from "@cognate/agent-identity";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
 
@@ -43,10 +44,16 @@ function recording(fail = false) {
   };
 }
 
-async function start(fail = false) {
+async function start(fail = false, requireEvaluationCitations?: RequireEvaluationCitations) {
   const agent = `eval-agent-${++agentSeq}`;
   const rec = recording(fail);
-  const { server } = createCognateServer({ state: state(agent), port: 0, host: "127.0.0.1", eventStore: rec.eventStore });
+  const { server } = createCognateServer({
+    state: state(agent),
+    port: 0,
+    host: "127.0.0.1",
+    eventStore: rec.eventStore,
+    ...(requireEvaluationCitations !== undefined ? { requireEvaluationCitations } : {}),
+  });
   const port = await new Promise<number>((resolve) =>
     server.listen(0, "127.0.0.1", () => {
       const a = server.address();
@@ -164,6 +171,58 @@ describe("POST /registry/versions/:id/evaluations", () => {
     } finally {
       s.stop();
     }
+  });
+});
+
+describe("the requireEvaluationCitations setting", () => {
+  async function evaluatedOn(rule?: RequireEvaluationCitations) {
+    const s = await start(false, rule);
+    await s.post("/registry/models", { model });
+    await s.post("/registry/versions/v1", { version });
+    await s.post("/registry/versions/v1/evaluations", { evaluation: evaluation("e1") });
+    await s.post("/registry/versions/v1", { from: "registered", to: "evaluated", actorId: "rnd", reason: "e", evaluationIds: ["e1"] });
+    return s;
+  }
+
+  it("defaults to false: an approval without citations goes through", async () => {
+    const s = await evaluatedOn();
+    try {
+      expect((await s.post("/registry/versions/v1", { from: "evaluated", to: "approved", actorId: "d", reason: "ok" })).status).toBe(200);
+    } finally {
+      s.stop();
+    }
+  });
+
+  it('"decisions" refuses an approval without citations and accepts one with them', async () => {
+    const s = await evaluatedOn("decisions");
+    try {
+      const refused = await s.post("/registry/versions/v1", { from: "evaluated", to: "approved", actorId: "d", reason: "ok" });
+      expect(refused).toMatchObject({ status: 400, json: { code: "EVALUATION_CITATION_REQUIRED" } });
+      const ok = await s.post("/registry/versions/v1", { from: "evaluated", to: "approved", actorId: "d", reason: "ok", evaluationIds: ["e1"] });
+      expect(ok.status).toBe(200);
+    } finally {
+      s.stop();
+    }
+  });
+
+  it('"all" refuses an uncited transition of any kind', async () => {
+    const s = await start(false, "all");
+    try {
+      await s.post("/registry/models", { model });
+      await s.post("/registry/versions/v1", { version });
+      const r = await s.post("/registry/versions/v1", { from: "registered", to: "evaluated", actorId: "rnd", reason: "e" });
+      expect(r).toMatchObject({ status: 400, json: { code: "EVALUATION_CITATION_REQUIRED" } });
+    } finally {
+      s.stop();
+    }
+  });
+
+  it("reads COGNATE_REQUIRE_EVALUATION_CITATIONS, and refuses a value it doesn't know", () => {
+    expect(citationRuleFromEnv({})).toBe(false);
+    expect(citationRuleFromEnv({ COGNATE_REQUIRE_EVALUATION_CITATIONS: "false" })).toBe(false);
+    expect(citationRuleFromEnv({ COGNATE_REQUIRE_EVALUATION_CITATIONS: " decisions " })).toBe("decisions");
+    expect(citationRuleFromEnv({ COGNATE_REQUIRE_EVALUATION_CITATIONS: "all" })).toBe("all");
+    expect(() => citationRuleFromEnv({ COGNATE_REQUIRE_EVALUATION_CITATIONS: "sometimes" })).toThrow(/must be false, decisions or all/);
   });
 });
 

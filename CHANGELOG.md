@@ -21,13 +21,21 @@ All notable changes to Cognate are documented in this file.
   - `@cognate/node`: `POST /registry/versions/:id/evaluations` records an evaluation (201, with the event id). The
     version, tenant and agent checks match the transition route. `POST /registry/versions/:id` passes
     `evaluationIds` through. Evaluation events get inclusion proofs from `GET /events/:eventId`.
+  - **Record an evaluation, then transition citing it.** Recording never moves the version, so every call is one
+    append and the log can't be left half-written.
+  - **`requireEvaluationCitations`, a setting:** `false` (default: no citations required, so every existing caller
+    keeps working), `"decisions"` (moves to `approved` or `rejected` must cite) or `"all"` (every transition must).
+    It's a transition option in model-registry and `ServerContext.requireEvaluationCitations` in node. The entry
+    point reads it from `COGNATE_REQUIRE_EVALUATION_CITATIONS` and refuses to start on any other value.
+  - New error codes: `EVALUATION_ALREADY_RECORDED`, `EVALUATION_TENANT_MISMATCH`, `EVALUATION_ON_CLOSED_VERSION`,
+    `EVALUATION_NOT_FOUND`, `EVALUATION_IDS_EMPTY`, `EVALUATION_CITATION_REQUIRED` and `INVALID_CITATION_RULE`.
 
 ### Changed
 
 - **An approved version can be rejected before it is deployed** (`approved → rejected`), for example when a
   replication reverses the evaluation the approval rested on. Deployed and retired versions are unchanged.
-- `@cognate/model-registry` and `@cognate/node` enforce the org's 90% line-coverage floor. They measure 97.2% and
-  92.8%.
+- `@cognate/model-registry` and `@cognate/node` enforce the org's 90% line-coverage floor. They measure 97.3% and
+  93.0%.
 
 ## [0.1.8] - 2026-10-14
 

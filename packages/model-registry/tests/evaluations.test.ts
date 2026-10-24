@@ -149,6 +149,44 @@ describe("decisions that cite evaluations", () => {
   });
 });
 
+describe("requireEvaluationCitations", () => {
+  const toEvaluated = (s: RegistryState, rule?: unknown, ids?: string[]) =>
+    transitionVersion(s, "vB", "registered", "evaluated", "rnd", "e", {
+      ...(rule !== undefined ? { requireEvaluationCitations: rule as never } : {}),
+      ...(ids ? { evaluationIds: ids } : {}),
+    });
+  const evaluated = () => toEvaluated(recordEvaluation(base(), evaluation("e1")), undefined, ["e1"]);
+
+  it("false (the default) requires no citations anywhere", () => {
+    let s = toEvaluated(base(), false);
+    s = transitionVersion(s, "vB", "evaluated", "approved", "director", "ok", { requireEvaluationCitations: false });
+    expect(s.versions["vB"]?.status).toBe("approved");
+    expect(toEvaluated(base()).versions["vB"]?.status).toBe("evaluated");
+  });
+
+  it('"decisions" refuses approve and reject without citations, and allows other moves', () => {
+    const s = evaluated();
+    const opt = { requireEvaluationCitations: "decisions" as const };
+    expect(code(() => transitionVersion(s, "vB", "evaluated", "approved", "director", "ok", opt))).toBe("EVALUATION_CITATION_REQUIRED");
+    expect(code(() => transitionVersion(s, "vB", "evaluated", "rejected", "director", "no", opt))).toBe("EVALUATION_CITATION_REQUIRED");
+    const approved = transitionVersion(s, "vB", "evaluated", "approved", "director", "ok", { ...opt, evaluationIds: ["e1"] });
+    expect(approved.versions["vB"]?.status).toBe("approved");
+    // Not a decision: deploy needs no citation under "decisions".
+    expect(transitionVersion(approved, "vB", "approved", "deployed", "director", "ship", opt).versions["vB"]?.status).toBe("deployed");
+    expect(toEvaluated(base(), "decisions").versions["vB"]?.status).toBe("evaluated");
+  });
+
+  it('"all" refuses every transition without citations', () => {
+    expect(code(() => toEvaluated(base(), "all"))).toBe("EVALUATION_CITATION_REQUIRED");
+    const s = toEvaluated(recordEvaluation(base(), evaluation("e1")), "all", ["e1"]);
+    expect(s.versions["vB"]?.status).toBe("evaluated");
+  });
+
+  it("refuses an unknown rule", () => {
+    expect(code(() => toEvaluated(base(), "sometimes"))).toBe("INVALID_CITATION_RULE");
+  });
+});
+
 describe("attested evaluations", () => {
   function store() {
     const appended: Array<{ streamId: string; events: ReadonlyArray<{ type: string; payload: Record<string, unknown> }> }> = [];

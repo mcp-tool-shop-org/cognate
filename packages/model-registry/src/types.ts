@@ -33,7 +33,16 @@ export interface TransitionEvent {
 export interface TransitionOptions {
   /** Evaluations recorded on this version that the decision rests on. Each must exist; the list must not be empty. */
   readonly evaluationIds?: readonly string[];
+  /**
+   * Which transitions must cite evaluations. Default `false`: none, so existing callers keep working.
+   * - `"decisions"`: a move to `approved` or `rejected` must cite at least one evaluation.
+   * - `"all"`: every transition must.
+   */
+  readonly requireEvaluationCitations?: RequireEvaluationCitations;
 }
+
+/** The citation rule for transitions; see {@link TransitionOptions.requireEvaluationCitations}. */
+export type RequireEvaluationCitations = false | "decisions" | "all";
 
 /**
  * Immutable snapshot of the model registry.

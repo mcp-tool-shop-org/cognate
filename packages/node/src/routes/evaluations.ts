@@ -5,7 +5,21 @@
  * refuses a body that names a different version or tenant than the path and the caller.
  */
 
+import type { RequireEvaluationCitations } from "@cognate/model-registry";
 import type { Evaluation } from "@cognate/types";
+
+/**
+ * The transition citation rule from `COGNATE_REQUIRE_EVALUATION_CITATIONS`: unset or "false" is `false` (no
+ * citations required), "decisions" or "all" as named. Any other value throws, so a typo can't silently relax the rule.
+ */
+export function citationRuleFromEnv(env: Record<string, string | undefined>): RequireEvaluationCitations {
+  const raw = env.COGNATE_REQUIRE_EVALUATION_CITATIONS?.trim();
+  if (raw === undefined || raw === "" || raw === "false") return false;
+  if (raw === "decisions" || raw === "all") return raw;
+  throw new Error(
+    `COGNATE_REQUIRE_EVALUATION_CITATIONS must be false, decisions or all, not "${raw}". The server did not start.`,
+  );
+}
 
 export const EVALUATIONS_PATH = /^\/registry\/versions\/([^/]+)\/evaluations$/;
 

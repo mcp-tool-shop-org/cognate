@@ -16,7 +16,7 @@ export {
   getCurrentDeployedVersion,
 } from "./registry.js";
 
-export type { RegistryState, TransitionEvent, TransitionOptions } from "./types.js";
+export type { RegistryState, RequireEvaluationCitations, TransitionEvent, TransitionOptions } from "./types.js";
 export { RegistryError } from "./types.js";
 
 export type { AttestTransitionConfig } from "./attestation.js";
