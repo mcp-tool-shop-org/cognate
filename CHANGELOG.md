@@ -4,6 +4,31 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+### Security
+
+- **`@cognate/node` scopes every route to the authenticated agent's tenant.** Before, a caller authenticated in one
+  tenant could act in another: transition its versions, record evaluations on them, register models and versions in
+  it, log prompts and outputs and policy decisions to its event streams, and register agents and grants in it. Routes
+  either took the tenant from the request body or never compared it with the stored record. Now every POST acts in
+  the caller's tenant (`packages/node/src/tenant.ts`):
+  - A record that names another tenant is refused with 400: `registry.tenant-mismatch` (model, version),
+    `prompts.tenant-mismatch` (prompt, output), `policy.tenant-mismatch` (the context and the policy) and
+    `identity.tenant-mismatch` (agent, grant).
+  - An id that belongs to another tenant gets exactly the answer a missing id gets, so the caller can't learn that it
+    exists. That covers a version (transition, evaluation), the model a new version names, the prompt an output
+    names, the agent a grant names, and a grant to approve or export.
+  - The refusal comes before RepoMesh is asked and before anything is appended.
+  - The path id and the body id must agree when registering a version (`registry.version-id-mismatch`) and when
+    logging an output (`prompts.prompt-id-mismatch`).
+- **This is necessary, not sufficient.** The caller's identity is still self-asserted: the server trusts an unsigned
+  `X-Agent-Id` header, so anyone who knows an agent id can act as that agent, in that agent's tenant. Signed requests
+  are the fix for that, and they are a separate change.
+- **Ids are global across tenants.** Registering a model, version, prompt, output, agent or grant whose id another
+  tenant already holds is refused as a duplicate, which still shows that the id is taken.
+- **A tenant's first agent is seeded, not posted.** Every POST needs an existing agent, and an agent registers agents
+  only into its own tenant, so a new tenant's first agent goes into the agents snapshot (`COGNATE_AGENT_REGISTRY_PATH`,
+  `/app/data/cognate/agents.json` in Docker) before the server starts.
+
 ### Added
 
 - **A model version can carry any number of evaluations, and a decision cites the ones it rests on.** Before, the only
@@ -36,10 +61,13 @@ All notable changes to Cognate are documented in this file.
 
 ### Changed
 
+- **`@cognate/node` answers a missing id with 404, not 400:** `VERSION_NOT_FOUND`, `MODEL_NOT_FOUND`,
+  `store.prompt-not-found`, `identity.agent-not-found`, `identity.grant-not-found` and `vc.grant-not-found`. The
+  codes and bodies are unchanged. `@cognate/node` is 0.1.1.
 - **Test toolchain: vitest 1.6 to 4.1.12, with vite 8.3.5 declared as its peer.** It clears the high and critical
   advisories in the dev tree (vitest, vite, tinypool, source-map-js) with no ignores or overrides; `pnpm audit
   --audit-level high` over the whole tree is clean. Every test passes unchanged, and the coverage floors are
-  unchanged. vitest 4 measures coverage differently, so the figures moved (node lines 93.04 to 90.73).
+  unchanged. vitest 4 measures coverage differently, so the figures moved (node lines 93.59 to 90.85).
 - **An approved version can be rejected before it is deployed** (`approved → rejected`), for example when a
   replication reverses the evaluation the approval rested on. Deployed and retired versions are unchanged.
 - `@cognate/node` enforces the org's 90% line-coverage floor. It measures 93.0%. `@cognate/model-registry` keeps
