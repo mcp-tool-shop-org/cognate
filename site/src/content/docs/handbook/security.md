@@ -1,6 +1,6 @@
 ---
 title: Security
-description: The Cognate threat model, and the limits of v0.1.0.
+description: The Cognate threat model, and the limits of this release.
 sidebar:
   order: 5
 ---
