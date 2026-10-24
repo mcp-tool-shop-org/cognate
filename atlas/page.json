@@ -96,30 +96,30 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 6,
-      "changed": 49,
+      "added": 4,
+      "changed": 7,
       "moved": 0,
-      "parts": 10,
+      "parts": 3,
       "removed": 0
     },
     "items": [
       {
         "kind": "landing",
-        "sentence": "packages/model-registry/ is now read by packages/model-registry/tests/runs.test.ts.",
+        "sentence": "packages/node/config/tenant-roots.json is now read by packages/node/src/middleware/signature.ts.",
         "subjects": [
-          "packages/model-registry/",
-          "packages/model-registry/tests/runs.test.ts"
+          "packages/node/config/tenant-roots.json",
+          "packages/node/src/middleware/signature.ts"
         ]
       },
       {
         "kind": "counts",
-        "sentence": "6 files added and 49 changed content, across 10 parts.",
+        "sentence": "4 files added and 7 changed content, across 3 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "324888396a110aae607bb84e9996c320de45eed9",
-      "generatedAt": "2026-10-15T01:17:44.226Z"
+      "commit": "a476412d1f01e3b2b385e0f2d61ac39623fe88ef",
+      "generatedAt": "2026-10-24T23:10:04.232Z"
     },
     "unchanged": false
   },
@@ -128,9 +128,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 0 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "a476412d1f01e3b2b385e0f2d61ac39623fe88ef",
+  "commit": "7b6b9b29cbf6ce95264703061ad89fa331c60cd4",
   "defaultBranch": "main",
-  "derived": "14 parts, mostly TypeScript (72 files), CSS (2), JavaScript (2) and Astro (1). Work enters through 6 doors; Docker Publish and Publish to GHCR each reach 9 parts, and Docker Publish is followed because it comes first by name. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
+  "derived": "14 parts, mostly TypeScript (75 files), CSS (2), JavaScript (2) and Astro (1). Work enters through 6 doors; Docker Publish and Publish to GHCR each reach 9 parts, and Docker Publish is followed because it comes first by name. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
   "doors": [
     {
       "builds": [
@@ -184,7 +184,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 24
+          "files": 27
         },
         {
           "boundary": "policy",
@@ -278,7 +278,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 24
+          "files": 27
         },
         {
           "boundary": "policy",
@@ -364,7 +364,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 22
+          "files": 25
         },
         {
           "boundary": "policy",
@@ -448,7 +448,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 22
+          "files": 25
         },
         {
           "boundary": "policy",
@@ -481,7 +481,7 @@
         "packages/repomesh-bridge/tests/"
       ],
       "runsCount": 7,
-      "runsMore": 12,
+      "runsMore": 13,
       "sends": [
         "publishes @mcptoolshop/cognate to npm",
         "creates a GitHub release"
@@ -629,11 +629,10 @@
   ],
   "engine": "1.24.0",
   "generated": [],
-  "generatedAt": "2026-10-24T23:10:04.232Z",
+  "generatedAt": "2026-10-24T23:13:24.799Z",
   "limits": [
-    "14 imports could not be resolved: `packages/node/src/index.ts` imports `./middleware/signature.js`, which is not in this repository; `packages/node/src/server.ts` imports `./middleware/signature.js`, which is not in this repository, twice; and 11 more.",
-    "3 writes and 20 reads go to a path their caller passes, not to this repository.",
-    "3 reads go to the directory the command is run in, not to this repository.",
+    "3 writes and 22 reads go to a path their caller passes, not to this repository.",
+    "5 reads go to the directory the command is run in, not to this repository.",
     "There is a docker-compose.yml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
@@ -667,17 +666,17 @@
   ],
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 19,
+  "testFiles": 20,
   "testedBy": {
-    "agent-identity": 10,
+    "agent-identity": 11,
     "cognate": 1,
-    "model-registry": 12,
-    "node": 10,
-    "policy": 7,
-    "prompt-store": 11,
+    "model-registry": 13,
+    "node": 11,
+    "policy": 8,
+    "prompt-store": 12,
     "repomesh-bridge": 2,
     "scripts": 0,
-    "types": 17
+    "types": 18
   },
   "unnamedWrites": 0,
   "unread": [],

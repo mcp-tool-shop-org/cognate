@@ -176,7 +176,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 10,
+      "testedBy": 11,
       "unresolvedSites": 0
     },
     {
@@ -784,7 +784,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 12,
+      "testedBy": 13,
       "unresolvedSites": 0
     },
     {
@@ -798,8 +798,23 @@
       "externals": 0,
       "files": [
         {
+          "hash": "3aea0637c08dc84e5c7069d99ba1c0378bca75e6aa153764d96739a89ef5ccf6",
+          "path": "packages/node/config/tenant-roots.json"
+        },
+        {
           "hash": "91bb060149c196cabd49c4686918853d129bb148db8ba26b637f3bf24975bcc7",
           "path": "packages/node/package.json"
+        },
+        {
+          "exports": [
+            "createSignedClient",
+            "signHttpRequest"
+          ],
+          "hash": "352ba8760a32c0d38a90f0131dd6507758b2770a60d7f31738807d8f688c7eb9",
+          "importsFiles": [
+            "packages/node/src/middleware/signature.ts"
+          ],
+          "path": "packages/node/src/client.ts"
         },
         {
           "exports": [
@@ -827,12 +842,14 @@
           "hash": "45fa1ac404c1d35a176292f48e04ea7c1c6b187b6833d528b921c2fd0fdb6193",
           "importOrder": [
             "packages/repomesh-bridge/src/index.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/release-gate.ts",
             "packages/node/src/routes/evaluations.ts",
             "packages/node/src/runtime.ts",
             "packages/node/src/server.ts"
           ],
           "importsFiles": [
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/release-gate.ts",
             "packages/node/src/routes/evaluations.ts",
             "packages/node/src/runtime.ts",
@@ -867,6 +884,125 @@
           ],
           "hash": "78b437ba8d02e04e1db11292ca384921dedb8cbdb6f399d3578628108ceeb5de",
           "path": "packages/node/src/middleware/rate-limit.ts"
+        },
+        {
+          "exports": [
+            "buildCanonicalRequestString",
+            "canonicalizeJsonBody",
+            "createReplayStore",
+            "deriveKid",
+            "generateEd25519KeyPair",
+            "isJcsCanonicalJsonBytes",
+            "isValidAgentIdHeader",
+            "isValidKeyIdHeader",
+            "isValidNonceHeader",
+            "isValidPublicKeyBase64Url",
+            "isValidRequestMethod",
+            "isValidRequestPath",
+            "isValidSignatureHeader",
+            "isValidTimestampHeader",
+            "loadTenantRootsConfig",
+            "sha256HexBytes",
+            "signCanonicalRequest",
+            "signedRequestsConfigFromEnv",
+            "tryDeriveKid",
+            "validateSignedRequestsConfig",
+            "validateTenantRootsList",
+            "verifyCanonicalRequestSignature",
+            "verifySignedRequest"
+          ],
+          "failurePaths": [
+            {
+              "in": "deriveKid",
+              "kind": "throw",
+              "line": 118
+            },
+            {
+              "in": "createEd25519PrivateKeyFromSeedHex",
+              "kind": "throw",
+              "line": 125
+            },
+            {
+              "in": "createEd25519PublicKeyFromBase64Url",
+              "kind": "throw",
+              "line": 137
+            },
+            {
+              "in": "verifyCanonicalRequestSignature",
+              "kind": "catch",
+              "line": 265
+            },
+            {
+              "in": "isJcsCanonicalJsonBytes",
+              "kind": "catch",
+              "line": 284
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 381
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 384
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 389
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 392
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 397
+            },
+            {
+              "in": "loadTenantRootsConfig",
+              "kind": "throw",
+              "line": 411
+            },
+            {
+              "in": "loadTenantRootsConfig",
+              "kind": "throw",
+              "line": 425
+            },
+            {
+              "in": "validateSignedRequestsConfig",
+              "kind": "throw",
+              "line": 442
+            },
+            {
+              "in": "validateSignedRequestsConfig",
+              "kind": "throw",
+              "line": 450
+            },
+            {
+              "in": "validateSignedRequestsConfig",
+              "kind": "throw",
+              "line": 456
+            },
+            {
+              "in": "validateSignedRequestsConfig",
+              "kind": "throw",
+              "line": 461
+            }
+          ],
+          "hash": "91c8391bca25f56eee86a5a95b9792c3371324ae697ca437aba9b97299bfe17e",
+          "importOrder": [
+            "packages/types/src/index.ts",
+            "packages/agent-identity/src/index.ts"
+          ],
+          "importsFiles": [
+            "packages/agent-identity/src/index.ts",
+            "packages/types/src/index.ts"
+          ],
+          "path": "packages/node/src/middleware/signature.ts"
         },
         {
           "exports": [
@@ -1085,7 +1221,7 @@
               "line": 1174
             }
           ],
-          "hash": "0cde8e51399ef894b6fa3646abb86961fc415ef5899ab2617bcbf3372d8d2359",
+          "hash": "66ad5907e059af2f4c0ecfcafee809e57bb142e487fffd5610bef1f8b9470ec5",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/policy/src/index.ts",
@@ -1099,16 +1235,20 @@
             "packages/node/src/routes/identity.ts",
             "packages/node/src/routes/prompts.ts",
             "packages/node/src/middleware/rate-limit.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/snapshot.ts",
             "packages/node/src/release-gate.ts",
             "packages/node/src/event-proof.ts",
-            "packages/node/src/tenant.ts"
+            "packages/node/src/tenant.ts",
+            "packages/node/src/client.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
             "packages/node/src/event-proof.ts",
             "packages/node/src/middleware/rate-limit.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/release-gate.ts",
             "packages/node/src/routes/evaluations.ts",
             "packages/node/src/routes/health.ts",
@@ -1193,6 +1333,8 @@
           "importOrder": [
             "packages/node/src/server.ts",
             "packages/node/src/release-gate.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts",
             "packages/model-registry/src/index.ts",
             "packages/agent-identity/src/index.ts",
             "packages/prompt-store/src/index.ts"
@@ -1200,6 +1342,8 @@
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/release-gate.ts",
             "packages/node/src/server.ts",
             "packages/prompt-store/src/index.ts"
@@ -1215,12 +1359,16 @@
             "packages/model-registry/src/index.ts",
             "packages/node/src/routes/evaluations.ts",
             "packages/agent-identity/src/index.ts",
-            "packages/prompt-store/src/index.ts"
+            "packages/prompt-store/src/index.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
             "packages/node/src/event-proof.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/routes/evaluations.ts",
             "packages/node/src/server.ts",
             "packages/prompt-store/src/index.ts"
@@ -1235,12 +1383,16 @@
             "packages/model-registry/src/index.ts",
             "packages/prompt-store/src/index.ts",
             "packages/node/src/event-proof.ts",
-            "packages/node/src/server.ts"
+            "packages/node/src/server.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
             "packages/node/src/event-proof.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/server.ts",
             "packages/prompt-store/src/index.ts"
           ],
@@ -1270,17 +1422,46 @@
             "packages/node/src/routes/prompts.ts",
             "packages/model-registry/src/index.ts",
             "packages/agent-identity/src/index.ts",
-            "packages/prompt-store/src/index.ts"
+            "packages/prompt-store/src/index.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/routes/prompts.ts",
             "packages/node/src/routes/registry.ts",
             "packages/node/src/server.ts",
             "packages/prompt-store/src/index.ts"
           ],
           "path": "packages/node/tests/server.test.ts",
+          "testFramework": "vitest"
+        },
+        {
+          "hash": "717bf7b3048111b3363e69b2f2ca7536142638e5db23d06fda4f55291daf066c",
+          "importOrder": [
+            "packages/types/src/index.ts",
+            "packages/agent-identity/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/prompt-store/src/index.ts",
+            "packages/node/src/server.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/routes/identity.ts"
+          ],
+          "importsFiles": [
+            "packages/agent-identity/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/routes/identity.ts",
+            "packages/node/src/server.ts",
+            "packages/prompt-store/src/index.ts",
+            "packages/types/src/index.ts"
+          ],
+          "path": "packages/node/tests/signed-requests.test.ts",
           "testFramework": "vitest"
         },
         {
@@ -1309,11 +1490,15 @@
             "packages/model-registry/src/index.ts",
             "packages/agent-identity/src/index.ts",
             "packages/prompt-store/src/index.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts",
             "packages/types/src/index.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/server.ts",
             "packages/prompt-store/src/index.ts",
             "packages/types/src/index.ts"
@@ -1338,7 +1523,7 @@
       "origin": "authored",
       "outsidePlaces": [
         {
-          "reads": 3,
+          "reads": 5,
           "where": [
             "caller"
           ],
@@ -1350,33 +1535,23 @@
             "cwd"
           ],
           "writes": 0
+        },
+        {
+          "reads": 2,
+          "where": [
+            "cwd:packages/"
+          ],
+          "writes": 0
         }
       ],
-      "outsideReads": 6,
+      "outsideReads": 10,
       "outsideWrites": 3,
       "role": "code",
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 10,
-      "unresolvedNamed": [
-        {
-          "path": "packages/node/src/index.ts",
-          "specifier": "./middleware/signature.js",
-          "why": "missing"
-        },
-        {
-          "path": "packages/node/src/server.ts",
-          "specifier": "./middleware/signature.js",
-          "why": "missing"
-        },
-        {
-          "path": "packages/node/src/server.ts",
-          "specifier": "./middleware/signature.js",
-          "why": "missing"
-        }
-      ],
-      "unresolvedSites": 14
+      "testedBy": 11,
+      "unresolvedSites": 0
     },
     {
       "dynamicReads": 0,
@@ -1465,7 +1640,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 7,
+      "testedBy": 8,
       "unresolvedSites": 0
     },
     {
@@ -1615,7 +1790,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 11,
+      "testedBy": 12,
       "unresolvedSites": 0
     },
     {
@@ -1709,7 +1884,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "bd30236f3dbc23fbfe5ff8718e7828ee8b1e7a5c8a099c80178032f58073e19e",
+          "hash": "3e5325b5af80302f6c32567f7bc7fdc69c8989f6b195d620c55688c1e5b6fac1",
           "path": "CHANGELOG.md"
         },
         {
@@ -1717,11 +1892,11 @@
           "path": "Caddyfile"
         },
         {
-          "hash": "7c012c274469bdeaaca41a8bfbd343abe6be3175d4895068e9b75eac0369aa86",
+          "hash": "3c4597a01f9deee259a309327df0d2d0317a94491f290399b19b4cbd5893bab0",
           "path": "Dockerfile"
         },
         {
-          "hash": "a9d362f1f8a875b7848d54ac9030f9d37553cce2c9fabd34385a995c78c95943",
+          "hash": "b852e72170bf4dfdbbd607934523f3de8a39fd811d02054d09a7953bc7a6875c",
           "path": "HANDBOOK.md"
         },
         {
@@ -1749,7 +1924,7 @@
           "path": "README.ja.md"
         },
         {
-          "hash": "2f2a5db6d6669ce3c1da371fa5a52eef6e75fe4a8da5733446e99643d2650c6d",
+          "hash": "45c54f504584f5b24fd6f882bc982fd2bc8700838d8f1bf650cebf11df2ee373",
           "path": "README.md"
         },
         {
@@ -1765,7 +1940,7 @@
           "path": "SCORECARD.md"
         },
         {
-          "hash": "d1ff6b022bb9d82a089cd3de9d20934f750c8f5c92c26a58975b030367302e1d",
+          "hash": "b817edce9f560b7001d9e417e6b1b13011df5552b6eb12f67fd3413188011a05",
           "path": "SECURITY.md"
         },
         {
@@ -1884,7 +2059,7 @@
           "path": "site/src/content/docs/handbook/reference.md"
         },
         {
-          "hash": "30bd536e68f4c61d789cd92a3738c57e96994926f98766a4e65522c3f883f69c",
+          "hash": "0bd40cb5d4c29e2b70e76f2a503a44c2e5e6d3409f686dfda02e906a10531c9d",
           "path": "site/src/content/docs/handbook/security.md"
         },
         {
@@ -1987,7 +2162,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 17,
+      "testedBy": 18,
       "unresolvedSites": 0
     }
   ],
@@ -2106,7 +2281,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 22
+          "files": 25
         },
         {
           "boundary": "policy",
@@ -2321,7 +2496,7 @@
           "config": "packages/node/vitest.config.ts",
           "coverage": true,
           "dir": "packages/node",
-          "files": 7,
+          "files": 8,
           "job": "build-and-test",
           "runner": "vitest",
           "step": "Test with coverage",
@@ -2459,7 +2634,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 24
+          "files": 27
         },
         {
           "boundary": "policy",
@@ -2738,7 +2913,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 24
+          "files": 27
         },
         {
           "boundary": "policy",
@@ -3268,7 +3443,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 22
+          "files": 25
         },
         {
           "boundary": "policy",
@@ -3519,7 +3694,7 @@
         {
           "config": "packages/node/vitest.config.ts",
           "dir": "packages/node",
-          "files": 7,
+          "files": 8,
           "job": "release",
           "runner": "vitest",
           "step": "Run tests",
@@ -3707,8 +3882,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "a476412d1f01e3b2b385e0f2d61ac39623fe88ef",
-    "tracked": 147
+    "commit": "7b6b9b29cbf6ce95264703061ad89fa331c60cd4",
+    "tracked": 151
   },
   "landings": [
     {
@@ -3741,6 +3916,22 @@
         }
       ],
       "target": "packages/model-registry",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "packages/node/src/middleware/signature.ts",
+          "call": "existsSync",
+          "confidence": "ast"
+        },
+        {
+          "by": "packages/node/src/middleware/signature.ts",
+          "call": "readFileSync",
+          "confidence": "ast"
+        }
+      ],
+      "target": "packages/node/config/tenant-roots.json",
       "writers": []
     },
     {
@@ -3791,7 +3982,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 19,
+  "testFiles": 20,
   "unassigned": [],
   "unseen": [
     {

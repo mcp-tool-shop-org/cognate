@@ -290,8 +290,8 @@
         "path": ".gitignore"
       },
       {
-        "commits": 13,
-        "lines": 123,
+        "commits": 14,
+        "lines": 148,
         "path": "CHANGELOG.md"
       },
       {
@@ -300,13 +300,13 @@
         "path": "Caddyfile"
       },
       {
-        "commits": 6,
-        "lines": 205,
+        "commits": 7,
+        "lines": 207,
         "path": "Dockerfile"
       },
       {
-        "commits": 11,
-        "lines": 170,
+        "commits": 12,
+        "lines": 186,
         "path": "HANDBOOK.md"
       },
       {
@@ -340,8 +340,8 @@
         "path": "README.ja.md"
       },
       {
-        "commits": 13,
-        "lines": 310,
+        "commits": 14,
+        "lines": 365,
         "path": "README.md"
       },
       {
@@ -360,8 +360,8 @@
         "path": "SCORECARD.md"
       },
       {
-        "commits": 2,
-        "lines": 28,
+        "commits": 3,
+        "lines": 43,
         "path": "SECURITY.md"
       },
       {
@@ -370,8 +370,8 @@
         "path": "SHIP_GATE.md"
       },
       {
-        "commits": 5,
-        "lines": 244,
+        "commits": 6,
+        "lines": 271,
         "path": "atlas/README.md"
       },
       {
@@ -380,19 +380,24 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 5,
-        "lines": 1510,
+        "commits": 6,
+        "lines": 1578,
         "path": "atlas/page.json"
       },
       {
-        "commits": 5,
-        "lines": 2426,
+        "commits": 6,
+        "lines": 2664,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 5,
-        "lines": 6909,
+        "commits": 6,
+        "lines": 7505,
         "path": "atlas/structure.json"
+      },
+      {
+        "commits": 1,
+        "lines": 47,
+        "path": "config/tenant-roots.json"
       },
       {
         "commits": 2,
@@ -425,28 +430,28 @@
         "path": "node.json"
       },
       {
-        "commits": 14,
-        "lines": 71,
+        "commits": 15,
+        "lines": 73,
         "path": "package.json"
       },
       {
-        "commits": 3,
-        "lines": 52,
+        "commits": 4,
+        "lines": 54,
         "path": "packages/agent-identity/package.json"
       },
       {
-        "commits": 2,
-        "lines": 175,
+        "commits": 3,
+        "lines": 322,
         "path": "packages/agent-identity/src/identity.ts"
       },
       {
-        "commits": 2,
-        "lines": 35,
+        "commits": 3,
+        "lines": 40,
         "path": "packages/agent-identity/src/index.ts"
       },
       {
-        "commits": 2,
-        "lines": 22,
+        "commits": 3,
+        "lines": 24,
         "path": "packages/agent-identity/src/types.ts"
       },
       {
@@ -460,8 +465,8 @@
         "path": "packages/agent-identity/src/vc-types.ts"
       },
       {
-        "commits": 2,
-        "lines": 287,
+        "commits": 3,
+        "lines": 391,
         "path": "packages/agent-identity/tests/identity.test.ts"
       },
       {
@@ -475,8 +480,8 @@
         "path": "packages/agent-identity/tsconfig.json"
       },
       {
-        "commits": 2,
-        "lines": 24,
+        "commits": 3,
+        "lines": 30,
         "path": "packages/agent-identity/vitest.config.ts"
       },
       {
@@ -525,8 +530,8 @@
         "path": "packages/cognate/README.zh.md"
       },
       {
-        "commits": 9,
-        "lines": 116,
+        "commits": 10,
+        "lines": 118,
         "path": "packages/cognate/package.json"
       },
       {
@@ -585,8 +590,8 @@
         "path": "packages/cognate/vitest.config.ts"
       },
       {
-        "commits": 6,
-        "lines": 46,
+        "commits": 7,
+        "lines": 48,
         "path": "packages/model-registry/package.json"
       },
       {
@@ -600,8 +605,8 @@
         "path": "packages/model-registry/src/index.ts"
       },
       {
-        "commits": 4,
-        "lines": 786,
+        "commits": 5,
+        "lines": 800,
         "path": "packages/model-registry/src/registry.ts"
       },
       {
@@ -620,8 +625,8 @@
         "path": "packages/model-registry/tests/evaluations.test.ts"
       },
       {
-        "commits": 2,
-        "lines": 180,
+        "commits": 3,
+        "lines": 207,
         "path": "packages/model-registry/tests/registry.test.ts"
       },
       {
@@ -640,9 +645,14 @@
         "path": "packages/model-registry/vitest.config.ts"
       },
       {
-        "commits": 3,
-        "lines": 57,
+        "commits": 4,
+        "lines": 62,
         "path": "packages/node/package.json"
+      },
+      {
+        "commits": 1,
+        "lines": 199,
+        "path": "packages/node/src/client.ts"
       },
       {
         "commits": 2,
@@ -650,8 +660,8 @@
         "path": "packages/node/src/event-proof.ts"
       },
       {
-        "commits": 3,
-        "lines": 51,
+        "commits": 4,
+        "lines": 57,
         "path": "packages/node/src/index.ts"
       },
       {
@@ -665,6 +675,11 @@
         "path": "packages/node/src/middleware/rate-limit.ts"
       },
       {
+        "commits": 1,
+        "lines": 696,
+        "path": "packages/node/src/middleware/signature.ts"
+      },
+      {
         "commits": 2,
         "lines": 148,
         "path": "packages/node/src/release-gate.ts"
@@ -675,13 +690,13 @@
         "path": "packages/node/src/routes/evaluations.ts"
       },
       {
-        "commits": 1,
-        "lines": 6,
+        "commits": 2,
+        "lines": 15,
         "path": "packages/node/src/routes/health.ts"
       },
       {
-        "commits": 2,
-        "lines": 88,
+        "commits": 3,
+        "lines": 168,
         "path": "packages/node/src/routes/identity.ts"
       },
       {
@@ -705,8 +720,8 @@
         "path": "packages/node/src/runtime.ts"
       },
       {
-        "commits": 9,
-        "lines": 733,
+        "commits": 10,
+        "lines": 1500,
         "path": "packages/node/src/server.ts"
       },
       {
@@ -720,18 +735,18 @@
         "path": "packages/node/src/tenant.ts"
       },
       {
-        "commits": 3,
-        "lines": 546,
+        "commits": 4,
+        "lines": 614,
         "path": "packages/node/tests/deploy-gate.test.ts"
       },
       {
-        "commits": 2,
-        "lines": 262,
+        "commits": 3,
+        "lines": 320,
         "path": "packages/node/tests/evaluations.test.ts"
       },
       {
-        "commits": 1,
-        "lines": 415,
+        "commits": 2,
+        "lines": 475,
         "path": "packages/node/tests/event-proof.test.ts"
       },
       {
@@ -740,18 +755,23 @@
         "path": "packages/node/tests/middleware.test.ts"
       },
       {
-        "commits": 7,
-        "lines": 938,
+        "commits": 8,
+        "lines": 1045,
         "path": "packages/node/tests/server.test.ts"
       },
       {
-        "commits": 3,
-        "lines": 211,
+        "commits": 1,
+        "lines": 1680,
+        "path": "packages/node/tests/signed-requests.test.ts"
+      },
+      {
+        "commits": 4,
+        "lines": 218,
         "path": "packages/node/tests/snapshot.test.ts"
       },
       {
-        "commits": 1,
-        "lines": 342,
+        "commits": 2,
+        "lines": 445,
         "path": "packages/node/tests/tenant-scoping.test.ts"
       },
       {
@@ -760,13 +780,13 @@
         "path": "packages/node/tsconfig.json"
       },
       {
-        "commits": 3,
-        "lines": 22,
+        "commits": 4,
+        "lines": 29,
         "path": "packages/node/vitest.config.ts"
       },
       {
-        "commits": 3,
-        "lines": 50,
+        "commits": 4,
+        "lines": 52,
         "path": "packages/policy/package.json"
       },
       {
@@ -800,13 +820,13 @@
         "path": "packages/policy/vitest.config.ts"
       },
       {
-        "commits": 5,
-        "lines": 57,
+        "commits": 6,
+        "lines": 59,
         "path": "packages/prompt-store/package.json"
       },
       {
-        "commits": 3,
-        "lines": 218,
+        "commits": 4,
+        "lines": 228,
         "path": "packages/prompt-store/src/attestation.ts"
       },
       {
@@ -825,8 +845,8 @@
         "path": "packages/prompt-store/src/store.ts"
       },
       {
-        "commits": 3,
-        "lines": 145,
+        "commits": 4,
+        "lines": 174,
         "path": "packages/prompt-store/tests/attestation.test.ts"
       },
       {
@@ -845,13 +865,13 @@
         "path": "packages/prompt-store/tsconfig.json"
       },
       {
-        "commits": 2,
-        "lines": 24,
+        "commits": 3,
+        "lines": 30,
         "path": "packages/prompt-store/vitest.config.ts"
       },
       {
-        "commits": 2,
-        "lines": 54,
+        "commits": 3,
+        "lines": 56,
         "path": "packages/repomesh-bridge/package.json"
       },
       {
@@ -890,13 +910,13 @@
         "path": "packages/repomesh-bridge/vitest.config.ts"
       },
       {
-        "commits": 4,
-        "lines": 53,
+        "commits": 5,
+        "lines": 58,
         "path": "packages/types/package.json"
       },
       {
-        "commits": 4,
-        "lines": 478,
+        "commits": 5,
+        "lines": 515,
         "path": "packages/types/src/index.ts"
       },
       {
@@ -905,8 +925,8 @@
         "path": "packages/types/tsconfig.json"
       },
       {
-        "commits": 8,
-        "lines": 3128,
+        "commits": 9,
+        "lines": 3135,
         "path": "pnpm-lock.yaml"
       },
       {
@@ -965,13 +985,13 @@
         "path": "site/src/content/docs/handbook/index.md"
       },
       {
-        "commits": 8,
-        "lines": 112,
+        "commits": 9,
+        "lines": 124,
         "path": "site/src/content/docs/handbook/reference.md"
       },
       {
-        "commits": 6,
-        "lines": 36,
+        "commits": 7,
+        "lines": 45,
         "path": "site/src/content/docs/handbook/security.md"
       },
       {
@@ -1020,9 +1040,9 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-10-24T23:10:04.232Z",
+  "generatedAt": "2026-10-24T23:13:24.799Z",
   "generatedFrom": {
-    "commit": "a476412d1f01e3b2b385e0f2d61ac39623fe88ef"
+    "commit": "7b6b9b29cbf6ce95264703061ad89fa331c60cd4"
   },
   "pairs": [
     {
@@ -1055,7 +1075,7 @@
     }
   ],
   "parameters": {
-    "appliedChangesetLimit": 38,
+    "appliedChangesetLimit": 39,
     "changeset": 50,
     "changesetFraction": 0.25,
     "cohesionDrop": 0.2,
@@ -1064,8 +1084,8 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-10-24T17:44:07-04:00",
-    "inScopeFiles": 152,
+    "headDate": "2026-10-24T19:10:45-04:00",
+    "inScopeFiles": 156,
     "pinnedStart": null,
     "priorFloor": "fallen",
     "qualifyingCommits": 35,
@@ -1073,7 +1093,7 @@
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-27T21:44:07.000Z",
+    "since": "2026-04-27T23:10:45.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

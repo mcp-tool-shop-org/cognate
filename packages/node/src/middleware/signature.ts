@@ -414,8 +414,8 @@ export function loadTenantRootsConfig(configPath?: string): readonly TenantRootK
   }
   const moduleDir = fileURLToPath(new URL(".", import.meta.url));
   const candidatePaths = [
-    resolve(moduleDir, "../../../../config/tenant-roots.json"),
-    resolve(process.cwd(), "config/tenant-roots.json"),
+    resolve(moduleDir, "../../config/tenant-roots.json"),
+    resolve(process.cwd(), "packages/node/config/tenant-roots.json"),
   ];
   for (const candidate of candidatePaths) {
     if (existsSync(candidate)) {

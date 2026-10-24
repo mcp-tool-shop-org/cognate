@@ -15,7 +15,6 @@ WORKDIR /build
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY tsconfig.json ./
-COPY config/ config/
 
 COPY packages/types/package.json packages/types/
 COPY packages/policy/package.json packages/policy/
@@ -49,7 +48,6 @@ WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY tsconfig.json ./
-COPY config/ config/
 
 COPY packages/types/package.json packages/types/
 COPY packages/policy/package.json packages/policy/
@@ -71,6 +69,7 @@ COPY --from=builder /build/packages/agent-identity/dist packages/agent-identity/
 COPY --from=builder /build/packages/prompt-store/dist packages/prompt-store/dist
 COPY --from=builder /build/packages/repomesh-bridge/dist packages/repomesh-bridge/dist
 COPY --from=builder /build/packages/node/dist packages/node/dist
+COPY --from=builder /build/packages/node/config packages/node/config
 COPY --from=builder /build/packages/cognate/dist packages/cognate/dist
 
 ENV NODE_ENV=production

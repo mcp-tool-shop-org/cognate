@@ -103,7 +103,7 @@ export interface ServerContext {
    */
   readonly signedRequestsLogUntil?: string;
   /**
-   * Optional explicit per-tenant root public key entries (defaults to committed `config/tenant-roots.json`).
+   * Optional explicit per-tenant root public key entries (defaults to committed `packages/node/config/tenant-roots.json`).
    */
   readonly tenantRoots?: readonly TenantRootKeyEntry[];
   /**
