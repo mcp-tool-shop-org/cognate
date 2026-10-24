@@ -216,3 +216,261 @@ export interface DriftEvent {
 export type DriftKind =
   | "output-distribution" | "policy-violation" | "agent-behavior"
   | "adversarial-prompt" | "capability-exceedance";
+
+
+/**
+ * Plaintext field names that name an account (HF repo IDs, GitHub owners,
+ * emails, home paths) and are forbidden in records under the hashed-identifier rule.
+ * Use the `*Sha256` fields instead (`ggufRepoSha256`, `hostedRepoSha256`,
+ * `repoSha256`, `ggufSourceSha256`, `hfRepoSha256`, `githubOwnerSha256`,
+ * `emailSha256`, `homePathSha256`).
+ */
+export type ForbiddenPlaintextIdentifierKey =
+  | "ggufRepo"
+  | "gguf_repo"
+  | "ggufSource"
+  | "gguf_source"
+  | "hostedRepo"
+  | "hosted_repo"
+  | "hfRepo"
+  | "hf_repo"
+  | "repo"
+  | "githubOwner"
+  | "github_owner"
+  | "owner"
+  | "repoOwner"
+  | "repo_owner"
+  | "hfOwner"
+  | "hf_owner"
+  | "githubUser"
+  | "github_user"
+  | "hfUser"
+  | "hf_user"
+  | "username"
+  | "user_name"
+  | "user"
+  | "author"
+  | "account"
+  | "accountName"
+  | "account_name"
+  | "email"
+  | "authorEmail"
+  | "author_email"
+  | "userEmail"
+  | "user_email"
+  | "homePath"
+  | "home_path"
+  | "handle"
+  | "githubHandle"
+  | "github_handle"
+  | "hfHandle"
+  | "hf_handle";
+
+/**
+ * Account balance field names forbidden in run records.
+ * Records carry the run's own `cost` (`unitsSpent`, `rate`, `basis`), never
+ * the account's start or end balance.
+ */
+export type ForbiddenAccountBalanceKey =
+  | "balance"
+  | "startBalance"
+  | "endBalance"
+  | "startBalanceBeforeLaunch"
+  | "start_balance"
+  | "end_balance"
+  | "start_balance_before_launch"
+  | "endBalanceAfterRun"
+  | "startingBalance"
+  | "starting_balance"
+  | "endingBalance"
+  | "ending_balance"
+  | "remainingBalance"
+  | "remaining_balance"
+  | "initialBalance"
+  | "initial_balance"
+  | "finalBalance"
+  | "final_balance"
+  | "accountBalance"
+  | "account_balance"
+  | "colabBalance"
+  | "colab_balance"
+  | "unitBalance"
+  | "creditBalance"
+  | "walletBalance";
+
+/**
+ * Compile-time prohibition of plaintext account-naming fields and account balance fields.
+ */
+export type ForbidPlaintextAccountFields = {
+  readonly [K in ForbiddenPlaintextIdentifierKey | ForbiddenAccountBalanceKey]?: never;
+};
+
+/**
+ * Hashed account-naming identifiers stored as 64-character lowercase hex SHA-256 digests.
+ */
+export interface RunIdentifierHashes extends ForbidPlaintextAccountFields {
+  readonly ggufRepoSha256?: HashId | null;
+  readonly hostedRepoSha256?: HashId | null;
+  readonly repoSha256?: HashId | null;
+  readonly ggufSourceSha256?: HashId | null;
+  readonly hfRepoSha256?: HashId | null;
+  readonly githubOwnerSha256?: HashId | null;
+  readonly ownerSha256?: HashId | null;
+  readonly repoOwnerSha256?: HashId | null;
+  readonly githubUserSha256?: HashId | null;
+  readonly hfOwnerSha256?: HashId | null;
+  readonly usernameSha256?: HashId | null;
+  readonly accountSha256?: HashId | null;
+  readonly emailSha256?: HashId | null;
+  readonly authorEmailSha256?: HashId | null;
+  readonly homePathSha256?: HashId | null;
+}
+
+/**
+ * Pinned model artifact reference for a run, storing repository and GGUF source
+ * identifiers strictly as SHA-256 digests.
+ */
+export interface RunModelPin extends ForbidPlaintextAccountFields {
+  readonly servedAs?: string | null;
+  readonly repoSha256?: HashId | null;
+  readonly ggufSourceSha256?: HashId | null;
+  readonly revision?: string | null;
+  readonly ggufSha256?: HashId | null;
+}
+
+/**
+ * Resource and budget caps approved before a run starts.
+ */
+export interface RunCaps extends ForbidPlaintextAccountFields {
+  /** Maximum compute units authorized for the run. */
+  readonly maxUnits: number;
+  /** Maximum wall-clock runtime in seconds. */
+  readonly maxWallSeconds: number;
+  /** Optional safety margin in compute units. */
+  readonly margin?: number | null;
+}
+
+/**
+ * Pre-registration record for a governed run before execution begins.
+ *
+ * Captures the plan's SHA-256, the decision line's SHA-256, resource caps,
+ * the planned card, and the approving actor ID. All account-naming identifiers
+ * are stored only as SHA-256 digests.
+ */
+export interface RunPreRegistration extends ForbidPlaintextAccountFields {
+  readonly id: HashId;
+  readonly tenantId: TenantId;
+  /** SHA-256 digest of the execution plan or launch specification. */
+  readonly planSha256: HashId;
+  /** SHA-256 digest of the pre-registered decision line or rule. */
+  readonly decisionSha256: HashId;
+  /** Approved resource and budget caps for the run. */
+  readonly caps: RunCaps;
+  /** Planned compute card or work card identifier (e.g. `"A100"`, `"CPU"`). */
+  readonly plannedCard: string;
+  /** Actor ID of the human or governance seat that approved the run. */
+  readonly approvedBy: ActorId;
+  /** ISO 8601 timestamp when the pre-registration was recorded. */
+  readonly registeredAt: Timestamp;
+  /** Optional SHA-256 of the GGUF repository identifier. */
+  readonly ggufRepoSha256?: HashId | null;
+  /** Optional SHA-256 of the hosted repository identifier. */
+  readonly hostedRepoSha256?: HashId | null;
+  /** Optional SHA-256 of the source repository identifier. */
+  readonly repoSha256?: HashId | null;
+  /** Optional SHA-256 of the GGUF source identifier. */
+  readonly ggufSourceSha256?: HashId | null;
+  /** Optional structured bundle of hashed account-naming identifiers. */
+  readonly identifiers?: RunIdentifierHashes;
+  /** Optional pinned model references (using `repoSha256` and `ggufSourceSha256`). */
+  readonly models?: readonly RunModelPin[];
+  /** Optional human-readable notes (must not contain plaintext account identifiers or balances). */
+  readonly notes?: string;
+}
+
+/**
+ * Lifecycle state of a governed run.
+ */
+export type RunStatus = "in_progress" | "completed" | "cancelled" | "lost";
+
+/**
+ * Basis describing how a run's cost was computed (e.g. `"rate_x_runtime"`).
+ */
+export type RunCostBasis = "rate_x_runtime" | "measured" | "estimate" | "pending" | "zero";
+
+/**
+ * Cost of a single run. Records the units spent by the run, the burn rate,
+ * and the calculation basis (e.g. `rate_x_runtime`), never the account's
+ * overall start or end balance.
+ */
+export interface RunCost extends ForbidPlaintextAccountFields {
+  /** Compute units spent by this run (`>= 0`). */
+  readonly unitsSpent: number;
+  /** Burn rate in units per hour (`>= 0`). */
+  readonly rate: number;
+  /** Basis used to derive `unitsSpent` (e.g. `"rate_x_runtime"`). */
+  readonly basis: RunCostBasis;
+  /** Optional runtime in seconds used with `rate`. */
+  readonly runtimeSeconds?: number | null;
+  /** Optional unit label (e.g. `"colab_units"`). */
+  readonly unit?: string;
+}
+
+/**
+ * Retirement details when a run or its window output is retired.
+ */
+export interface RunRetirement extends ForbidPlaintextAccountFields {
+  /** Why the run was retired. */
+  readonly reason: string;
+  /** Optional timestamp when the run was retired. */
+  readonly retiredAt?: Timestamp | null;
+  /** Optional actor ID who retired the run. */
+  readonly retiredBy?: ActorId | null;
+  /** Optional SHA-256 digest of the retirement notice. */
+  readonly sha256?: HashId | null;
+}
+
+/**
+ * Outcome record for a pre-registered run.
+ *
+ * References its `RunPreRegistration` via `preRegistrationId`, records the
+ * lifecycle state (`in_progress`, `completed`, `cancelled`, `lost`), optional
+ * `retirement` reason, timestamps, the outcome artifact's SHA-256, and the
+ * run's cost (never the account's start or end balance).
+ */
+export interface RunOutcome extends ForbidPlaintextAccountFields {
+  readonly id: HashId;
+  readonly tenantId: TenantId;
+  /** ID of the `RunPreRegistration` this outcome belongs to. */
+  readonly preRegistrationId: HashId;
+  /** Current or terminal state of the run. */
+  readonly status: RunStatus;
+  /** ISO 8601 timestamp when execution started. */
+  readonly startedAt: Timestamp;
+  /** ISO 8601 timestamp when execution ended (`null` while `in_progress`). */
+  readonly endedAt: Timestamp | null;
+  /** ISO 8601 timestamp when this outcome record was created. */
+  readonly recordedAt: Timestamp;
+  /** SHA-256 digest of the outcome artifact (`null` while `in_progress` if not yet materialized). */
+  readonly outcomeSha256: HashId | null;
+  /** Cost of the run (units spent, rate, and basis; never account balances). */
+  readonly cost: RunCost;
+  /** Optional structured retirement record (with `reason`). */
+  readonly retirement?: RunRetirement | null;
+  /** Optional shorthand retirement reason string. */
+  readonly retirementReason?: string | null;
+  /** Optional actor ID who recorded the outcome. */
+  readonly recordedBy?: ActorId;
+  /** Optional SHA-256 of the GGUF repository identifier. */
+  readonly ggufRepoSha256?: HashId | null;
+  /** Optional SHA-256 of the hosted repository identifier. */
+  readonly hostedRepoSha256?: HashId | null;
+  /** Optional SHA-256 of the source repository identifier. */
+  readonly repoSha256?: HashId | null;
+  /** Optional SHA-256 of the GGUF source identifier. */
+  readonly ggufSourceSha256?: HashId | null;
+  /** Optional structured bundle of hashed account-naming identifiers. */
+  readonly identifiers?: RunIdentifierHashes;
+  /** Optional human-readable notes (must not contain plaintext account identifiers or balances). */
+  readonly notes?: string;
+}

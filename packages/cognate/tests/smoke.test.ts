@@ -16,6 +16,9 @@ describe("@mcptoolshop/cognate bundle", () => {
   it("re-exports the load-bearing calls on each subpath", () => {
     expect(typeof policy.evaluatePolicy).toBe("function");
     expect(typeof modelRegistry.registerModel).toBe("function");
+    expect(typeof modelRegistry.attestRunPreRegistered).toBe("function");
+    expect(typeof modelRegistry.attestRunCompleted).toBe("function");
+    expect(typeof modelRegistry.validateHashedIdentifiers).toBe("function");
     expect(typeof agentIdentity.requestGrant).toBe("function");
     expect(typeof promptStore.encrypt).toBe("function");
   });

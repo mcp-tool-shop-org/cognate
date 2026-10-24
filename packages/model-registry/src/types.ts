@@ -32,6 +32,12 @@ export interface RegistryState {
   readonly versions: Readonly<Record<string, import("@cognate/types").ModelVersion>>;
   /** Transition history per version id. */
   readonly transitions: Readonly<Record<string, readonly TransitionEvent[]>>;
+  /** Pre-registered runs by id. */
+  readonly runPreRegistrations?: Readonly<
+    Record<string, import("@cognate/types").RunPreRegistration>
+  >;
+  /** Recorded run outcomes by id. */
+  readonly runOutcomes?: Readonly<Record<string, import("@cognate/types").RunOutcome>>;
 }
 
 /**

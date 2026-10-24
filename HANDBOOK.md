@@ -27,9 +27,9 @@ pnpm verify
 
 | Package | What you call | What it refuses to do |
 |---------|---------------|------------------------|
-| `@cognate/types` | Domain types: models, versions, policies, agents, hashes | Runtime behavior. Zero dependencies |
+| `@cognate/types` | Domain types: models, versions, runs (`RunPreRegistration`, `RunOutcome`), policies, agents, hashes | Runtime behavior, plaintext account-naming identifiers, or account balance fields. Zero dependencies |
 | `@cognate/policy` | `evaluatePolicy(policy, context)` | I/O, clocks, hidden state |
-| `@cognate/model-registry` | `createRegistry`, `registerModel`, `registerVersion`, `transitionVersion` | Deploying a model that was not approved |
+| `@cognate/model-registry` | `createRegistry`, `registerModel`, `registerVersion`, `transitionVersion`, `preRegisterRun`, `recordRunOutcome`, `attestRunPreRegistered`, `attestRunCompleted` | Deploying an unapproved model, recording a run outcome without a pre-registration, or storing unhashed account identifiers or account balances |
 | `@cognate/agent-identity` | `registerAgent`, `requestGrant`, `approveGrant`, `revokeCapability` | Granting a capability without an approval |
 | `@cognate/prompt-store` | `logPrompt`, `logOutput`, `encrypt`, `decrypt` | Storing plaintext prompts |
 | `@cognate/repomesh-bridge` | `verifyRelease`, `verifyAll` on the RepoMesh ledger | Running the ledger, anchoring to XRPL, or sharing Attestia's Merkle tree |
@@ -78,6 +78,8 @@ Rule types are `content-filter`, `capability-limit`, `rate-limit`, `guardrail`, 
 A model has an owner, an architecture, and at most one current version. A version records three hashes: weights, config, and manifest. It also records dataset refs and whether consent was verified.
 
 Legal version states are `registered`, `evaluated`, `approved`, `deployed`, `rejected`, and `retired`. `transitionVersion` is the only way to move a snapshot the caller holds, and that call stays inside the state machine. The HTTP server calls `verifyRelease` before it moves a version from `approved` to `deployed`, using the `repo` and `release` recorded when the version was registered. A release that does not pass does not deploy, and neither does a request that names a different release. `getCurrentDeployedVersion` returns the version that is actually deployed, which is not the same as the newest version.
+
+Runs are pre-registered before launch with `preRegisterRun` (`RunPreRegistration`: `planSha256`, `decisionSha256`, `caps`, `plannedCard`, `approvedBy`, `registeredAt`) and closed out with `recordRunOutcome` (`RunOutcome`: `status` in `in_progress`, `completed`, `cancelled`, `lost`; `retirement` / `retirementReason`; `startedAt`, `endedAt`, `recordedAt`, `outcomeSha256`, and `cost`). `attestRunPreRegistered` and `attestRunCompleted` append `cognate.run.preregistered` and `cognate.run.completed` events to the `cognate-${tenantId}-runs` stream on Attestia's `EventStore`. Every account-naming identifier (`ggufRepoSha256`, `hostedRepoSha256`, `repoSha256`, `ggufSourceSha256`, `hfRepoSha256`, `githubOwnerSha256`, `ownerSha256`, `repoOwnerSha256`, `githubUserSha256`, `hfOwnerSha256`, `usernameSha256`, `accountSha256`, `emailSha256`, `authorEmailSha256`, `homePathSha256`) is stored only as a 64-character lowercase hex SHA-256 digest; plaintext repo slugs, email addresses, `@handle` tokens, and home paths are rejected (`validateHashedIdentifiers`, `validateRunPreRegistration`, `validateRunOutcome`). A run records its own `cost` (`unitsSpent`, `rate`, `basis` in `rate_x_runtime | measured | estimate | pending | zero`), never the account's starting or ending balance (`startBalance`, `endBalance`, or any `*balance*` key), because a persistent balance across runs fingerprints the operator's billing account.
 
 `RegistryError` carries `code`, `message`, and `hint`.
 
