@@ -138,10 +138,11 @@ The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data
 Cognate assumes the following threat model:
 
 1. **Compromised inference endpoint.** An attacker gains access to the model API. Mitigation: all prompts and outputs are logged with encrypted payloads and SHA-256 integrity hashes. Replay is deterministic.
-2. **Rogue agent with stolen credentials.** An agent's keys are exfiltrated. Mitigation: capabilities are time-bound, scope-limited, and revocable. Every grant requires explicit approval.
+2. **Rogue agent with stolen credentials.** An agent's keys are exfiltrated. Mitigation: capabilities are time-bound, scope-limited, and revocable. Every grant requires explicit approval. Limit: the HTTP server does not check a key at all. It identifies the caller by an unsigned `X-Agent-Id` header, so an agent's id is enough to act as it.
 3. **Supply-chain model tampering.** Weights or configs are swapped post-evaluation. Mitigation: the model registry hashes weights, config, and manifest at registration. Any deviation invalidates the version.
 4. **Policy bypass via prompt injection.** An adversarial prompt attempts to circumvent content rules. Mitigation: policy evaluation is deterministic, versioned, and runs before inference. No prompt executes without a passing policy check.
 5. **Insider abuse of audit logs.** A privileged operator tampers with logs. Mitigation: the event store is append-only and backed by Attestia's Merkle-tree proofs. Tampering breaks the chain hash.
+6. **Cross-tenant access on the HTTP server.** An agent of one tenant reaches another tenant's records. Mitigation: every route acts in the authenticated agent's tenant. A record naming another tenant is refused, and another tenant's id is answered as missing. Limit: identity is self-asserted (item 2), so this keeps an agent inside its own tenant but does not stop someone from claiming to be that agent.
 
 No telemetry or analytics. A deploy on the HTTP server asks RepoMesh whether the named release passes. Health and the other routes stay on this process.
 

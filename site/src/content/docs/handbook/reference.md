@@ -77,6 +77,18 @@ Run statuses: `in_progress`, `completed`, `cancelled`, `lost`.
 | `hashPlaintext` | SHA-256 |
 | `serializePayload` / `deserializePayload` | Encrypted payload codec |
 
+## @cognate/node: tenant scoping
+
+Every POST acts in the authenticated agent's tenant.
+
+| Request names | Answer |
+|---------------|--------|
+| A record for another tenant (model, version, prompt, output, policy or its context, agent, grant) | 400 `registry.tenant-mismatch`, `prompts.tenant-mismatch`, `policy.tenant-mismatch` or `identity.tenant-mismatch` |
+| Another tenant's version, model, prompt, agent or grant by id | The same 404 a missing id gets |
+| A body id that differs from the path id | 400 `registry.version-id-mismatch` or `prompts.prompt-id-mismatch` |
+
+A missing id is 404: `VERSION_NOT_FOUND`, `MODEL_NOT_FOUND`, `store.prompt-not-found`, `identity.agent-not-found`, `identity.grant-not-found`, `vc.grant-not-found`. The caller is identified by an unsigned `X-Agent-Id`, so this scoping is not authentication.
+
 ## @cognate/types
 
 Shared types only. Notable nouns: `Model`, `ModelVersion`, `RunPreRegistration`, `RunOutcome`, `RunCost`, `RunCostBasis`, `RunStatus`, `RunRetirement`, `Policy`, `PolicyRule`, `DatasetRef`, and the branded ids `HashId`, `Timestamp`, `TenantId`, `ActorId`.

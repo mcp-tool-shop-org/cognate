@@ -21,6 +21,16 @@ import { checkRateLimit, createRateLimitState, type RateLimitConfig } from "./mi
 import { saveSnapshots, type SnapshotPaths, type SnapshotState } from "./snapshot.js";
 import { checkDeploy, resolveDeployRelease, type ReleaseFailOn } from "./release-gate.js";
 import { proveRecordedEvent, proofErrorBody, statusForProof } from "./event-proof.js";
+import {
+  idMismatch,
+  refuseForeignRecord,
+  refuseHiddenAgent,
+  refuseHiddenGrant,
+  refuseHiddenModel,
+  refuseHiddenPrompt,
+  refuseHiddenVersion,
+  type Refusal,
+} from "./tenant.js";
 
 export interface ServerState extends SnapshotState {}
 
@@ -104,8 +114,26 @@ function sendJson(res: ServerResponse, status: number, payload: unknown): void {
   res.end(JSON.stringify(payload));
 }
 
+const NOT_FOUND_CODES = new Set([
+  "VERSION_NOT_FOUND",
+  "MODEL_NOT_FOUND",
+  "store.prompt-not-found",
+  "identity.agent-not-found",
+  "identity.grant-not-found",
+  "vc.grant-not-found",
+]);
+
 function statusFor(code: string | undefined): number {
-  return code === "attestia.append-failed" ? 503 : 400;
+  if (code === "attestia.append-failed") return 503;
+  return code !== undefined && NOT_FOUND_CODES.has(code) ? 404 : 400;
+}
+
+/** Sends the first refusal, if any. True when the request was answered. */
+function refused(res: ServerResponse, ...checks: Array<Refusal | null>): boolean {
+  const first = checks.find((c): c is Refusal => c !== null);
+  if (first === undefined) return false;
+  sendJson(res, first.status, first.body);
+  return true;
 }
 
 function watchAppends(store: Pick<EventStore, "append">): {
@@ -244,12 +272,28 @@ export function createCognateServer(ctx: ServerContext) {
         }
       }
 
+      // Every POST acts in the authenticated agent's tenant (tenant.ts).
+      const tenantId = getAgent(mutableState.identity, actorId)?.tenantId ?? "default";
+
       if (pathname === "/policy/evaluate" && method === "POST") {
+        const req = body as { policy?: { tenantId?: unknown }; context?: { tenantId?: unknown } };
+        if (
+          req.policy &&
+          req.context &&
+          refused(
+            res,
+            refuseForeignRecord("policy", "context", req.context, tenantId),
+            refuseForeignRecord("policy", "policy", req.policy, tenantId),
+          )
+        ) {
+          return;
+        }
         await handlePolicy(res, body, ctx.eventStore);
         return;
       }
 
       if (pathname === "/registry/models" && method === "POST") {
+        if (refused(res, refuseForeignRecord("registry", "model", (body as { model?: { tenantId?: unknown } }).model, tenantId))) return;
         const result = handleRegistry(mutableState, pathname, method, body);
         if (!result.ok || !result.state) {
           sendJson(res, 400, result.error);
@@ -263,12 +307,12 @@ export function createCognateServer(ctx: ServerContext) {
       const evaluationsPath = method === "POST" ? EVALUATIONS_PATH.exec(pathname) : null;
       if (evaluationsPath) {
         const versionId = evaluationsPath[1] ?? "";
-        const tenantId = getAgent(mutableState.identity, actorId)?.tenantId ?? "default";
         const parsed = parseEvaluationRequest(body, versionId, tenantId);
         if (!parsed.ok) {
           sendJson(res, 400, parsed.error);
           return;
         }
+        if (refused(res, refuseHiddenVersion(mutableState, versionId, tenantId))) return;
         const watched = watchAppends(ctx.eventStore);
         try {
           const next = await attestEvaluation(mutableState.registry, { eventStore: watched.eventStore, tenantId }, parsed.evaluation);
@@ -310,7 +354,8 @@ export function createCognateServer(ctx: ServerContext) {
             });
             return;
           }
-          const tenantId = getAgent(mutableState.identity, actorId)?.tenantId ?? "default";
+          // Before RepoMesh or any append: another tenant's version is answered as a missing one.
+          if (refused(res, refuseHiddenVersion(mutableState, versionId, tenantId))) return;
           const stored = mutableState.registry.versions[versionId];
           // Only an approved version moving to deployed is checked. Other transitions never call RepoMesh.
           const deploying =
@@ -421,9 +466,24 @@ export function createCognateServer(ctx: ServerContext) {
           }
           return;
         }
+        const registering = (body as { version?: { id?: unknown; tenantId?: unknown; modelId?: unknown } }).version;
+        if (
+          registering &&
+          parts.length === 4 &&
+          refused(
+            res,
+            registering.id === versionId
+              ? null
+              : idMismatch("registry.version-id-mismatch", "The version's id is not the id in the path."),
+            refuseForeignRecord("registry", "version", registering, tenantId),
+            refuseHiddenModel(mutableState, String(registering.modelId), tenantId),
+          )
+        ) {
+          return;
+        }
         const result = handleRegistry(mutableState, pathname, method, body);
         if (!result.ok || !result.state) {
-          sendJson(res, 400, result.error);
+          sendJson(res, statusFor(result.error?.code), result.error);
           return;
         }
         keep({ ...mutableState, registry: result.state });
@@ -432,6 +492,9 @@ export function createCognateServer(ctx: ServerContext) {
       }
 
       if (pathname === "/identity/agents" && method === "POST") {
+        if (refused(res, refuseForeignRecord("identity", "agent", (body as { agent?: { tenantId?: unknown } }).agent, tenantId))) {
+          return;
+        }
         const result = handleIdentity(mutableState, pathname, method, body);
         if (!result.ok || !result.state) {
           sendJson(res, 400, result.error);
@@ -443,9 +506,29 @@ export function createCognateServer(ctx: ServerContext) {
       }
 
       if ((pathname === "/identity/grants" || pathname.startsWith("/identity/grants/")) && method === "POST") {
+        const grantId = pathname.split("/")[3] ?? "";
+        const requested = (body as { grant?: { tenantId?: unknown; agentId?: unknown } }).grant;
+        const approving = body as { approverId?: unknown; timestamp?: unknown };
+        if (
+          (pathname === "/identity/grants" &&
+            requested !== undefined &&
+            refused(
+              res,
+              refuseForeignRecord("identity", "grant", requested, tenantId),
+              refuseHiddenAgent(mutableState, String(requested.agentId), tenantId),
+            )) ||
+          (pathname.endsWith("/approve") &&
+            grantId !== "" &&
+            Boolean(approving.approverId) &&
+            Boolean(approving.timestamp) &&
+            refused(res, refuseHiddenGrant(mutableState, grantId, tenantId, "approve"))) ||
+          (pathname.endsWith("/vc") && grantId !== "" && refused(res, refuseHiddenGrant(mutableState, grantId, tenantId, "vc")))
+        ) {
+          return;
+        }
         const result = handleIdentity(mutableState, pathname, method, body);
         if (!result.ok || !result.state) {
-          sendJson(res, result.ok ? 200 : 400, result.ok ? result.value : result.error);
+          sendJson(res, result.ok ? 200 : statusFor(result.error?.code), result.ok ? result.value : result.error);
           return;
         }
         keep({ ...mutableState, identity: result.state });
@@ -460,6 +543,7 @@ export function createCognateServer(ctx: ServerContext) {
           sendJson(res, 400, result.error);
           return;
         }
+        if (refused(res, refuseForeignRecord("prompts", "prompt", prompt, tenantId))) return;
         const watched = watchAppends(ctx.eventStore);
         const result = await attestLogPrompt(
           mutableState.prompts,
@@ -480,6 +564,19 @@ export function createCognateServer(ctx: ServerContext) {
         if (!output) {
           const result = handlePrompts(mutableState, pathname, method, body);
           sendJson(res, 400, result.error);
+          return;
+        }
+        const promptId = pathname.split("/")[2] ?? "";
+        if (
+          refused(
+            res,
+            output.promptId === promptId
+              ? null
+              : idMismatch("prompts.prompt-id-mismatch", "The output's promptId is not the prompt id in the path."),
+            refuseForeignRecord("prompts", "output", output, tenantId),
+            refuseHiddenPrompt(mutableState, String(output.promptId), tenantId),
+          )
+        ) {
           return;
         }
         const watched = watchAppends(ctx.eventStore);
