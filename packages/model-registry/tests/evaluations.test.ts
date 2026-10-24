@@ -96,6 +96,17 @@ describe("evaluations on a model version", () => {
     expect(getEvaluations(recordEvaluation(s, evaluation("e3", "vD")), "vD")).toHaveLength(1);
   });
 
+  it("refuses an evaluation that names an account in plaintext, as a run record would be", () => {
+    const s = base();
+    expect(code(() => recordEvaluation(s, { ...evaluation("e1"), notes: "weights from acme/critic-weights" }))).toBe(
+      "PLAINTEXT_ACCOUNT_IDENTIFIER",
+    );
+    expect(code(() => recordEvaluation(s, { ...evaluation("e2"), evaluator: ["ops", "example.com"].join("@") }))).toBe(
+      "PLAINTEXT_ACCOUNT_IDENTIFIER",
+    );
+    expect(getEvaluations(recordEvaluation(s, evaluation("e3")), "vB")).toHaveLength(1);
+  });
+
   it("reads an older snapshot without an evaluations map", () => {
     const { evaluations: _drop, ...old } = recordEvaluation(base(), evaluation("e1"));
     expect(getEvaluations(old as RegistryState, "vB")).toEqual([]);

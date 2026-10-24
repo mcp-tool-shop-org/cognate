@@ -97,8 +97,20 @@ Register a model version, then walk it through the lifecycle. A version moves `r
 
 Evaluations attach to a version, as many as you have: a run, its replication, a pooled result. **Record an evaluation, then transition citing it.** `recordEvaluation` (or `attestEvaluation`, which also appends `cognate.evaluation.recorded`) never moves the version itself, so every call is one append. A transition's `evaluationIds` names the evaluations the decision rests on. Each must be recorded on that version, and the ids are bound into the transition's lineage hash. An approved version can still be rejected before it deploys. Whether transitions must cite is a setting, `requireEvaluationCitations`: `false` (the default), `"decisions"` (approve and reject must cite) or `"all"`. The HTTP server reads it from `COGNATE_REQUIRE_EVALUATION_CITATIONS` and refuses to start on any other value.
 
+Pre-register a run before it launches and record its outcome on the `cognate-<tenant>-runs` stream. Account-naming identifiers (`ggufRepoSha256`, `hostedRepoSha256`, `repoSha256`, dataset `sourceUri`) are stored only as 64-character lowercase hex SHA-256 digests, and a run records its own `cost` (`unitsSpent`, `rate`, `basis`) rather than account balances.
+
 ```ts
-import { createRegistry, registerModel, registerVersion, recordEvaluation, transitionVersion } from "@cognate/model-registry";
+import {
+  createRegistry,
+  registerModel,
+  registerVersion,
+  recordEvaluation,
+  transitionVersion,
+  preRegisterRun,
+  recordRunOutcome,
+  attestRunPreRegistered,
+  attestRunCompleted,
+} from "@cognate/model-registry";
 ```
 
 ---
@@ -142,8 +154,8 @@ Building in public. All core packages are implemented, tested, and building. Ins
 | Gate | Status |
 |------|--------|
 | Build | Passing |
-| Tests | 231 passing |
-| Coverage | Over 90% of lines in policy, model-registry, node, agent-identity and prompt-store; model-registry and node enforce a 90% floor |
+| Tests | 243 passing |
+| Coverage | Over 90% of lines in policy, node, agent-identity and prompt-store, and over 98% in model-registry; model-registry enforces 98% lines and node a 90% floor |
 | Typecheck | Clean |
 | Docker | Image serves the governance API. The volume holds the event log and the three snapshots |
 | Shipcheck | Handbook, landing page, and repo metadata in this release |

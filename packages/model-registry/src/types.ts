@@ -59,6 +59,12 @@ export interface RegistryState {
    * existed still loads; read it with `getEvaluations`.
    */
   readonly evaluations?: Readonly<Record<string, readonly import("@cognate/types").Evaluation[]>>;
+  /** Pre-registered runs by id. */
+  readonly runPreRegistrations?: Readonly<
+    Record<string, import("@cognate/types").RunPreRegistration>
+  >;
+  /** Recorded run outcomes by id. */
+  readonly runOutcomes?: Readonly<Record<string, import("@cognate/types").RunOutcome>>;
 }
 
 /**

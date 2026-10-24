@@ -32,6 +32,11 @@ sidebar:
 | `getEvaluations` | A version's evaluations, in recorded order |
 | `getVersionHistory` | Prior transitions |
 | `getCurrentDeployedVersion` | The version whose state is `deployed` |
+| `preRegisterRun` | Record a `RunPreRegistration` before launch |
+| `recordRunOutcome` | Record a `RunOutcome` linked to a pre-registered run |
+| `getRunPreRegistration` / `getRunOutcomes` | Read pre-registrations and outcomes from the registry snapshot |
+| `attestRunPreRegistered` / `attestRunCompleted` | Append `cognate.run.pre_registered` and `cognate.run.completed` on the `cognate-${tenantId}-runs` stream |
+| `isSha256Hex` / `assertRunHashedIdentifiers` | Enforce the hashed-identifier rule and reject plaintext identifiers or account balance fields |
 | `RegistryError` | `code`, `message`, `hint` |
 
 Version states: `registered`, `evaluated`, `approved`, `deployed`, `rejected`, `retired`. `approved` can move to `deployed` or `rejected`.
@@ -39,6 +44,8 @@ Version states: `registered`, `evaluated`, `approved`, `deployed`, `rejected`, `
 `requireEvaluationCitations` (transition option; server env `COGNATE_REQUIRE_EVALUATION_CITATIONS`): `false` (default), `"decisions"` or `"all"`.
 
 Errors added with evaluations: `EVALUATION_ALREADY_RECORDED`, `EVALUATION_TENANT_MISMATCH`, `EVALUATION_ON_CLOSED_VERSION`, `EVALUATION_NOT_FOUND`, `EVALUATION_IDS_EMPTY`, `EVALUATION_CITATION_REQUIRED`, `INVALID_CITATION_RULE`.
+
+Run statuses: `in_progress`, `completed`, `cancelled`, `lost`.
 
 ## @cognate/agent-identity
 
@@ -72,7 +79,7 @@ Errors added with evaluations: `EVALUATION_ALREADY_RECORDED`, `EVALUATION_TENANT
 
 ## @cognate/types
 
-Shared types only. Notable nouns: `Model`, `ModelVersion`, `Policy`, `PolicyRule`, `DatasetRef`, and the branded ids `HashId`, `Timestamp`, `TenantId`, `ActorId`.
+Shared types only. Notable nouns: `Model`, `ModelVersion`, `RunPreRegistration`, `RunOutcome`, `RunCost`, `RunStatus`, `RunRetirement`, `Sha256Hex`, `Policy`, `PolicyRule`, `DatasetRef`, and the branded ids `HashId`, `Timestamp`, `TenantId`, `ActorId`.
 
 Model architectures: `transformer`, `diffusion`, `mamba`, `rnn`, `cnn`, `hybrid`, `other`.
 

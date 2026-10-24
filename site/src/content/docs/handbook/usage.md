@@ -34,6 +34,10 @@ import {
   recordEvaluation,
   transitionVersion,
   getCurrentDeployedVersion,
+  preRegisterRun,
+  recordRunOutcome,
+  attestRunPreRegistered,
+  attestRunCompleted,
 } from "@cognate/model-registry";
 ```
 
@@ -60,6 +64,8 @@ Each cited id must be an evaluation recorded on that version. The ids go into th
 The HTTP server reads it from `COGNATE_REQUIRE_EVALUATION_CITATIONS` and won't start on any other value. `POST /registry/versions/:id/evaluations` records an evaluation and returns its event id, and `GET /events/:eventId` proves it.
 
 A version stores three hashes: weights, config, and manifest. `getCurrentDeployedVersion` is the deployed version, which is not automatically the newest one. `RegistryError` carries `code`, `message`, and `hint`.
+
+Pre-register a run before launch with `preRegisterRun` and record its completion, cancellation, or loss with `recordRunOutcome`. `attestRunPreRegistered` and `attestRunCompleted` append `cognate.run.pre_registered` and `cognate.run.completed` to the `cognate-${tenantId}-runs` stream on Attestia's `EventStore`. Every account-naming identifier on a run or `DatasetRef` is stored only as a 64-character lowercase hex SHA-256 digest, and a run records its own `cost` (`unitsSpent`, `rate`, `basis`), never the account's starting or ending balance.
 
 On the HTTP server, `approved → deployed` calls `verifyRelease` on the `repo` and `release` recorded when the version was registered. A release that does not pass does not deploy, and neither does a request that names a different release. The refusal is recorded. `transitionVersion` stays the state machine: a caller who holds a snapshot moves it without that check.
 

@@ -5,6 +5,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
+      thresholds: {
+        statements: 98,
+        branches: 97,
+        functions: 100,
+        lines: 98,
+      },
       exclude: [
         "node_modules",
         "dist",
@@ -13,8 +19,6 @@ export default defineConfig({
         "**/index.ts",
         "**/types.ts",
       ],
-      // The org's 90% bar, adopted here because this package measures above it.
-      thresholds: { lines: 90 },
     },
   },
 });

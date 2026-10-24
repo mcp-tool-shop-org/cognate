@@ -34,8 +34,16 @@ All notable changes to Cognate are documented in this file.
 
 - **An approved version can be rejected before it is deployed** (`approved → rejected`), for example when a
   replication reverses the evaluation the approval rested on. Deployed and retired versions are unchanged.
-- `@cognate/model-registry` and `@cognate/node` enforce the org's 90% line-coverage floor. They measure 97.3% and
-  93.0%.
+- `@cognate/node` enforces the org's 90% line-coverage floor. It measures 93.0%. `@cognate/model-registry` keeps
+  the 98% floor set with the run records, and measures 98.8% with evaluations.
+
+## [0.2.0] - 2026-10-24
+
+### Added
+
+- **`RunPreRegistration` and `RunOutcome` types in `@cognate/types`.** `RunPreRegistration` records `planSha256`, `decisionSha256`, `caps`, `plannedCard`, `approvedBy`, `registeredAt`, and optional SHA-256 identifier fields (`ggufRepoSha256`, `hostedRepoSha256`, `repoSha256`, `ggufSourceSha256`, `hfRepoSha256`, `githubOwnerSha256`, `emailSha256`, `homePathSha256`). `RunOutcome` records `status` (`in_progress`, `completed`, `cancelled`, `lost`), `retirement` / `retirementReason` (`completed`, `cancelled_by_operator`, `budget_cap_reached`, `runtime_disconnected`, `pre_registration_superseded`, `verification_failed`, `other`), `startedAt`, `endedAt`, `recordedAt`, `outcomeSha256`, and `cost` (`unitsSpent`, `rate`, `basis: "duration" | "measured" | "none"`). A run never records account balances (`startBalance`, `endBalance`): a persistent account balance across runs is a fingerprint of the operator's billing account, whereas the run's own `unitsSpent`, `rate`, and `basis` record only what the run consumed. Compile-time guards (`ForbiddenPlaintextIdentifierKey`, `ForbiddenAccountBalanceKey`, `ForbidPlaintextAccountFields`) reject plaintext account-naming keys and balance fields at the type level.
+- **Hashed-identifier enforcement (`isSha256Hex`, `assertRunHashedIdentifiers`, `assertDatasetRefsHashed`) and pure run lifecycle functions (`preRegisterRun`, `recordRunOutcome`, `getRunPreRegistration`, `getRunOutcomes`) in `@cognate/model-registry`.** Every account-naming field on a run record or `DatasetRef.sourceUri` must be a 64-character lowercase hex SHA-256 digest. Records carrying unhashed field keys (`ggufRepo`, `gguf_source`, `hostedRepo`, `hfRepo`, `repo`, `githubOwner`, `account`, `email`, `authorEmail`, `homePath`), plaintext string values containing HuggingFace/GitHub owner-repo slugs, email addresses, or OS home paths, or account balance fields (`startBalance`, `endBalance`, `startBalanceBeforeLaunch`, `accountBalance`, `cost.basis === "balance"`) are rejected with `RegistryError`. `recordRunOutcome` requires an existing `RunPreRegistration` in the registry snapshot (`RUN_NOT_PRE_REGISTERED`).
+- **`attestRunPreRegistered` and `attestRunCompleted` in `@cognate/model-registry`.** Both validate the run record and append `cognate.run.pre_registered` and `cognate.run.completed` events to the `cognate-${tenantId}-runs` stream on Attestia's `EventStore` (`source: "external"`).
 
 ## [0.1.8] - 2026-10-14
 

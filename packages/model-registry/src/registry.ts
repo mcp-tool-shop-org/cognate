@@ -5,7 +5,17 @@
  * No input is ever mutated.
  */
 
-import type { Evaluation, Model, ModelVersion, ModelVersionStatus } from "@cognate/types";
+import type {
+  Evaluation,
+  HashId,
+  Model,
+  ModelVersion,
+  ModelVersionStatus,
+  RunCostBasis,
+  RunOutcome,
+  RunPreRegistration,
+  RunStatus,
+} from "@cognate/types";
 import type { RegistryState, TransitionEvent, TransitionOptions } from "./types.js";
 import { RegistryError } from "./types.js";
 
@@ -21,6 +31,45 @@ const VALID_TRANSITIONS: Readonly<
   rejected: [],
   retired: [],
 };
+
+const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
+
+const FORBIDDEN_BALANCE_KEY_RE =
+  /^(?:startBalance|endBalance|startBalanceBeforeLaunch|start_balance|end_balance|accountBalance|account_balance)$/i;
+
+const FORBIDDEN_PLAINTEXT_ID_KEY_RE =
+  /^(?:ggufRepo|gguf_repo|ggufSource|gguf_source|hostedRepo|hosted_repo|hfRepo|hf_repo|repo|githubOwner|github_owner|account|email|authorEmail|author_email|homePath|home_path)$/i;
+
+const ACCOUNT_SHA256_KEY_RE =
+  /^(?:ggufRepoSha256|hostedRepoSha256|repoSha256|ggufSourceSha256|hfRepoSha256|githubOwnerSha256|accountSha256|emailSha256|authorEmailSha256|homePathSha256)$/i;
+
+const ANY_SHA256_KEY_RE = /(?:Sha256|_sha256)$/i;
+
+const EMAIL_VALUE_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
+
+const HOME_PATH_VALUE_RE =
+  /(?:[A-Za-z][:$][\\/]+Users[\\/]+|(?:^|[\\/])Users[\\/]+(?!Public\b|Default\b|All Users\b)|(?:^|[\\/])home[\\/]+|(?:^|[\s"'(=])~[\\/]+)[^\s"'/\\]+/i;
+
+const REPO_URL_OR_HANDLE_VALUE_RE =
+  /(?:https?:\/\/)?(?:huggingface\.co|hf\.co|github\.com)\/[A-Za-z0-9._-]+|hf:\/\/[A-Za-z0-9._-]+|(?:^|[\s(])@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?\b/i;
+
+const OWNER_REPO_SLUG_VALUE_RE =
+  /\b(?=[A-Za-z0-9._-]*[A-Za-z])[A-Za-z0-9][A-Za-z0-9._-]{0,38}\/(?=[A-Za-z0-9._-]*[A-Za-z])[A-Za-z0-9._-]{2,}\b/;
+
+const VALID_RUN_STATUSES: readonly RunStatus[] = [
+  "in_progress",
+  "completed",
+  "cancelled",
+  "lost",
+];
+
+const VALID_RUN_COST_BASES: readonly RunCostBasis[] = [
+  "rate_x_runtime",
+  "measured",
+  "estimate",
+  "pending",
+  "zero",
+];
 
 /**
  * Create an empty registry state.
@@ -207,9 +256,12 @@ const CLOSED_STATES: readonly ModelVersionStatus[] = ["rejected", "retired"];
  * @param state Current registry snapshot.
  * @param evaluation The evaluation, naming its version in `modelVersionId`.
  * @returns A new registry snapshot with the evaluation appended to its version's list.
- * @throws {RegistryError} If the version is missing or closed, the tenant differs, or the evaluation id is taken.
+ * @throws {RegistryError} If the evaluation names an account in plaintext, the version is missing or closed, the
+ *   tenant differs, or the evaluation id is taken.
  */
 export function recordEvaluation(state: RegistryState, evaluation: Evaluation): RegistryState {
+  // The run records' identity rule holds here too.
+  validateHashedIdentifiers(evaluation, "evaluation");
   const version = state.versions[evaluation.modelVersionId];
   if (version === undefined) {
     throw new RegistryError({
@@ -290,4 +342,389 @@ export function getCurrentDeployedVersion(
 ): ModelVersion | undefined {
   const versions = getVersionHistory(state, modelId);
   return versions.filter((v) => v.status === "deployed").pop();
+}
+
+/**
+ * Check whether a value is a 64-character lowercase hexadecimal SHA-256 digest.
+ */
+export function isSha256Hex(value: unknown): value is HashId {
+  return typeof value === "string" && SHA256_HEX_RE.test(value);
+}
+
+function containsPlaintextAccountValue(value: string): boolean {
+  return (
+    EMAIL_VALUE_RE.test(value) ||
+    HOME_PATH_VALUE_RE.test(value) ||
+    REPO_URL_OR_HANDLE_VALUE_RE.test(value) ||
+    OWNER_REPO_SLUG_VALUE_RE.test(value)
+  );
+}
+
+function requireNonEmptyString(
+  value: unknown,
+  fieldName: string,
+  code: string,
+): void {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new RegistryError({
+      code,
+      message: `Field "${fieldName}" must be a non-empty string.`,
+      hint: `Provide a non-empty string for "${fieldName}".`,
+    });
+  }
+}
+
+/**
+ * Enforce the New 4 hashed-identifier rule and no-balance rule across a run record.
+ *
+ * Refuses:
+ * - any forbidden plaintext account-naming key (`ggufRepo`, `gguf_source`, `hostedRepo`,
+ *   `hfRepo`, `repo`, `githubOwner`, `account`, `email`, `authorEmail`, `homePath`);
+ * - any non-SHA256 value in a `*Sha256` field (`ggufRepoSha256`, `hostedRepoSha256`,
+ *   `repoSha256`, `ggufSourceSha256`, etc.);
+ * - any string value containing an HF repo id, GitHub owner/repo, email, or home path;
+ * - any account-balance key (`startBalance`, `endBalance`, `startBalanceBeforeLaunch`,
+ *   `accountBalance`).
+ */
+export function validateHashedIdentifiers(
+  record: unknown,
+  pathPrefix = "record",
+): void {
+  if (record === null || record === undefined) return;
+  if (typeof record === "string") {
+    if (containsPlaintextAccountValue(record)) {
+      throw new RegistryError({
+        code: "PLAINTEXT_ACCOUNT_IDENTIFIER",
+        message: `Field "${pathPrefix}" contains a plaintext account-naming identifier (HF repo, GitHub owner, email, or home path).`,
+        hint: "Hash account-naming identifiers to 64-character lowercase SHA-256 digests before recording.",
+      });
+    }
+    return;
+  }
+  if (Array.isArray(record)) {
+    for (let i = 0; i < record.length; i++) {
+      validateHashedIdentifiers(record[i], `${pathPrefix}[${i}]`);
+    }
+    return;
+  }
+  if (typeof record === "object") {
+    for (const [key, value] of Object.entries(record as Record<string, unknown>)) {
+      const fieldPath = `${pathPrefix}.${key}`;
+      if (FORBIDDEN_BALANCE_KEY_RE.test(key)) {
+        throw new RegistryError({
+          code: "RUN_BALANCE_FORBIDDEN",
+          message: `Account balance field "${key}" at "${fieldPath}" is forbidden in Cognate run records.`,
+          hint: "Record only the run's cost (unitsSpent, rate, basis), never the account's start or end balance.",
+        });
+      }
+      if (FORBIDDEN_PLAINTEXT_ID_KEY_RE.test(key)) {
+        throw new RegistryError({
+          code: "PLAINTEXT_ACCOUNT_IDENTIFIER",
+          message: `Plaintext account-naming field "${key}" at "${fieldPath}" is forbidden; use its *Sha256 counterpart.`,
+          hint: "Store account-naming identifiers only as 64-character lowercase SHA-256 digests in *Sha256 fields.",
+        });
+      }
+      if (ACCOUNT_SHA256_KEY_RE.test(key) && value !== undefined && value !== null) {
+        if (!isSha256Hex(value)) {
+          throw new RegistryError({
+            code: "PLAINTEXT_ACCOUNT_IDENTIFIER",
+            message: `Hashed identifier field "${fieldPath}" must be a 64-character lowercase SHA-256 hex digest.`,
+            hint: "Hash the HF repo id, GitHub owner, email, or home path with SHA-256 before storing.",
+          });
+        }
+        continue;
+      }
+      if (ANY_SHA256_KEY_RE.test(key) && value !== undefined && value !== null) {
+        if (!isSha256Hex(value)) {
+          const isPlainAccount =
+            typeof value === "string" && containsPlaintextAccountValue(value);
+          throw new RegistryError({
+            code: isPlainAccount
+              ? "PLAINTEXT_ACCOUNT_IDENTIFIER"
+              : "INVALID_SHA256_DIGEST",
+            message: `Digest field "${fieldPath}" must be a 64-character lowercase SHA-256 hex string.`,
+            hint: "Supply a 64-character lowercase hexadecimal SHA-256 digest.",
+          });
+        }
+        continue;
+      }
+      validateHashedIdentifiers(value, fieldPath);
+    }
+  }
+}
+
+/**
+ * Validate a {@link RunPreRegistration} record.
+ */
+export function validateRunPreRegistration(
+  preRegistration: RunPreRegistration,
+): void {
+  validateHashedIdentifiers(preRegistration, "preRegistration");
+  requireNonEmptyString(
+    preRegistration.id,
+    "preRegistration.id",
+    "INVALID_RUN_PREREGISTRATION",
+  );
+  requireNonEmptyString(
+    preRegistration.tenantId,
+    "preRegistration.tenantId",
+    "INVALID_RUN_PREREGISTRATION",
+  );
+  const caps = preRegistration.caps;
+  if (
+    !caps ||
+    typeof caps !== "object" ||
+    typeof caps.maxUnits !== "number" ||
+    !Number.isFinite(caps.maxUnits) ||
+    caps.maxUnits < 0 ||
+    typeof caps.maxWallSeconds !== "number" ||
+    !Number.isFinite(caps.maxWallSeconds) ||
+    caps.maxWallSeconds <= 0 ||
+    (caps.margin !== undefined &&
+      caps.margin !== null &&
+      (typeof caps.margin !== "number" ||
+        !Number.isFinite(caps.margin) ||
+        caps.margin < 0))
+  ) {
+    throw new RegistryError({
+      code: "INVALID_RUN_CAPS",
+      message:
+        "preRegistration.caps requires finite maxUnits >= 0, maxWallSeconds > 0, and optional margin >= 0.",
+      hint: "Specify valid numeric resource caps for the run.",
+    });
+  }
+  requireNonEmptyString(
+    preRegistration.plannedCard,
+    "preRegistration.plannedCard",
+    "INVALID_RUN_PREREGISTRATION",
+  );
+  requireNonEmptyString(
+    preRegistration.approvedBy,
+    "preRegistration.approvedBy",
+    "INVALID_RUN_PREREGISTRATION",
+  );
+  requireNonEmptyString(
+    preRegistration.registeredAt,
+    "preRegistration.registeredAt",
+    "INVALID_RUN_PREREGISTRATION",
+  );
+}
+
+/**
+ * Validate a {@link RunOutcome} record and optional linkage to its {@link RunPreRegistration}.
+ */
+export function validateRunOutcome(
+  outcome: RunOutcome,
+  preRegistration?: RunPreRegistration,
+): void {
+  validateHashedIdentifiers(outcome, "outcome");
+  requireNonEmptyString(outcome.id, "outcome.id", "INVALID_RUN_OUTCOME");
+  requireNonEmptyString(outcome.tenantId, "outcome.tenantId", "INVALID_RUN_OUTCOME");
+  requireNonEmptyString(
+    outcome.preRegistrationId,
+    "outcome.preRegistrationId",
+    "MISSING_PREREGISTRATION_REF",
+  );
+
+  if (preRegistration !== undefined) {
+    if (outcome.preRegistrationId !== preRegistration.id) {
+      throw new RegistryError({
+        code: "PREREGISTRATION_MISMATCH",
+        message: `Outcome "${outcome.id}" references pre-registration "${outcome.preRegistrationId}", expected "${preRegistration.id}".`,
+        hint: "Link the outcome to the pre-registration it fulfills.",
+      });
+    }
+    if (outcome.tenantId !== preRegistration.tenantId) {
+      throw new RegistryError({
+        code: "TENANT_MISMATCH",
+        message: `Outcome tenant "${outcome.tenantId}" does not match pre-registration tenant "${preRegistration.tenantId}".`,
+        hint: "Ensure the outcome and its pre-registration belong to the same tenant.",
+      });
+    }
+  }
+
+  if (!VALID_RUN_STATUSES.includes(outcome.status)) {
+    throw new RegistryError({
+      code: "INVALID_RUN_STATUS",
+      message: `Invalid run outcome status "${String(outcome.status)}".`,
+      hint: "Use one of: in_progress, completed, cancelled, lost.",
+    });
+  }
+
+  requireNonEmptyString(outcome.startedAt, "outcome.startedAt", "INVALID_RUN_OUTCOME");
+  requireNonEmptyString(
+    outcome.recordedAt,
+    "outcome.recordedAt",
+    "INVALID_RUN_OUTCOME",
+  );
+
+  if (outcome.status === "in_progress") {
+    if (outcome.endedAt !== null) {
+      throw new RegistryError({
+        code: "INVALID_RUN_OUTCOME",
+        message: "An in_progress run outcome must have endedAt set to null.",
+        hint: "Set endedAt only when the run reaches completed, cancelled, or lost.",
+      });
+    }
+  } else {
+    requireNonEmptyString(outcome.endedAt, "outcome.endedAt", "INVALID_RUN_OUTCOME");
+  }
+
+  if (outcome.status === "completed" && !isSha256Hex(outcome.outcomeSha256)) {
+    throw new RegistryError({
+      code: "INVALID_SHA256_DIGEST",
+      message:
+        "A completed run outcome requires a 64-character lowercase SHA-256 outcomeSha256.",
+      hint: "Compute the SHA-256 digest of the outcome artifact.",
+    });
+  }
+
+  const cost = outcome.cost;
+  if (!cost || typeof cost !== "object") {
+    throw new RegistryError({
+      code: "INVALID_RUN_COST",
+      message: "outcome.cost is required.",
+      hint: "Provide unitsSpent, rate, and basis on outcome.cost.",
+    });
+  }
+  if ((cost.basis as string) === "balance") {
+    throw new RegistryError({
+      code: "RUN_BALANCE_FORBIDDEN",
+      message:
+        'outcome.cost.basis cannot be "balance"; account balances are forbidden in run records.',
+      hint: 'Record the run cost using "rate_x_runtime", "measured", "estimate", "pending", or "zero".',
+    });
+  }
+  if (
+    typeof cost.unitsSpent !== "number" ||
+    !Number.isFinite(cost.unitsSpent) ||
+    cost.unitsSpent < 0 ||
+    typeof cost.rate !== "number" ||
+    !Number.isFinite(cost.rate) ||
+    cost.rate < 0 ||
+    !VALID_RUN_COST_BASES.includes(cost.basis) ||
+    (cost.runtimeSeconds !== undefined &&
+      cost.runtimeSeconds !== null &&
+      (typeof cost.runtimeSeconds !== "number" ||
+        !Number.isFinite(cost.runtimeSeconds) ||
+        cost.runtimeSeconds < 0))
+  ) {
+    throw new RegistryError({
+      code: "INVALID_RUN_COST",
+      message:
+        "outcome.cost requires finite unitsSpent >= 0, rate >= 0, and a valid basis.",
+      hint: "Provide valid non-negative cost numbers and a recognized cost basis.",
+    });
+  }
+
+  if (outcome.retirement !== undefined && outcome.retirement !== null) {
+    requireNonEmptyString(
+      outcome.retirement.reason,
+      "outcome.retirement.reason",
+      "INVALID_RUN_RETIREMENT",
+    );
+  }
+  if (outcome.retirementReason !== undefined && outcome.retirementReason !== null) {
+    requireNonEmptyString(
+      outcome.retirementReason,
+      "outcome.retirementReason",
+      "INVALID_RUN_RETIREMENT",
+    );
+  }
+}
+
+/**
+ * Record a validated {@link RunPreRegistration} in the registry snapshot.
+ */
+export function preRegisterRun(
+  state: RegistryState,
+  preRegistration: RunPreRegistration,
+): RegistryState {
+  validateRunPreRegistration(preRegistration);
+  const existing = state.runPreRegistrations ?? {};
+  if (existing[preRegistration.id] !== undefined) {
+    throw new RegistryError({
+      code: "RUN_ALREADY_PREREGISTERED",
+      message: `Run pre-registration with id "${preRegistration.id}" already exists.`,
+      hint: "Use a unique pre-registration id.",
+    });
+  }
+  return {
+    ...state,
+    runPreRegistrations: {
+      ...existing,
+      [preRegistration.id]: preRegistration,
+    },
+  };
+}
+
+/**
+ * Look up a pre-registered run by id.
+ */
+export function getRunPreRegistration(
+  state: RegistryState,
+  preRegistrationId: string,
+): RunPreRegistration | undefined {
+  return state.runPreRegistrations?.[preRegistrationId];
+}
+
+/**
+ * Return all recorded outcomes for a pre-registered run, ordered by `recordedAt`.
+ */
+export function getRunOutcomes(
+  state: RegistryState,
+  preRegistrationId: string,
+): readonly RunOutcome[] {
+  const outcomes = state.runOutcomes ?? {};
+  return Object.values(outcomes)
+    .filter(
+      (o): o is RunOutcome =>
+        o !== undefined && o.preRegistrationId === preRegistrationId,
+    )
+    .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
+}
+
+/**
+ * Record a validated {@link RunOutcome} linked to an existing {@link RunPreRegistration}.
+ */
+export function recordRunOutcome(
+  state: RegistryState,
+  outcome: RunOutcome,
+): RegistryState {
+  const preReg = getRunPreRegistration(state, outcome.preRegistrationId);
+  if (preReg === undefined) {
+    throw new RegistryError({
+      code: "PREREGISTRATION_NOT_FOUND",
+      message: `Run pre-registration "${outcome.preRegistrationId}" does not exist.`,
+      hint: "Pre-register the run before recording its outcome.",
+    });
+  }
+  validateRunOutcome(outcome, preReg);
+
+  const existingOutcomes = state.runOutcomes ?? {};
+  if (existingOutcomes[outcome.id] !== undefined) {
+    throw new RegistryError({
+      code: "RUN_OUTCOME_ALREADY_EXISTS",
+      message: `Run outcome with id "${outcome.id}" is already recorded.`,
+      hint: "Use a unique outcome id.",
+    });
+  }
+
+  const priorForRun = getRunOutcomes(state, outcome.preRegistrationId);
+  const hasTerminalPrior = priorForRun.some((o) => o.status !== "in_progress");
+  if (hasTerminalPrior && outcome.status === "in_progress") {
+    throw new RegistryError({
+      code: "INVALID_RUN_TRANSITION",
+      message: `Run "${outcome.preRegistrationId}" has already reached a terminal state and cannot return to "in_progress".`,
+      hint: "Only in_progress runs may transition to completed, cancelled, or lost.",
+    });
+  }
+
+  return {
+    ...state,
+    runOutcomes: {
+      ...existingOutcomes,
+      [outcome.id]: outcome,
+    },
+  };
 }
