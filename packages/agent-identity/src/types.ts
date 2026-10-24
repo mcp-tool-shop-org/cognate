@@ -9,6 +9,8 @@ export interface IdentityRegistryState {
   readonly grants: ReadonlyMap<HashId, CapabilityGrant>;
 }
 
+export type IdentityState = IdentityRegistryState;
+
 export interface IdentityError {
   readonly code: string;
   readonly message: string;

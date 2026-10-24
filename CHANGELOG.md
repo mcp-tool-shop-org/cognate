@@ -4,7 +4,32 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-24
+
 ### Security
+
+- **Ed25519 request signing (`cognate-request-v1`), replay protection, actor binding, and privilege-escalation guards on `@cognate/node` (PR a).**
+  - **Request signing (`packages/node/src/middleware/signature.ts`).** Every write (`POST`) and every authenticated read (`GET /events/:eventId`) requires five headers (`X-Agent-Id`, `X-Timestamp`, `X-Nonce`, `X-Key-Id`, `X-Signature`) and an Ed25519 signature (`node:crypto`) over the 8-line `cognate-request-v1` canonical UTF-8 string (`cognate-request-v1\n<METHOD>\n<PATH>\n<BODY_SHA256>\n<X-Timestamp>\n<X-Nonce>\n<X-Agent-Id>\n<X-Key-Id>`). Header and path fields obey a strict single-line ASCII grammar (`X-Timestamp` is `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$`; paths forbid query strings, `\r`, `\n`, and percent-encoded control bytes). Request bodies are buffered as raw bytes under a 1 MiB limit before `JSON.parse`, verified to be RFC 8785 JCS-canonical (`400 auth.body-not-canonical` otherwise), and hashed over those exact bytes. `kid` is the 64-character lowercase hex SHA-256 of the raw 32-byte Ed25519 public key.
+  - **Ordered replay protection and uniform 401.** Timestamps must fall within ±300 s of server time. The in-memory replay store checks `(agentId, nonce)` read-only before signature verification, inserts it only after verification succeeds (so an invalid signature cannot burn a nonce), and retains it until `max(now, timestamp) + 300 s` (600 s validity span). Every pre-signature authentication failure (missing/malformed headers, unknown or inactive agent, unknown or revoked/rotated-out `kid`, stale timestamp, replay, invalid signature) returns the same byte-identical `401` body (`code: "auth.unauthenticated"`).
+  - **Actor binding across all routes (`403 auth.actor-mismatch`).** The actor recorded by every route is derived from the verified signer and checked before RepoMesh or any Attestia append: `POST /registry/versions/:id` (`actorId`), `POST /registry/versions/:id/evaluations` (`evaluation.evaluator`), `POST /identity/grants` (`grant.requestedBy` and `grant.capability.grantedBy`), `POST /identity/grants/:id/approve` (`approverId`), `POST /identity/agents` (`agent.owner`), `POST /prompts` (`prompt.agentId`, defaulting `null` to the signer, and recording `actorId` on `cognate.prompt.logged` and `cognate.output.logged`), `POST /registry/models` (`model.owner`), and `POST /policy/evaluate` (`context.actorId`, `context.agentId`, and `context.agentCapabilities` checked against the identity registry). Under PR (a), any sign-off-gated action must be signed by the authorizing principal itself; detached `cognate-approval-v1` approvals land in PR (b).
+  - **Privilege escalation guards (Ruling 5a–5e) and tenant root key bootstrap.**
+    - `5a`: `POST /identity/agents` requires `delegate`, refuses pre-populated `agent.capabilities` (`403 auth.capabilities-not-allowed`) except during the tenant root key's one-time bootstrap of the tenant's first `delegate`, and requires a valid 43-character base64url Ed25519 `publicKey`.
+    - `5b`: `POST /identity/grants/:id/approve` requires `delegate`, refuses self-approval (`approverId === grant.agentId`, `403 auth.self-approval-forbidden`), and sets `capability.grantedBy = approverId`.
+    - `5c`: A `principal: "agent"` cannot register a `principal: "human"` record (`403 auth.escalation-forbidden`).
+    - `5d`: A `principal: "agent"` cannot request or approve a `delegate` capability grant (`403 auth.escalation-forbidden`).
+    - `5e`: Key rotation (`POST /identity/agents/:id/key`) and revocation (`POST /identity/agents/:id/revoke`) are enforced; an `owner` cannot rotate a `principal: "human"`'s key (`403 auth.escalation-forbidden`), and rotated-out/revoked `kid`s are immediately refused (`401 auth.unauthenticated`).
+    - Per-tenant root public keys live in `config/tenant-roots.json` (`loadTenantRootsConfig`) and can only bootstrap the tenant's first `delegate` (`403 auth.bootstrap-already-completed` thereafter).
+  - **Sunset-gated `log` mode.** `signedRequests` defaults to `"enforce"`. Starting in `"log"` mode requires `signedRequestsLogUntil` (`COGNATE_SIGNED_REQUESTS_LOG_UNTIL`) set to a future RFC 3339 UTC timestamp at most 14 days away; unsigned requests are refused after sunset, `/identity/*` routes require signatures even in `"log"` mode, and unsigned events in `"log"` mode are marked `unsigned: true` with a sanitized warning (`{ method, pathname, agentId, code }`).
+  - **Hashed-identifier value checks.** Plaintext account-naming values on `agent.id`, `agent.owner`, `agent.name`, `model.owner`, `model.name`, `transition.actorId`, `evaluation.evaluator`, `grant.requestedBy`, `approverId`, and `policy.approvedBy` are refused (`400 PLAINTEXT_ACCOUNT_IDENTIFIER`) while the `owner` property key on `Agent` and `Model` remains allowed, and `ModelVersion.repo` must be stored as `sha256:<64 lowercase hex>`.
+  - **Clock-offset sync and Node client signing helper.** `GET /health` returns `serverTime`, and `signHttpRequest` / `createSignedClient` (`packages/node/src/client.ts`) canonicalize bodies with JCS, sign requests, sync clock offset from `/health`, and retry once on `401`.
+
+### Changed (breaking)
+
+- **Unsigned HTTP writes and `/events/:eventId` reads are refused by default (`401 auth.unauthenticated`).** Callers must register an Ed25519 `publicKey` on each `Agent` and sign requests with `cognate-request-v1` headers (`signHttpRequest` / `createSignedClient`), or configure a temporary `signedRequests: "log"` window (at most 14 days via `COGNATE_SIGNED_REQUESTS_LOG_UNTIL`) for non-`/identity/*` routes during migration.
+- **`ModelVersion.repo` must be a `sha256:<64 lowercase hex>` digest.** Plaintext `owner/repo` strings on `ModelVersion.repo` are rejected with `PLAINTEXT_ACCOUNT_IDENTIFIER`.
+- **`json-canonicalize` is a direct dependency of `@cognate/node` and `@cognate/types`.**
+
+### Security (earlier in 0.3.0 cycle)
 
 - **`@cognate/node` scopes every route to the authenticated agent's tenant.** Before, a caller authenticated in one
   tenant could act in another: transition its versions, record evaluations on them, register models and versions in

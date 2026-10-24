@@ -6,20 +6,35 @@ import { createRegistry as createModelRegistry, type RequireEvaluationCitations 
 import { citationRuleFromEnv } from "../src/routes/evaluations.js";
 import { createRegistry as createIdentityRegistry, registerAgent } from "@cognate/agent-identity";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
+import { generateEd25519KeyPair, type Ed25519KeyPairMaterial } from "../src/middleware/signature.js";
+import { signHttpRequest } from "../src/client.js";
 
 // Rate-limit buckets are per agent and path prefix, and module-level; a fresh agent per server keeps tests apart.
 let agentSeq = 0;
 const TS = "2026-10-24T12:00:00Z";
+const agentKeys = new Map<string, Ed25519KeyPairMaterial>();
+
+function keyFor(agent: string): Ed25519KeyPairMaterial {
+  let kp = agentKeys.get(agent);
+  if (!kp) {
+    kp = generateEd25519KeyPair();
+    agentKeys.set(agent, kp);
+  }
+  return kp;
+}
 
 function state(agent: string) {
+  const kp = keyFor(agent);
   let identity = createIdentityRegistry();
   const r = registerAgent(identity, {
     id: agent,
     tenantId: "tenant-1",
     name: "Test Agent",
     owner: "human-1",
+    principal: "human",
     walletAddress: null,
-    publicKey: null,
+    publicKey: kp.publicKey,
+    kid: kp.kid,
     capabilities: [],
     createdAt: TS,
     status: "active",
@@ -44,8 +59,28 @@ function recording(fail = false) {
   };
 }
 
+function bindActor(body: unknown, agent: string): unknown {
+  if (!body || typeof body !== "object") return body;
+  const obj = { ...(body as Record<string, unknown>) };
+  if (obj.model && typeof obj.model === "object") {
+    const m = { ...(obj.model as Record<string, unknown>) };
+    if (m.owner === "human-1") m.owner = agent;
+    obj.model = m;
+  }
+  if (obj.evaluation && typeof obj.evaluation === "object") {
+    const ev = { ...(obj.evaluation as Record<string, unknown>) };
+    if (ev.evaluator === "rnd") ev.evaluator = agent;
+    obj.evaluation = ev;
+  }
+  if (obj.actorId === "rnd" || obj.actorId === "d") {
+    obj.actorId = agent;
+  }
+  return obj;
+}
+
 async function start(fail = false, requireEvaluationCitations?: RequireEvaluationCitations) {
   const agent = `eval-agent-${++agentSeq}`;
+  const kp = keyFor(agent);
   const rec = recording(fail);
   const { server } = createCognateServer({
     state: state(agent),
@@ -61,10 +96,27 @@ async function start(fail = false, requireEvaluationCitations?: RequireEvaluatio
     }),
   );
   const post = async (path: string, body: unknown, auth = true) => {
+    const payload = bindActor(body, agent);
+    if (!auth) {
+      const res = await fetch(`http://127.0.0.1:${port}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      return { status: res.status, json: (await res.json()) as Record<string, unknown> };
+    }
+    const signed = signHttpRequest({
+      method: "POST",
+      path,
+      agentId: agent,
+      seedHex: kp.seedHex,
+      kid: kp.kid,
+      body: payload,
+    });
     const res = await fetch(`http://127.0.0.1:${port}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(auth ? { "X-Agent-Id": agent, "X-Timestamp": TS } : {}) },
-      body: JSON.stringify(body),
+      headers: signed.headers,
+      body: signed.rawBody,
     });
     return { status: res.status, json: (await res.json()) as Record<string, unknown> };
   };

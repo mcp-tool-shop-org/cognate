@@ -15,6 +15,7 @@ WORKDIR /build
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY tsconfig.json ./
+COPY config/ config/
 
 COPY packages/types/package.json packages/types/
 COPY packages/policy/package.json packages/policy/
@@ -48,6 +49,7 @@ WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY tsconfig.json ./
+COPY config/ config/
 
 COPY packages/types/package.json packages/types/
 COPY packages/policy/package.json packages/policy/

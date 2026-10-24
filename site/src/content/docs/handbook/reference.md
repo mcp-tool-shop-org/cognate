@@ -5,7 +5,7 @@ sidebar:
   order: 4
 ---
 
-`@mcptoolshop/cognate` is `0.1.8` on npm. The `@cognate/*` packages stay in this workspace and are inlined into that bundle.
+`@mcptoolshop/cognate` is `0.3.0`. The `@cognate/*` packages stay in this workspace and are inlined into that bundle.
 
 ## @cognate/policy
 
@@ -52,10 +52,12 @@ Run statuses: `in_progress`, `completed`, `cancelled`, `lost`.
 | Export | Role |
 |--------|------|
 | `createRegistry` | Empty identity registry |
-| `registerAgent` | Record an agent |
+| `registerAgent` | Record an agent and derive `kid` from its Ed25519 `publicKey` |
 | `getAgent` | Read one agent |
-| `requestGrant` | Ask for a capability. This does not activate it |
-| `approveGrant` / `rejectGrant` | The human gate |
+| `rotateAgentKey` / `revokeAgent` | Rotate an active agent's Ed25519 key or revoke the agent and its key |
+| `deriveKeyIdFromPublicKey` | Compute the 64-char lowercase hex SHA-256 `kid` of a 32-byte base64url Ed25519 public key |
+| `requestGrant` | Ask for a capability (`status: "pending"`, `approvedBy: null`) |
+| `approveGrant` / `rejectGrant` | The human gate (refuses self-approval `approverId === grant.agentId`) |
 | `revokeCapability` | End a grant |
 | `getActiveCapabilities` | Live capabilities for an agent |
 | `isCapabilityActive` / `hasCapability` | Predicates over the state you pass |
@@ -87,7 +89,7 @@ Every POST acts in the authenticated agent's tenant.
 | Another tenant's version, model, prompt, agent or grant by id | The same 404 a missing id gets |
 | A body id that differs from the path id | 400 `registry.version-id-mismatch` or `prompts.prompt-id-mismatch` |
 
-A missing id is 404: `VERSION_NOT_FOUND`, `MODEL_NOT_FOUND`, `store.prompt-not-found`, `identity.agent-not-found`, `identity.grant-not-found`, `vc.grant-not-found`. The caller is identified by an unsigned `X-Agent-Id`, so this scoping is not authentication.
+A missing id is 404: `VERSION_NOT_FOUND`, `MODEL_NOT_FOUND`, `store.prompt-not-found`, `identity.agent-not-found`, `identity.grant-not-found`, `vc.grant-not-found`. Every write (`POST`) and `GET /events/:eventId` is authenticated with `cognate-request-v1` Ed25519 signatures (`signHttpRequest`, `createSignedClient`, `generateEd25519KeyPair`), and body actor fields must match the verified signer (`403 auth.actor-mismatch`).
 
 ## @cognate/types
 

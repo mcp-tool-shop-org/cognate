@@ -5,8 +5,26 @@
  * All state transitions return new immutable RegistryState objects.
  */
 
+import { createHash } from "node:crypto";
 import type { ActorId, Agent, Capability, CapabilityGrant, HashId, Timestamp } from "@cognate/types";
 import type { IdentityError, IdentityRegistryState, IdentityResult } from "./types.js";
+
+const RAW_PUBLIC_KEY_B64URL_RE = /^[A-Za-z0-9_-]{43}$/;
+
+/**
+ * Derive the 64-character lowercase hex SHA-256 key identifier (`kid`) from a
+ * base64url-encoded raw 32-byte Ed25519 public key, or return `null` if invalid.
+ */
+export function deriveKeyIdFromPublicKey(publicKey: string): string | null {
+  if (!RAW_PUBLIC_KEY_B64URL_RE.test(publicKey)) {
+    return null;
+  }
+  const raw = Buffer.from(publicKey, "base64url");
+  if (raw.length !== 32 || raw.toString("base64url") !== publicKey) {
+    return null;
+  }
+  return createHash("sha256").update(raw).digest("hex");
+}
 
 function err(code: string, message: string, hint: string): IdentityError {
   return { code, message, hint };
@@ -25,7 +43,7 @@ export function createRegistry(): IdentityRegistryState {
   return { agents: new Map(), grants: new Map() };
 }
 
-/** Register an agent. Fails if agent ID already exists. */
+/** Register an agent. Fails if agent ID already exists or publicKey is malformed. */
 export function registerAgent(
   state: IdentityRegistryState,
   agent: Agent
@@ -33,8 +51,36 @@ export function registerAgent(
   if (state.agents.has(agent.id)) {
     return fail(err("identity.duplicate", `Agent ${agent.id} already registered`, "Use updateAgent to modify an existing agent."), state);
   }
+  let derivedKid: string | null = null;
+  if (agent.publicKey !== null) {
+    derivedKid = deriveKeyIdFromPublicKey(agent.publicKey);
+    if (derivedKid === null) {
+      return fail(
+        err(
+          "identity.invalid-public-key",
+          `Agent ${agent.id} has an invalid Ed25519 publicKey`,
+          "Provide a 43-character base64url raw 32-byte Ed25519 public key.",
+        ),
+        state,
+      );
+    }
+    if (agent.kid !== undefined && agent.kid !== null && agent.kid !== derivedKid) {
+      return fail(
+        err(
+          "identity.kid-mismatch",
+          `Agent ${agent.id} kid does not match sha256(publicKey)`,
+          "Omit kid or set it to the lowercase hex SHA-256 of the raw 32-byte public key.",
+        ),
+        state,
+      );
+    }
+  }
+  const normalizedAgent: Agent = {
+    ...agent,
+    ...(derivedKid !== null ? { kid: derivedKid } : {}),
+  };
   const newAgents = new Map(state.agents);
-  newAgents.set(agent.id, agent);
+  newAgents.set(agent.id, normalizedAgent);
   return ok(undefined, { ...state, agents: newAgents });
 }
 
@@ -46,7 +92,7 @@ export function getAgent(
   return state.agents.get(agentId);
 }
 
-/** Submit a capability grant request (status: pending). */
+/** Submit a capability grant request (status: pending, approvedBy: null). */
 export function requestGrant(
   state: IdentityRegistryState,
   grant: CapabilityGrant
@@ -56,6 +102,16 @@ export function requestGrant(
   }
   if (state.grants.has(grant.id)) {
     return fail(err("identity.duplicate-grant", `Grant ${grant.id} already exists`, "Each grant must have a unique ID."), state);
+  }
+  if (grant.status !== "pending" || grant.approvedBy !== null || (grant.approvedAt !== null && grant.approvedAt !== undefined)) {
+    return fail(
+      err(
+        "identity.grant-not-pending",
+        `New grant ${grant.id} must have status "pending" and approvedBy null`,
+        "Submit new grants with status: 'pending', approvedBy: null, and approvedAt: null.",
+      ),
+      state,
+    );
   }
   const newGrants = new Map(state.grants);
   newGrants.set(grant.id, grant);
@@ -76,17 +132,98 @@ export function approveGrant(
   if (grant.status !== "pending") {
     return fail(err("identity.grant-not-pending", `Grant ${grantId} is ${grant.status}, not pending`, "Only pending grants can be approved."), state);
   }
+  if (approverId === grant.agentId) {
+    return fail(
+      err(
+        "auth.self-approval-forbidden",
+        `Principal ${approverId} cannot approve a grant for itself`,
+        "Have another authorized delegate approve the grant.",
+      ),
+      state,
+    );
+  }
+  const approvedCapability: Capability = {
+    ...grant.capability,
+    grantedBy: approverId,
+  };
   const newGrants = new Map(state.grants);
-  newGrants.set(grantId, { ...grant, status: "approved" as const, approvedBy: approverId, approvedAt: timestamp });
+  newGrants.set(grantId, {
+    ...grant,
+    capability: approvedCapability,
+    status: "approved" as const,
+    approvedBy: approverId,
+    approvedAt: timestamp,
+  });
 
   // Also append capability to agent
   const agent = state.agents.get(grant.agentId);
   if (agent) {
     const newAgents = new Map(state.agents);
-    newAgents.set(grant.agentId, { ...agent, capabilities: [...agent.capabilities, grant.capability] });
+    newAgents.set(grant.agentId, { ...agent, capabilities: [...agent.capabilities, approvedCapability] });
     return ok(undefined, { agents: newAgents, grants: newGrants });
   }
   return ok(undefined, { ...state, grants: newGrants });
+}
+
+/** Rotate an active agent's Ed25519 public key and record the previous kid as revoked. */
+export function rotateAgentKey(
+  state: IdentityRegistryState,
+  agentId: ActorId,
+  newPublicKey: string,
+): IdentityResult<Agent> {
+  const agent = state.agents.get(agentId);
+  if (!agent) {
+    return fail(err("identity.agent-not-found", `Agent ${agentId} not found`, "Register the agent before rotating its key."), state);
+  }
+  if (agent.status !== "active") {
+    return fail(err("identity.agent-not-active", `Agent ${agentId} is ${agent.status}, not active`, "Only active agents can rotate keys."), state);
+  }
+  const newKid = deriveKeyIdFromPublicKey(newPublicKey);
+  if (newKid === null) {
+    return fail(err("identity.invalid-public-key", "Invalid Ed25519 publicKey", "Provide a 43-character base64url raw 32-byte Ed25519 public key."), state);
+  }
+  const currentKid = agent.kid ?? (agent.publicKey ? deriveKeyIdFromPublicKey(agent.publicKey) : null);
+  const existingRevoked = agent.revokedKids ?? [];
+  if (newKid === currentKid || existingRevoked.includes(newKid)) {
+    return fail(err("identity.key-already-used", `Key ${newKid} is already active or previously revoked on agent ${agentId}`, "Generate a fresh Ed25519 key pair."), state);
+  }
+  const revokedKids = currentKid ? [...existingRevoked, currentKid] : [...existingRevoked];
+  const updatedAgent: Agent = {
+    ...agent,
+    publicKey: newPublicKey,
+    kid: newKid,
+    revokedKids,
+  };
+  const newAgents = new Map(state.agents);
+  newAgents.set(agentId, updatedAgent);
+  return ok(updatedAgent, { ...state, agents: newAgents });
+}
+
+/** Revoke an agent and its active key. */
+export function revokeAgent(
+  state: IdentityRegistryState,
+  agentId: ActorId,
+): IdentityResult<Agent> {
+  const agent = state.agents.get(agentId);
+  if (!agent) {
+    return fail(err("identity.agent-not-found", `Agent ${agentId} not found`, "Check the agent ID."), state);
+  }
+  const currentKid = agent.kid ?? (agent.publicKey ? deriveKeyIdFromPublicKey(agent.publicKey) : null);
+  const existingRevoked = agent.revokedKids ?? [];
+  const revokedKids =
+    currentKid && !existingRevoked.includes(currentKid)
+      ? [...existingRevoked, currentKid]
+      : [...existingRevoked];
+  const updatedAgent: Agent = {
+    ...agent,
+    status: "revoked",
+    publicKey: null,
+    kid: null,
+    revokedKids,
+  };
+  const newAgents = new Map(state.agents);
+  newAgents.set(agentId, updatedAgent);
+  return ok(updatedAgent, { ...state, agents: newAgents });
 }
 
 /** Reject a pending capability grant. */

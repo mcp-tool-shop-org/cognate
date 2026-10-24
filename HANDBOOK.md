@@ -104,18 +104,24 @@ curl http://localhost:4000/health
 ```
 
 ```json
-{ "status": "ok", "service": "cognate", "mode": "api" }
+{ "status": "ok", "service": "cognate", "mode": "api", "serverTime": "2026-10-24T12:00:00.000Z" }
 ```
 
-The `cognate-data` volume mounts at `/app/data`. The event log is `/app/data/events.jsonl` (`ATTESTIA_EVENTS_FILE`). The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. `GET /events/:eventId` reads that log and returns the recorded event with an Attestia inclusion proof and the root. The caller sends the same agent headers as a write. An id that is not in this tenant's log is a miss, and the body has no proof. Prompt and output text stay out of the event. The route does not call RepoMesh. Attestia's compose uses the same event-log variable on its own `attestia-data` volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL.
+The `cognate-data` volume mounts at `/app/data`. The event log is `/app/data/events.jsonl` (`ATTESTIA_EVENTS_FILE`). The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. `GET /events/:eventId` reads that log and returns the recorded event with an Attestia inclusion proof and the root. The caller sends the same signed `cognate-request-v1` headers as a write. An id that is not in this tenant's log is a miss, and the body has no proof. Prompt and output text stay out of the event. The route does not call RepoMesh. Attestia's compose uses the same event-log variable on its own `attestia-data` volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL.
 
 The image is pushed to `ghcr.io/mcp-tool-shop-org/cognate` when a GitHub release is published. Local builds use the same Dockerfile.
+
+## Authentication and migration guide (`@cognate/node`)
+
+- **What is proved now (PR a):** `@cognate/node` enforces `cognate-request-v1` Ed25519 request signatures (`X-Agent-Id`, `X-Timestamp`, `X-Nonce`, `X-Key-Id`, `X-Signature`) over an 8-line canonical string and RFC 8785 JCS-canonical JSON bodies (`400 auth.body-not-canonical` otherwise), with a ±300 s timestamp window, a 600 s ordered replay store, and a uniform `401 auth.unauthenticated` response. Every route binds its body actor fields to the verified signer (`403 auth.actor-mismatch`) before RepoMesh or any Attestia append. Agent registration and grant approval require `delegate`, self-approval is refused (`403 auth.self-approval-forbidden`), `principal: "agent"` cannot register `principal: "human"` or grant `delegate`, an `owner` cannot rotate a human principal's key, and the tenant root key (`config/tenant-roots.json`) can only bootstrap the tenant's first `delegate`.
+- **What comes in PR (b) and current limits:** The `(agentId, nonce)` replay store is in-memory on a single server instance. Under PR (a), any sign-off-gated action must be signed by the authorizing principal itself; detached `cognate-approval-v1` approvals, durable `approvalId`s, the `cognate-<tenant>-identity` stream, `submittedBy` / `authorizedBy` on events, and the standalone offline verifier come in PR (b).
+- **Migration guide:** Generate an Ed25519 key pair with `generateEd25519KeyPair()`, bootstrap the tenant's first `delegate` via `POST /identity/agents` signed by the tenant root key in `config/tenant-roots.json`, and send requests with `createSignedClient` or `signHttpRequest` (which canonicalize bodies with JCS, sync clock offset from `GET /health`'s `serverTime`, and retry once on `401`). For a bounded migration window (at most 14 days), set `COGNATE_SIGNED_REQUESTS=log` and `COGNATE_SIGNED_REQUESTS_LOG_UNTIL=<RFC3339 UTC timestamp>`; `/identity/*` stays signed even in `log` mode, and unsigned events are marked `unsigned: true`.
 
 ## Threat model
 
 1. A compromised inference endpoint is answered by encrypted prompt and output records plus a SHA-256 integrity hash.
-2. A stolen agent key is answered by time-bound, scoped, revocable capabilities. Every grant needs an explicit approval.
-3. Swapped weights are answered by the three hashes recorded at registration. A mismatch is a different version, not a silent edit.
+2. A stolen or forged caller identity is answered by Ed25519 request signing (`cognate-request-v1`), actor binding (`403 auth.actor-mismatch`), privilege-escalation guards, and time-bound, scoped, revocable capabilities (`POST /identity/agents/:id/key`, `POST /identity/agents/:id/revoke`).
+3. Swapped weights are answered by the three hashes recorded at registration and `ModelVersion.repo` stored as `sha256:<hex>`. A mismatch is a different version, not a silent edit.
 4. Prompt injection is answered by evaluating policy before inference. A failing check does not execute.
 5. Tampered logs are answered by append-only records. Attestia's Merkle proofs are the settlement layer under those records.
 
@@ -123,4 +129,4 @@ No package sends telemetry. There is no analytics switch to turn off, because th
 
 ## What this release does not include
 
-`@mcptoolshop/cognate` is on npm at 0.1.8. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.
+`@mcptoolshop/cognate` is `0.3.0`. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.

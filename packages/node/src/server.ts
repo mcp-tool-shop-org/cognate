@@ -3,21 +3,48 @@
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
-import type { ActorId, ModelVersionStatus } from "@cognate/types";
+import type {
+  ActorId,
+  Agent,
+  CapabilityGrant,
+  HashId,
+  Model,
+  ModelVersionStatus,
+  Output,
+  Policy,
+  Prompt,
+  SignedRequestsMode,
+  TenantRootKeyEntry,
+} from "@cognate/types";
+import type { EvaluationContext } from "@cognate/policy";
 import type { DomainEvent, EventStore } from "@mcptoolshop/attestia/event-store";
-import { getAgent } from "@cognate/agent-identity";
-import { attestEvaluation, attestTransitionVersion, type RequireEvaluationCitations } from "@cognate/model-registry";
-import { RegistryError } from "@cognate/model-registry";
+import { getActiveCapabilities, getAgent, hasCapability } from "@cognate/agent-identity";
+import {
+  RegistryError,
+  attestEvaluation,
+  attestTransitionVersion,
+  validateHashedIdentifiers,
+  type RequireEvaluationCitations,
+} from "@cognate/model-registry";
 import { attestLogOutput, attestLogPrompt } from "@cognate/prompt-store";
-import type { Output, Prompt } from "@cognate/types";
 import { handleHealth } from "./routes/health.js";
 import { handlePolicy } from "./routes/policy.js";
 import { handleRegistry } from "./routes/registry.js";
 import { EVALUATIONS_PATH, parseEvaluationRequest } from "./routes/evaluations.js";
 import { handleIdentity } from "./routes/identity.js";
 import { handlePrompts } from "./routes/prompts.js";
-import { authenticate } from "./middleware/auth.js";
 import { checkRateLimit, createRateLimitState, type RateLimitConfig } from "./middleware/rate-limit.js";
+import {
+  MAX_BODY_BYTES,
+  UNIFORM_UNAUTHENTICATED_BODY,
+  createReplayStore,
+  isJcsCanonicalJsonBytes,
+  isValidPublicKeyBase64Url,
+  loadTenantRootsConfig,
+  validateSignedRequestsConfig,
+  validateTenantRootsList,
+  verifySignedRequest,
+} from "./middleware/signature.js";
 import { saveSnapshots, type SnapshotPaths, type SnapshotState } from "./snapshot.js";
 import { checkDeploy, resolveDeployRelease, type ReleaseFailOn } from "./release-gate.js";
 import { proveRecordedEvent, proofErrorBody, statusForProof } from "./event-proof.js";
@@ -34,12 +61,21 @@ import {
 
 export interface ServerState extends SnapshotState {}
 
+export interface AuthLogEntry {
+  readonly level: "warn";
+  readonly method: string;
+  readonly pathname: string;
+  readonly agentId: string;
+  readonly code: string;
+  readonly reason?: string;
+}
+
 export interface ServerContext {
   readonly state: ServerState;
   readonly port: number;
   readonly host: string;
   /**
-   * Attestia's append-only log. The four governance acts append here.
+   * Attestia's append-only log. The governance acts append here.
    * `readAll` serves the inclusion proof. A store without it cannot prove.
    */
   readonly eventStore: Pick<EventStore, "append"> & Partial<Pick<EventStore, "readAll">>;
@@ -57,6 +93,27 @@ export interface ServerContext {
    * reject) or `"all"`. The entry point reads it from COGNATE_REQUIRE_EVALUATION_CITATIONS.
    */
   readonly requireEvaluationCitations?: RequireEvaluationCitations;
+  /**
+   * Request signature enforcement mode: `"enforce"` (default) or `"log"`.
+   * `"log"` requires `signedRequestsLogUntil` set to a future RFC 3339 UTC timestamp at most 14 days away.
+   */
+  readonly signedRequests?: SignedRequestsMode;
+  /**
+   * Mandatory RFC 3339 UTC sunset timestamp when `signedRequests === "log"`.
+   */
+  readonly signedRequestsLogUntil?: string;
+  /**
+   * Optional explicit per-tenant root public key entries (defaults to committed `config/tenant-roots.json`).
+   */
+  readonly tenantRoots?: readonly TenantRootKeyEntry[];
+  /**
+   * Optional path to a per-tenant root public key JSON configuration file.
+   */
+  readonly tenantRootsPath?: string;
+  /**
+   * Optional server-side callback for sanitized authentication and `log`-mode warnings.
+   */
+  readonly onAuthLog?: (entry: AuthLogEntry) => void;
 }
 
 const rateLimitBuckets = new Map<string, ReturnType<typeof createRateLimitState>>();
@@ -97,21 +154,72 @@ function checkRateLimitForAgent(agentId: string, pathname: string, nowMs: number
   return { allowed: true };
 }
 
-function parseBody(req: IncomingMessage): Promise<unknown> {
+class BodyTooLargeError extends Error {
+  constructor() {
+    super("Request body exceeds 1 MiB limit.");
+  }
+}
+
+function readRawBody(req: IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (chunk) => { data += chunk; });
-    req.on("end", () => {
-      try { resolve(data ? JSON.parse(data) : {}); }
-      catch { reject(new Error("Invalid JSON")); }
+    const chunks: Buffer[] = [];
+    let total = 0;
+    let rejected = false;
+    req.on("data", (chunk: Buffer | string) => {
+      if (rejected) return;
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, "utf8");
+      total += buf.length;
+      if (total > MAX_BODY_BYTES) {
+        rejected = true;
+        reject(new BodyTooLargeError());
+        return;
+      }
+      chunks.push(buf);
     });
-    req.on("error", reject);
+    req.on("end", () => {
+      if (!rejected) {
+        resolve(Buffer.concat(chunks));
+      }
+    });
+    req.on("error", (err) => {
+      if (!rejected) {
+        reject(err);
+      }
+    });
   });
 }
 
 function sendJson(res: ServerResponse, status: number, payload: unknown): void {
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify(payload));
+}
+
+function sendActorMismatch(res: ServerResponse, field: string): void {
+  sendJson(res, 403, {
+    error: "auth.actor-mismatch",
+    code: "auth.actor-mismatch",
+    message: `${field} must match the authenticated signer.`,
+    hint: "Sign the request with the key belonging to the actor named in the request body.",
+  });
+}
+
+function checkHashedValue(res: ServerResponse, value: unknown, fieldPath: string): boolean {
+  if (typeof value !== "string") return false;
+  try {
+    validateHashedIdentifiers(value, fieldPath);
+    return false;
+  } catch (err) {
+    if (err instanceof RegistryError) {
+      sendJson(res, 400, {
+        error: err.code,
+        code: err.code,
+        message: err.message,
+        hint: err.hint,
+      });
+      return true;
+    }
+    throw err;
+  }
 }
 
 const NOT_FOUND_CODES = new Set([
@@ -125,6 +233,7 @@ const NOT_FOUND_CODES = new Set([
 
 function statusFor(code: string | undefined): number {
   if (code === "attestia.append-failed") return 503;
+  if (code !== undefined && code.startsWith("auth.")) return 403;
   return code !== undefined && NOT_FOUND_CODES.has(code) ? 404 : 400;
 }
 
@@ -136,7 +245,10 @@ function refused(res: ServerResponse, ...checks: Array<Refusal | null>): boolean
   return true;
 }
 
-function watchAppends(store: Pick<EventStore, "append">): {
+function watchAppends(
+  store: Pick<EventStore, "append">,
+  unsigned = false,
+): {
   eventId: () => string;
   eventStore: Pick<EventStore, "append">;
 } {
@@ -145,15 +257,30 @@ function watchAppends(store: Pick<EventStore, "append">): {
     eventId: () => eventId,
     eventStore: {
       append(streamId, events, options) {
-        const first = events[0] as DomainEvent | undefined;
+        const decorated = unsigned
+          ? events.map((ev) => ({
+              ...ev,
+              payload: { ...(ev.payload as Record<string, unknown>), unsigned: true },
+            }))
+          : events;
+        const first = decorated[0] as DomainEvent | undefined;
         eventId = first?.metadata.eventId ?? "";
-        return store.append(streamId, events, options);
+        return store.append(streamId, decorated, options);
       },
     },
   };
 }
 
 export function createCognateServer(ctx: ServerContext) {
+  const { mode: signedRequestsMode, logUntilMs } = validateSignedRequestsConfig(
+    ctx.signedRequests ?? "enforce",
+    ctx.signedRequestsLogUntil,
+  );
+  const tenantRoots = ctx.tenantRoots
+    ? validateTenantRootsList(ctx.tenantRoots)
+    : loadTenantRootsConfig(ctx.tenantRootsPath);
+  const replayStore = createReplayStore();
+
   const mutableState: ServerState = {
     registry: ctx.state.registry,
     identity: ctx.state.identity,
@@ -181,15 +308,21 @@ export function createCognateServer(ctx: ServerContext) {
   }
 
   const server = createServer(async (req, res) => {
-    const url = new URL(req.url ?? "/", "http://" + (req.headers.host ?? "localhost"));
+    const rawUrl = req.url ?? "/";
+    const url = new URL(rawUrl, "http://" + (req.headers.host ?? "localhost"));
     const method = req.method ?? "GET";
     const pathname = url.pathname;
 
     try {
-      const body = await parseBody(req);
+      const rawBody = await readRawBody(req);
 
       if (pathname === "/health" && method === "GET") {
         handleHealth(res);
+        return;
+      }
+
+      if (method === "GET" && !pathname.startsWith("/events/") && req.headers["x-agent-id"] === undefined) {
+        sendJson(res, 404, { error: "Not found", path: pathname, method });
         return;
       }
 
@@ -205,18 +338,43 @@ export function createCognateServer(ctx: ServerContext) {
           sendJson(res, 404, { error: "Not found", path: pathname, method });
           return;
         }
-        const authResult = authenticate(req, { identityState: mutableState.identity });
+        const authResult = verifySignedRequest({
+          method,
+          rawUrl,
+          headers: req.headers,
+          rawBody,
+          identity: mutableState.identity,
+          tenantRoots,
+          replayStore,
+          mode: signedRequestsMode,
+          logUntilMs,
+          onLogModeWarning: (entry) => ctx.onAuthLog?.({ level: "warn", ...entry }),
+        });
         if (!authResult.ok) {
-          sendJson(res, 401, { error: authResult.code, message: authResult.message });
+          ctx.onAuthLog?.({
+            level: "warn",
+            method,
+            pathname,
+            agentId: typeof req.headers["x-agent-id"] === "string" ? req.headers["x-agent-id"] : "",
+            code: "auth.unauthenticated",
+            reason: authResult.reason,
+          });
+          sendJson(res, 401, UNIFORM_UNAUTHENTICATED_BODY);
           return;
         }
-        const rateResult = checkRateLimitForAgent(authResult.agent.agentId, pathname, Date.now());
+        const rateResult = checkRateLimitForAgent(authResult.principal.agentId, pathname, Date.now());
         if (!rateResult.allowed) {
           res.writeHead(429, {
             "Content-Type": "application/json",
             "Retry-After": String(rateResult.retryAfter ?? 60),
           });
-          res.end(JSON.stringify({ error: "rate-limit.exceeded", message: "Rate limit exceeded", retryAfter: rateResult.retryAfter }));
+          res.end(
+            JSON.stringify({
+              error: "rate-limit.exceeded",
+              message: "Rate limit exceeded",
+              retryAfter: rateResult.retryAfter,
+            }),
+          );
           return;
         }
         if (!ctx.eventStore.readAll) {
@@ -238,7 +396,7 @@ export function createCognateServer(ctx: ServerContext) {
           });
           return;
         }
-        const tenantId = getAgent(mutableState.identity, authResult.agent.agentId)?.tenantId ?? "default";
+        const tenantId = authResult.principal.tenantId;
         const proved = proveRecordedEvent(recorded, eventId, tenantId);
         if (!proved.ok) {
           sendJson(res, statusForProof(proved.code), proofErrorBody(proved.code));
@@ -253,39 +411,169 @@ export function createCognateServer(ctx: ServerContext) {
         return;
       }
 
-      let actorId = "" as ActorId;
-      if (method === "POST") {
-        const authResult = authenticate(req, { identityState: mutableState.identity });
+      if (method !== "POST") {
+        const authResult = verifySignedRequest({
+          method,
+          rawUrl,
+          headers: req.headers,
+          rawBody,
+          identity: mutableState.identity,
+          tenantRoots,
+          replayStore,
+          mode: signedRequestsMode,
+          logUntilMs,
+          onLogModeWarning: (entry) => ctx.onAuthLog?.({ level: "warn", ...entry }),
+        });
         if (!authResult.ok) {
-          sendJson(res, 401, { error: authResult.code, message: authResult.message });
+          ctx.onAuthLog?.({
+            level: "warn",
+            method,
+            pathname,
+            agentId: typeof req.headers["x-agent-id"] === "string" ? req.headers["x-agent-id"] : "",
+            code: "auth.unauthenticated",
+            reason: authResult.reason,
+          });
+          sendJson(res, 401, UNIFORM_UNAUTHENTICATED_BODY);
           return;
         }
-        actorId = authResult.agent.agentId;
-        const rateResult = checkRateLimitForAgent(actorId, pathname, Date.now());
-        if (!rateResult.allowed) {
-          res.writeHead(429, {
-            "Content-Type": "application/json",
-            "Retry-After": String(rateResult.retryAfter ?? 60),
+        sendJson(res, 404, { error: "Not found", path: pathname, method });
+        return;
+      }
+
+      const authResult = verifySignedRequest({
+        method,
+        rawUrl,
+        headers: req.headers,
+        rawBody,
+        identity: mutableState.identity,
+        tenantRoots,
+        replayStore,
+        mode: signedRequestsMode,
+        logUntilMs,
+        onLogModeWarning: (entry) => ctx.onAuthLog?.({ level: "warn", ...entry }),
+      });
+      if (!authResult.ok) {
+        ctx.onAuthLog?.({
+          level: "warn",
+          method,
+          pathname,
+          agentId: typeof req.headers["x-agent-id"] === "string" ? req.headers["x-agent-id"] : "",
+          code: "auth.unauthenticated",
+          reason: authResult.reason,
+        });
+        sendJson(res, 401, UNIFORM_UNAUTHENTICATED_BODY);
+        return;
+      }
+
+      const caller = authResult.principal;
+      const actorId = caller.actorId;
+      const tenantId = caller.tenantId;
+
+      const rawText = rawBody.toString("utf8");
+      let body: unknown = {};
+      if (rawText.length > 0) {
+        try {
+          body = JSON.parse(rawText);
+        } catch {
+          throw new Error("Invalid JSON");
+        }
+      }
+
+      if (!caller.unsigned) {
+        if (rawBody.length === 0 || !isJcsCanonicalJsonBytes(rawBody, body)) {
+          sendJson(res, 400, {
+            error: "auth.body-not-canonical",
+            code: "auth.body-not-canonical",
+            message: "Signed POST body must be RFC 8785 JCS-canonical UTF-8.",
+            hint: "Canonicalize the JSON body with RFC 8785 (JCS) before hashing and signing.",
           });
-          res.end(JSON.stringify({ error: "rate-limit.exceeded", message: "Rate limit exceeded", retryAfter: rateResult.retryAfter }));
           return;
         }
       }
 
-      // Every POST acts in the authenticated agent's tenant (tenant.ts).
-      const tenantId = getAgent(mutableState.identity, actorId)?.tenantId ?? "default";
+      const rateResult = checkRateLimitForAgent(caller.agentId, pathname, Date.now());
+      if (!rateResult.allowed) {
+        res.writeHead(429, {
+          "Content-Type": "application/json",
+          "Retry-After": String(rateResult.retryAfter ?? 60),
+        });
+        res.end(
+          JSON.stringify({
+            error: "rate-limit.exceeded",
+            message: "Rate limit exceeded",
+            retryAfter: rateResult.retryAfter,
+          }),
+        );
+        return;
+      }
 
       if (pathname === "/policy/evaluate" && method === "POST") {
-        const req = body as { policy?: { tenantId?: unknown }; context?: { tenantId?: unknown } };
+        const reqBody = body as { policy?: Policy; context?: EvaluationContext };
         if (
-          req.policy &&
-          req.context &&
+          reqBody.policy &&
+          reqBody.context &&
           refused(
             res,
-            refuseForeignRecord("policy", "context", req.context, tenantId),
-            refuseForeignRecord("policy", "policy", req.policy, tenantId),
+            refuseForeignRecord("policy", "context", reqBody.context, tenantId),
+            refuseForeignRecord("policy", "policy", reqBody.policy, tenantId),
           )
         ) {
+          return;
+        }
+        if (reqBody.policy && reqBody.context) {
+          if (reqBody.context.actorId !== undefined && reqBody.context.actorId !== actorId) {
+            sendActorMismatch(res, "context.actorId");
+            return;
+          }
+          if (checkHashedValue(res, actorId, "context.actorId")) return;
+          if (
+            reqBody.policy.approvedBy !== null &&
+            reqBody.policy.approvedBy !== undefined &&
+            checkHashedValue(res, reqBody.policy.approvedBy, "policy.approvedBy")
+          ) {
+            return;
+          }
+
+          let verifiedContext: EvaluationContext = {
+            ...reqBody.context,
+            actorId,
+          };
+
+          if (reqBody.context.agentId !== null && reqBody.context.agentId !== undefined) {
+            if (reqBody.context.agentId !== caller.agentId) {
+              sendActorMismatch(res, "context.agentId");
+              return;
+            }
+            const ctxAgent = getAgent(mutableState.identity, reqBody.context.agentId);
+            if (!ctxAgent || ctxAgent.tenantId !== tenantId) {
+              sendActorMismatch(res, "context.agentId");
+              return;
+            }
+            const activeCaps = getActiveCapabilities(
+              mutableState.identity,
+              ctxAgent.id,
+              (reqBody.context.timestamp ?? new Date().toISOString()) as import("@cognate/types").Timestamp,
+            );
+            const activeKinds = new Set(activeCaps.map((c) => c.kind));
+            if (
+              Array.isArray(reqBody.context.agentCapabilities) &&
+              reqBody.context.agentCapabilities.some((cap) => !activeKinds.has(cap.kind ?? (cap as unknown as import("@cognate/types").CapabilityKind)))
+            ) {
+              sendActorMismatch(res, "context.agentCapabilities");
+              return;
+            }
+            verifiedContext = {
+              ...verifiedContext,
+              agentId: ctxAgent.id,
+              agentCapabilities: activeCaps,
+            };
+          } else if (Array.isArray(reqBody.context.agentCapabilities) && reqBody.context.agentCapabilities.length > 0) {
+            sendActorMismatch(res, "context.agentCapabilities");
+            return;
+          }
+
+          const watched = watchAppends(ctx.eventStore, caller.unsigned);
+          await handlePolicy(res, { policy: reqBody.policy, context: verifiedContext }, watched.eventStore);
           return;
         }
         await handlePolicy(res, body, ctx.eventStore);
@@ -293,7 +581,16 @@ export function createCognateServer(ctx: ServerContext) {
       }
 
       if (pathname === "/registry/models" && method === "POST") {
-        if (refused(res, refuseForeignRecord("registry", "model", (body as { model?: { tenantId?: unknown } }).model, tenantId))) return;
+        const model = (body as { model?: Model }).model;
+        if (refused(res, refuseForeignRecord("registry", "model", model, tenantId))) return;
+        if (model) {
+          if (model.owner !== undefined && model.owner !== actorId) {
+            sendActorMismatch(res, "model.owner");
+            return;
+          }
+          if (checkHashedValue(res, model.owner, "model.owner")) return;
+          if (checkHashedValue(res, model.name, "model.name")) return;
+        }
         const result = handleRegistry(mutableState, pathname, method, body);
         if (!result.ok || !result.state) {
           sendJson(res, 400, result.error);
@@ -313,9 +610,18 @@ export function createCognateServer(ctx: ServerContext) {
           return;
         }
         if (refused(res, refuseHiddenVersion(mutableState, versionId, tenantId))) return;
-        const watched = watchAppends(ctx.eventStore);
+        if (parsed.evaluation.evaluator !== actorId) {
+          sendActorMismatch(res, "evaluation.evaluator");
+          return;
+        }
+        if (checkHashedValue(res, parsed.evaluation.evaluator, "evaluation.evaluator")) return;
+        const watched = watchAppends(ctx.eventStore, caller.unsigned);
         try {
-          const next = await attestEvaluation(mutableState.registry, { eventStore: watched.eventStore, tenantId }, parsed.evaluation);
+          const next = await attestEvaluation(
+            mutableState.registry,
+            { eventStore: watched.eventStore, tenantId },
+            parsed.evaluation,
+          );
           keep({ ...mutableState, registry: next });
           sendJson(res, 201, { evaluationId: parsed.evaluation.id, versionId, eventId: watched.eventId() });
         } catch (err) {
@@ -342,10 +648,32 @@ export function createCognateServer(ctx: ServerContext) {
           release?: unknown;
         };
         if (transition.from && transition.to && transition.actorId && transition.reason && !transition.version) {
+          // Actor binding (Ruling 1): body actorId must match the verified signer before any check or append.
+          if (transition.actorId !== actorId) {
+            sendActorMismatch(res, "transition.actorId");
+            return;
+          }
+          // Under PR (a), any sign-off-gated action must be signed by the authorizing principal itself.
+          if (caller.agent) {
+            for (const cap of caller.agent.capabilities) {
+              for (const constraint of cap.constraints ?? []) {
+                if (
+                  constraint.kind === "approval-required" &&
+                  Array.isArray(constraint.approvers) &&
+                  !constraint.approvers.includes(actorId)
+                ) {
+                  sendActorMismatch(res, "transition.actorId");
+                  return;
+                }
+              }
+            }
+          }
+          if (checkHashedValue(res, transition.actorId, "transition.actorId")) return;
           // A citation the server can't read is refused, never dropped: an uncited move would go through instead.
           if (
             transition.evaluationIds !== undefined &&
-            (!Array.isArray(transition.evaluationIds) || !transition.evaluationIds.every((id) => typeof id === "string"))
+            (!Array.isArray(transition.evaluationIds) ||
+              !transition.evaluationIds.every((id) => typeof id === "string"))
           ) {
             sendJson(res, 400, {
               code: "registry.invalid-evaluation-ids",
@@ -368,17 +696,21 @@ export function createCognateServer(ctx: ServerContext) {
           if (deploying && stored) {
             const bound = resolveDeployRelease(stored, transition);
             if (!bound.ok) {
-              sendJson(res, 400, bound.code === "repomesh.missing-release"
-                ? {
-                    code: bound.code,
-                    message: "This version has no repo and release.",
-                    hint: "Record repo and release on the version when it is registered.",
-                  }
-                : {
-                    code: bound.code,
-                    message: "The request names a different repo or release than the version.",
-                    hint: "Deploy checks the pair stored on the version.",
-                  });
+              sendJson(
+                res,
+                400,
+                bound.code === "repomesh.missing-release"
+                  ? {
+                      code: bound.code,
+                      message: "This version has no repo and release.",
+                      hint: "Record repo and release on the version when it is registered.",
+                    }
+                  : {
+                      code: bound.code,
+                      message: "The request names a different repo or release than the version.",
+                      hint: "Deploy checks the pair stored on the version.",
+                    },
+              );
               return;
             }
             const repo = bound.repo;
@@ -391,8 +723,9 @@ export function createCognateServer(ctx: ServerContext) {
               });
               return;
             }
+            const deployWatched = watchAppends(ctx.eventStore, caller.unsigned);
             const checked = await checkDeploy({
-              eventStore: ctx.eventStore,
+              eventStore: deployWatched.eventStore,
               verifyRelease: ctx.verifyRelease,
               failOn: ctx.releaseFailOn ?? "unverified",
               tenantId,
@@ -433,7 +766,7 @@ export function createCognateServer(ctx: ServerContext) {
             releaseStatus = checked.status;
           }
 
-          const watched = watchAppends(ctx.eventStore);
+          const watched = watchAppends(ctx.eventStore, caller.unsigned);
           try {
             const next = await attestTransitionVersion(
               mutableState.registry,
@@ -492,12 +825,92 @@ export function createCognateServer(ctx: ServerContext) {
       }
 
       if (pathname === "/identity/agents" && method === "POST") {
-        if (refused(res, refuseForeignRecord("identity", "agent", (body as { agent?: { tenantId?: unknown } }).agent, tenantId))) {
+        const agent = (body as { agent?: Agent }).agent;
+        if (refused(res, refuseForeignRecord("identity", "agent", agent, tenantId))) {
           return;
+        }
+        if (agent) {
+          if (agent.owner !== undefined && agent.owner !== actorId) {
+            sendActorMismatch(res, "agent.owner");
+            return;
+          }
+          if (checkHashedValue(res, agent.id, "agent.id")) return;
+          if (checkHashedValue(res, agent.owner, "agent.owner")) return;
+          if (checkHashedValue(res, agent.name, "agent.name")) return;
+
+          if (!agent.publicKey || !isValidPublicKeyBase64Url(agent.publicKey)) {
+            sendJson(res, 400, {
+              error: "identity.invalid-public-key",
+              code: "identity.invalid-public-key",
+              message: "Agent must be registered with a valid 43-character base64url Ed25519 publicKey.",
+              hint: "Generate an Ed25519 key pair and provide the base64url publicKey.",
+            });
+            return;
+          }
+
+          const tenantHasDelegate = Array.from(mutableState.identity.agents.values()).some(
+            (existing) =>
+              existing.tenantId === tenantId &&
+              existing.capabilities.some((c) => c.kind === "delegate"),
+          );
+
+          if (caller.isTenantRoot) {
+            if (tenantHasDelegate) {
+              sendJson(res, 403, {
+                error: "auth.bootstrap-already-completed",
+                code: "auth.bootstrap-already-completed",
+                message: "Tenant root key bootstrap is only permitted for the tenant's first delegate agent.",
+                hint: "Use an active delegate principal in the tenant to register additional agents.",
+              });
+              return;
+            }
+            const caps = agent.capabilities ?? [];
+            const validBootstrapCaps =
+              caps.length <= 1 &&
+              caps.every((c) => c.kind === "delegate" && (c.grantedBy === undefined || c.grantedBy === actorId));
+            if (!validBootstrapCaps) {
+              sendJson(res, 403, {
+                error: "auth.capabilities-not-allowed",
+                code: "auth.capabilities-not-allowed",
+                message: "Root bootstrap may only pre-populate the initial delegate capability.",
+                hint: "Grant additional capabilities via POST /identity/grants.",
+              });
+              return;
+            }
+          } else {
+            const nowIso = new Date().toISOString() as import("@cognate/types").Timestamp;
+            if (!hasCapability(mutableState.identity, caller.agentId, "delegate", nowIso)) {
+              sendJson(res, 403, {
+                error: "auth.missing-capability",
+                code: "auth.missing-capability",
+                message: "Registering an agent requires the delegate capability.",
+                hint: "Sign the request with an active delegate principal.",
+              });
+              return;
+            }
+            if (Array.isArray(agent.capabilities) && agent.capabilities.length > 0) {
+              sendJson(res, 403, {
+                error: "auth.capabilities-not-allowed",
+                code: "auth.capabilities-not-allowed",
+                message: "Pre-populated agent capabilities are refused; capabilities come only through grants.",
+                hint: "Register the agent with capabilities: [] and use POST /identity/grants.",
+              });
+              return;
+            }
+            if (agent.principal === "human" && caller.principal !== "human") {
+              sendJson(res, 403, {
+                error: "auth.escalation-forbidden",
+                code: "auth.escalation-forbidden",
+                message: "An agent principal cannot register a human principal.",
+                hint: "Human principals must be registered by an active human delegate or the tenant root key.",
+              });
+              return;
+            }
+          }
         }
         const result = handleIdentity(mutableState, pathname, method, body);
         if (!result.ok || !result.state) {
-          sendJson(res, 400, result.error);
+          sendJson(res, statusFor(result.error?.code), result.error);
           return;
         }
         keep({ ...mutableState, identity: result.state });
@@ -505,9 +918,84 @@ export function createCognateServer(ctx: ServerContext) {
         return;
       }
 
+      if (pathname.startsWith("/identity/agents/") && (pathname.endsWith("/key") || pathname.endsWith("/revoke")) && method === "POST") {
+        const targetAgentId = pathname.split("/")[3] ?? "";
+        if (refused(res, refuseHiddenAgent(mutableState, targetAgentId, tenantId))) {
+          return;
+        }
+        const target = getAgent(mutableState.identity, targetAgentId as ActorId)!;
+        if (pathname.endsWith("/key")) {
+          if (target.principal === "human") {
+            if (actorId !== target.id && !caller.isTenantRoot) {
+              sendJson(res, 403, {
+                error: "auth.escalation-forbidden",
+                code: "auth.escalation-forbidden",
+                message: "A human principal's key cannot be rotated by its owner; only the human's own current key or the tenant root can rotate it.",
+                hint: "Sign the key rotation request with the human principal's own current key or the tenant root key.",
+              });
+              return;
+            }
+          } else if (actorId !== target.id && actorId !== target.owner && !caller.isTenantRoot) {
+            sendJson(res, 403, {
+              error: "auth.escalation-forbidden",
+              code: "auth.escalation-forbidden",
+              message: "Only the agent itself, its owner, or the tenant root key can rotate its key.",
+              hint: "Sign the request with the agent's current key, its owner's key, or the tenant root key.",
+            });
+            return;
+          }
+        } else {
+          // /revoke
+          if (target.principal === "human") {
+            const isHumanDelegate =
+              caller.principal === "human" &&
+              hasCapability(
+                mutableState.identity,
+                caller.agentId,
+                "delegate",
+                new Date().toISOString() as import("@cognate/types").Timestamp,
+              );
+            if (actorId !== target.id && !caller.isTenantRoot && !isHumanDelegate) {
+              sendJson(res, 403, {
+                error: "auth.escalation-forbidden",
+                code: "auth.escalation-forbidden",
+                message: "An agent cannot revoke a human principal.",
+                hint: "Human revocation requires the human's own key, an active human delegate, or the tenant root key.",
+              });
+              return;
+            }
+          } else {
+            const hasDel = hasCapability(
+              mutableState.identity,
+              caller.agentId,
+              "delegate",
+              new Date().toISOString() as import("@cognate/types").Timestamp,
+            );
+            if (actorId !== target.id && actorId !== target.owner && !caller.isTenantRoot && !hasDel) {
+              sendJson(res, 403, {
+                error: "auth.escalation-forbidden",
+                code: "auth.escalation-forbidden",
+                message: "Not authorized to revoke this agent.",
+                hint: "Sign the request with the agent's key, its owner's key, an active delegate, or the tenant root key.",
+              });
+              return;
+            }
+          }
+        }
+
+        const result = handleIdentity(mutableState, pathname, method, body);
+        if (!result.ok || !result.state) {
+          sendJson(res, statusFor(result.error?.code), result.error);
+          return;
+        }
+        keep({ ...mutableState, identity: result.state });
+        sendJson(res, 200, result.value);
+        return;
+      }
+
       if ((pathname === "/identity/grants" || pathname.startsWith("/identity/grants/")) && method === "POST") {
         const grantId = pathname.split("/")[3] ?? "";
-        const requested = (body as { grant?: { tenantId?: unknown; agentId?: unknown } }).grant;
+        const requested = (body as { grant?: CapabilityGrant }).grant;
         const approving = body as { approverId?: unknown; timestamp?: unknown };
         if (
           (pathname === "/identity/grants" &&
@@ -522,10 +1010,91 @@ export function createCognateServer(ctx: ServerContext) {
             Boolean(approving.approverId) &&
             Boolean(approving.timestamp) &&
             refused(res, refuseHiddenGrant(mutableState, grantId, tenantId, "approve"))) ||
-          (pathname.endsWith("/vc") && grantId !== "" && refused(res, refuseHiddenGrant(mutableState, grantId, tenantId, "vc")))
+          (pathname.endsWith("/vc") &&
+            grantId !== "" &&
+            refused(res, refuseHiddenGrant(mutableState, grantId, tenantId, "vc")))
         ) {
           return;
         }
+
+        if (pathname === "/identity/grants" && requested !== undefined) {
+          if (requested.requestedBy !== actorId) {
+            sendActorMismatch(res, "grant.requestedBy");
+            return;
+          }
+          if (requested.capability?.grantedBy !== undefined && requested.capability.grantedBy !== actorId) {
+            sendActorMismatch(res, "grant.capability.grantedBy");
+            return;
+          }
+          if (checkHashedValue(res, requested.requestedBy, "grant.requestedBy")) return;
+          if (
+            requested.status !== "pending" ||
+            requested.approvedBy !== null ||
+            (requested.approvedAt !== null && requested.approvedAt !== undefined)
+          ) {
+            sendJson(res, 400, {
+              error: "identity.grant-not-pending",
+              code: "identity.grant-not-pending",
+              message: "A new grant must have status 'pending' and approvedBy null.",
+              hint: "Submit new grants with status: 'pending', approvedBy: null, and approvedAt: null.",
+            });
+            return;
+          }
+          if (requested.capability?.kind === "delegate" && caller.principal !== "human" && !caller.isTenantRoot) {
+            sendJson(res, 403, {
+              error: "auth.escalation-forbidden",
+              code: "auth.escalation-forbidden",
+              message: "An agent principal cannot grant the delegate capability.",
+              hint: "Only an active human delegate or the tenant root key can grant delegate.",
+            });
+            return;
+          }
+        }
+
+        if (pathname.endsWith("/approve") && grantId !== "" && Boolean(approving.approverId) && Boolean(approving.timestamp)) {
+          if (approving.approverId !== actorId) {
+            sendActorMismatch(res, "approverId");
+            return;
+          }
+          if (checkHashedValue(res, approving.approverId, "approverId")) return;
+          const storedGrant = mutableState.identity.grants.get(grantId as HashId);
+          if (storedGrant && actorId === storedGrant.agentId) {
+            sendJson(res, 403, {
+              error: "auth.self-approval-forbidden",
+              code: "auth.self-approval-forbidden",
+              message: "A principal cannot approve a capability grant for itself.",
+              hint: "Have another authorized delegate approve the grant.",
+            });
+            return;
+          }
+          if (
+            !caller.isTenantRoot &&
+            !hasCapability(
+              mutableState.identity,
+              caller.agentId,
+              "delegate",
+              String(approving.timestamp) as import("@cognate/types").Timestamp,
+            )
+          ) {
+            sendJson(res, 403, {
+              error: "auth.missing-capability",
+              code: "auth.missing-capability",
+              message: "Approving a capability grant requires the delegate capability.",
+              hint: "Sign the approval with an active delegate principal.",
+            });
+            return;
+          }
+          if (storedGrant && storedGrant.capability.kind === "delegate" && caller.principal !== "human" && !caller.isTenantRoot) {
+            sendJson(res, 403, {
+              error: "auth.escalation-forbidden",
+              code: "auth.escalation-forbidden",
+              message: "An agent principal cannot grant the delegate capability.",
+              hint: "Only an active human delegate or the tenant root key can grant delegate.",
+            });
+            return;
+          }
+        }
+
         const result = handleIdentity(mutableState, pathname, method, body);
         if (!result.ok || !result.state) {
           sendJson(res, result.ok ? 200 : statusFor(result.error?.code), result.ok ? result.value : result.error);
@@ -544,18 +1113,24 @@ export function createCognateServer(ctx: ServerContext) {
           return;
         }
         if (refused(res, refuseForeignRecord("prompts", "prompt", prompt, tenantId))) return;
-        const watched = watchAppends(ctx.eventStore);
+        if (prompt.agentId !== null && prompt.agentId !== undefined && prompt.agentId !== actorId) {
+          sendActorMismatch(res, "prompt.agentId");
+          return;
+        }
+        if (checkHashedValue(res, actorId, "prompt.agentId")) return;
+        const boundPrompt: Prompt = { ...prompt, agentId: actorId };
+        const watched = watchAppends(ctx.eventStore, caller.unsigned);
         const result = await attestLogPrompt(
           mutableState.prompts,
-          { eventStore: watched.eventStore, tenantId: prompt.tenantId },
-          prompt,
+          { eventStore: watched.eventStore, tenantId: boundPrompt.tenantId, actorId },
+          boundPrompt,
         );
         if (!result.ok) {
           sendJson(res, statusFor(result.error.code), result.error);
           return;
         }
         keep({ ...mutableState, prompts: result.state });
-        sendJson(res, 201, { id: prompt.id, eventId: watched.eventId() });
+        sendJson(res, 201, { id: boundPrompt.id, eventId: watched.eventId() });
         return;
       }
 
@@ -579,10 +1154,11 @@ export function createCognateServer(ctx: ServerContext) {
         ) {
           return;
         }
-        const watched = watchAppends(ctx.eventStore);
+        if (checkHashedValue(res, actorId, "output.actorId")) return;
+        const watched = watchAppends(ctx.eventStore, caller.unsigned);
         const result = await attestLogOutput(
           mutableState.prompts,
-          { eventStore: watched.eventStore, tenantId: output.tenantId },
+          { eventStore: watched.eventStore, tenantId: output.tenantId, actorId },
           output,
         );
         if (!result.ok) {
@@ -596,6 +1172,14 @@ export function createCognateServer(ctx: ServerContext) {
 
       sendJson(res, 404, { error: "Not found", path: pathname, method });
     } catch (err) {
+      if (err instanceof BodyTooLargeError) {
+        sendJson(res, 413, {
+          error: "auth.body-too-large",
+          code: "auth.body-too-large",
+          message: err.message,
+        });
+        return;
+      }
       sendJson(res, 500, {
         error: "Internal server error",
         message: err instanceof Error ? err.message : String(err),
@@ -605,3 +1189,50 @@ export function createCognateServer(ctx: ServerContext) {
 
   return { server, state: mutableState };
 }
+
+export {
+  EMPTY_BODY_SHA256,
+  MAX_BODY_BYTES,
+  MAX_LOG_MODE_SUNSET_MS,
+  TIMESTAMP_WINDOW_MS,
+  UNIFORM_UNAUTHENTICATED_BODY,
+  buildCanonicalRequestString,
+  canonicalizeJsonBody,
+  createReplayStore,
+  deriveKid,
+  generateEd25519KeyPair,
+  isJcsCanonicalJsonBytes,
+  isValidAgentIdHeader,
+  isValidKeyIdHeader,
+  isValidNonceHeader,
+  isValidPublicKeyBase64Url,
+  isValidRequestMethod,
+  isValidRequestPath,
+  isValidSignatureHeader,
+  isValidTimestampHeader,
+  loadTenantRootsConfig,
+  sha256HexBytes,
+  signCanonicalRequest,
+  signedRequestsConfigFromEnv,
+  tryDeriveKid,
+  validateSignedRequestsConfig,
+  validateTenantRootsList,
+  verifyCanonicalRequestSignature,
+  verifySignedRequest,
+  type CanonicalRequestFields,
+  type Ed25519KeyPairMaterial,
+  type ReplayStore,
+  type SignatureAuthResult,
+  type VerifiedPrincipal,
+} from "./middleware/signature.js";
+
+export {
+  createSignedClient,
+  signHttpRequest,
+  type SignHttpRequestParams,
+  type SignedClient,
+  type SignedClientOptions,
+  type SignedClientRequestOptions,
+  type SignedHttpRequest,
+} from "./client.js";
+

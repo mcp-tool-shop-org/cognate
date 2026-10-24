@@ -1,6 +1,6 @@
 {
   "name": "@cognate/repomesh-bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "RepoMesh integration bridge for Cognate AI governance",
   "type": "module",
   "main": "dist/index.js",

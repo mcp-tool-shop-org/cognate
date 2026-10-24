@@ -163,4 +163,31 @@ describe("model registry", () => {
     state = transitionVersion(state, "v1", "deployed", "retired", "actor-1", "Retired");
     expect(state.versions["v1"].status).toBe("retired");
   });
+
+  it("enforces sha256:<hex> on version.repo and refuses plaintext account identifiers", () => {
+    let state = createRegistry();
+    state = registerModel(state, { ...makeModel("m1"), owner: "sha256:" + "a".repeat(64) });
+    const validRepo = "sha256:" + "b".repeat(64);
+    state = registerVersion(state, { ...makeVersion("v1", "m1", "1.0.0"), repo: validRepo, release: "1.0.0" });
+    expect(state.versions["v1"].repo).toBe(validRepo);
+
+    expect(() =>
+      registerVersion(state, { ...makeVersion("v2", "m1", "2.0.0"), repo: "org-slug/model-repo" }),
+    ).toThrow(RegistryError);
+    const fakeEmail = ["operator", "example.org"].join("@");
+    const fakePosixHome = ["", "home", "operator", "weights"].join("/");
+    const fakeWinHome = ["C:", "Users", "operator", "weights"].join("\\");
+    expect(() =>
+      registerModel(state, { ...makeModel("m2"), owner: fakeEmail }),
+    ).toThrow(RegistryError);
+    expect(() =>
+      registerModel(state, { ...makeModel("m3"), name: fakePosixHome }),
+    ).toThrow(RegistryError);
+    expect(() =>
+      registerModel(state, { ...makeModel("m4"), owner: fakeWinHome }),
+    ).toThrow(RegistryError);
+    expect(() =>
+      transitionVersion(state, "missing-v", "registered", "evaluated", "actor-1", "Eval"),
+    ).toThrow(RegistryError);
+  });
 });

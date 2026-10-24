@@ -138,4 +138,33 @@ describe("attestia prompt log", () => {
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe("store.prompt-not-found");
   });
+
+  it("uses explicit actorId and handles output append failure", async () => {
+    const appended: Array<{ metadata: { actor: string } }> = [];
+    let state = createStore();
+    const promptRes = await attestLogPrompt(state, {
+      tenantId: "tenant-1",
+      actorId: "signer-agent-1",
+      eventStore: {
+        async append(_streamId, events) {
+          appended.push(...(events as Array<{ metadata: { actor: string } }>));
+        },
+      },
+    }, basePrompt);
+    expect(promptRes.ok).toBe(true);
+    expect(appended[0]?.metadata.actor).toBe("signer-agent-1");
+    state = promptRes.state!;
+
+    const outFail = await attestLogOutput(state, {
+      tenantId: "tenant-1",
+      actorId: "signer-agent-1",
+      eventStore: {
+        async append() {
+          throw new Error("output store down");
+        },
+      },
+    }, baseOutput);
+    expect(outFail.ok).toBe(false);
+    expect(outFail.error?.code).toBe("attestia.append-failed");
+  });
 });

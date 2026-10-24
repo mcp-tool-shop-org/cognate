@@ -120,6 +120,9 @@ importers:
       '@mcptoolshop/attestia':
         specifier: ^2.0.5
         version: 2.0.5(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      json-canonicalize:
+        specifier: ^2.0.0
+        version: 2.0.0
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -195,6 +198,10 @@ importers:
         version: 1.6.1(@types/node@22.20.4)
 
   packages/types:
+    dependencies:
+      json-canonicalize:
+        specifier: ^2.0.0
+        version: 2.0.0
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^1.6.1

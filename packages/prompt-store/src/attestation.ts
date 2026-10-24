@@ -34,6 +34,7 @@ function cognateEvent(
 export interface AttestLogConfig {
   readonly eventStore: Pick<EventStore, "append">;
   readonly tenantId: string;
+  readonly actorId?: string;
   readonly streamPrefix?: string;
 }
 
@@ -59,18 +60,20 @@ export async function attestLogPrompt(
   const result = logPrompt(state, prompt);
   if (!result.ok) return result;
 
+  const actorId = config.actorId ?? prompt.agentId ?? prompt.tenantId;
   try {
     await config.eventStore.append(
       makeStreamId(config, "prompts"),
       [
         cognateEvent(
           "cognate.prompt.logged",
-          prompt.tenantId,
+          actorId,
           prompt.submittedAt,
           prompt.id,
           {
             promptId: prompt.id,
             tenantId: prompt.tenantId,
+            ...(config.actorId ?? prompt.agentId ? { actorId } : {}),
             modelVersionId: prompt.modelVersionId,
             plaintextHash: prompt.plaintextHash,
             submittedAt: prompt.submittedAt,
@@ -104,18 +107,21 @@ export async function attestLogOutput(
   const result = logOutput(state, output);
   if (!result.ok) return result;
 
+  const parentPrompt = state.prompts.get(output.promptId);
+  const actorId = config.actorId ?? parentPrompt?.agentId ?? output.tenantId;
   try {
     await config.eventStore.append(
       makeStreamId(config, "outputs"),
       [
         cognateEvent(
           "cognate.output.logged",
-          output.tenantId,
+          actorId,
           output.generatedAt,
           output.id,
           {
             outputId: output.id,
             tenantId: output.tenantId,
+            ...(config.actorId ?? parentPrompt?.agentId ? { actorId } : {}),
             promptId: output.promptId,
             modelVersionId: output.modelVersionId,
             plaintextHash: output.plaintextHash,

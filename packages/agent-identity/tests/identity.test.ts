@@ -10,6 +10,9 @@ import {
   getActiveCapabilities,
   hasCapability,
   getGrantsForAgent,
+  deriveKeyIdFromPublicKey,
+  rotateAgentKey,
+  revokeAgent,
 } from '../src/identity.js';
 
 const now = '2026-09-28T12:00:00.000Z';
@@ -284,4 +287,105 @@ describe('agent-identity', () => {
     const result = revokeCapability(state, 'agent-1', 'cap-1', 'admin-1', later);
     expect(result.ok).toBe(false);
     expect(result.error.code).toBe('identity.capability-not-found');
+  });
+
+  it('validates Ed25519 publicKey and derives kid on registerAgent', () => {
+    const validKey1 = 'OU0e1p_4rG9FqAHKkPob3VddG3eBEbRs55JR2wL5TIM';
+    const expectedKid1 = '6e676438555d5783c9197c1ad0f7ffd21d30c017f3bc882014c90756d91224e3';
+    expect(deriveKeyIdFromPublicKey(validKey1)).toBe(expectedKid1);
+    expect(deriveKeyIdFromPublicKey('short')).toBeNull();
+
+    let state = createRegistry();
+    const badKey = registerAgent(state, { ...baseAgent, publicKey: 'not-a-valid-key' });
+    expect(badKey.ok).toBe(false);
+    if (!badKey.ok) expect(badKey.error.code).toBe('identity.invalid-public-key');
+
+    const mismatchKid = registerAgent(state, { ...baseAgent, publicKey: validKey1, kid: '0'.repeat(64) });
+    expect(mismatchKid.ok).toBe(false);
+    if (!mismatchKid.ok) expect(mismatchKid.error.code).toBe('identity.kid-mismatch');
+
+    const okReg = registerAgent(state, { ...baseAgent, publicKey: validKey1 });
+    expect(okReg.ok).toBe(true);
+    expect(getAgent(okReg.state, 'agent-1')?.kid).toBe(expectedKid1);
+  });
+
+  it('refuses duplicate grants, pre-approved grants, missing grants, and self-approval', () => {
+    let state = createRegistry();
+    state = registerAgent(state, baseAgent).state;
+    const grant = {
+      id: 'grant-1',
+      tenantId: 'tenant-1',
+      agentId: 'agent-1',
+      capability: baseCapability,
+      requestedBy: 'human-1',
+      requestedAt: now,
+      status: 'pending' as const,
+      approvedBy: null,
+      approvedAt: null,
+    };
+    state = requestGrant(state, grant).state;
+
+    const dup = requestGrant(state, grant);
+    expect(dup.ok).toBe(false);
+    if (!dup.ok) expect(dup.error.code).toBe('identity.duplicate-grant');
+
+    const preApproved = requestGrant(state, {
+      ...grant,
+      id: 'grant-pre',
+      status: 'approved',
+      approvedBy: 'admin-1',
+      approvedAt: now,
+    });
+    expect(preApproved.ok).toBe(false);
+    if (!preApproved.ok) expect(preApproved.error.code).toBe('identity.grant-not-pending');
+
+    const missingApprove = approveGrant(state, 'grant-missing', 'admin-1', later);
+    expect(missingApprove.ok).toBe(false);
+    if (!missingApprove.ok) expect(missingApprove.error.code).toBe('identity.grant-not-found');
+
+    const selfApprove = approveGrant(state, 'grant-1', 'agent-1', later);
+    expect(selfApprove.ok).toBe(false);
+    if (!selfApprove.ok) expect(selfApprove.error.code).toBe('auth.self-approval-forbidden');
+  });
+
+  it('rotates and revokes agent keys', () => {
+    const key1 = 'OU0e1p_4rG9FqAHKkPob3VddG3eBEbRs55JR2wL5TIM';
+    const kid1 = '6e676438555d5783c9197c1ad0f7ffd21d30c017f3bc882014c90756d91224e3';
+    const key2 = 'Ts-MTztMri3vSZwiT87kz0E0CduYsTBJUxA590z8rf8';
+    const kid2 = 'e86478cb0dda167def172760eb69c635497dd3cfe3bc9849388f96ffdc6804f7';
+
+    let state = createRegistry();
+    expect(rotateAgentKey(state, 'missing', key1).ok).toBe(false);
+    expect(revokeAgent(state, 'missing').ok).toBe(false);
+
+    state = registerAgent(state, { ...baseAgent, publicKey: key1 }).state;
+
+    const badNewKey = rotateAgentKey(state, 'agent-1', 'bad-key');
+    expect(badNewKey.ok).toBe(false);
+    if (!badNewKey.ok) expect(badNewKey.error.code).toBe('identity.invalid-public-key');
+
+    const sameKey = rotateAgentKey(state, 'agent-1', key1);
+    expect(sameKey.ok).toBe(false);
+    if (!sameKey.ok) expect(sameKey.error.code).toBe('identity.key-already-used');
+
+    const rotated = rotateAgentKey(state, 'agent-1', key2);
+    expect(rotated.ok).toBe(true);
+    state = rotated.state;
+    expect(getAgent(state, 'agent-1')?.kid).toBe(kid2);
+    expect(getAgent(state, 'agent-1')?.revokedKids).toEqual([kid1]);
+
+    const reusedRevoked = rotateAgentKey(state, 'agent-1', key1);
+    expect(reusedRevoked.ok).toBe(false);
+    if (!reusedRevoked.ok) expect(reusedRevoked.error.code).toBe('identity.key-already-used');
+
+    const revoked = revokeAgent(state, 'agent-1');
+    expect(revoked.ok).toBe(true);
+    state = revoked.state;
+    expect(getAgent(state, 'agent-1')?.status).toBe('revoked');
+    expect(getAgent(state, 'agent-1')?.publicKey).toBeNull();
+    expect(getAgent(state, 'agent-1')?.revokedKids).toEqual([kid1, kid2]);
+
+    const rotateAfterRevoke = rotateAgentKey(state, 'agent-1', key1);
+    expect(rotateAfterRevoke.ok).toBe(false);
+    if (!rotateAfterRevoke.ok) expect(rotateAfterRevoke.error.code).toBe('identity.agent-not-active');
   });
