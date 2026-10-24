@@ -6,13 +6,14 @@ import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import type { ActorId, ModelVersionStatus } from "@cognate/types";
 import type { DomainEvent, EventStore } from "@mcptoolshop/attestia/event-store";
 import { getAgent } from "@cognate/agent-identity";
-import { attestTransitionVersion } from "@cognate/model-registry";
+import { attestEvaluation, attestTransitionVersion } from "@cognate/model-registry";
 import { RegistryError } from "@cognate/model-registry";
 import { attestLogOutput, attestLogPrompt } from "@cognate/prompt-store";
 import type { Output, Prompt } from "@cognate/types";
 import { handleHealth } from "./routes/health.js";
 import { handlePolicy } from "./routes/policy.js";
 import { handleRegistry } from "./routes/registry.js";
+import { EVALUATIONS_PATH, parseEvaluationRequest } from "./routes/evaluations.js";
 import { handleIdentity } from "./routes/identity.js";
 import { handlePrompts } from "./routes/prompts.js";
 import { authenticate } from "./middleware/auth.js";
@@ -254,6 +255,30 @@ export function createCognateServer(ctx: ServerContext) {
         return;
       }
 
+      const evaluationsPath = method === "POST" ? EVALUATIONS_PATH.exec(pathname) : null;
+      if (evaluationsPath) {
+        const versionId = evaluationsPath[1] ?? "";
+        const tenantId = getAgent(mutableState.identity, actorId)?.tenantId ?? "default";
+        const parsed = parseEvaluationRequest(body, versionId, tenantId);
+        if (!parsed.ok) {
+          sendJson(res, 400, parsed.error);
+          return;
+        }
+        const watched = watchAppends(ctx.eventStore);
+        try {
+          const next = await attestEvaluation(mutableState.registry, { eventStore: watched.eventStore, tenantId }, parsed.evaluation);
+          keep({ ...mutableState, registry: next });
+          sendJson(res, 201, { evaluationId: parsed.evaluation.id, versionId, eventId: watched.eventId() });
+        } catch (err) {
+          if (err instanceof RegistryError) {
+            sendJson(res, statusFor(err.code), { code: err.code, message: err.message, hint: err.hint });
+            return;
+          }
+          throw err;
+        }
+        return;
+      }
+
       if (pathname.startsWith("/registry/versions/") && method === "POST") {
         const parts = pathname.split("/");
         const versionId = parts[3] ?? "";
@@ -263,6 +288,7 @@ export function createCognateServer(ctx: ServerContext) {
           to?: ModelVersionStatus;
           actorId?: string;
           reason?: string;
+          evaluationIds?: unknown;
           repo?: unknown;
           release?: unknown;
         };
@@ -355,6 +381,9 @@ export function createCognateServer(ctx: ServerContext) {
               transition.to,
               transition.actorId,
               transition.reason,
+              Array.isArray(transition.evaluationIds)
+                ? { evaluationIds: transition.evaluationIds.map((id) => String(id)) }
+                : {},
             );
             keep({ ...mutableState, registry: next });
             sendJson(res, 200, {

@@ -6,12 +6,12 @@
  */
 
 import { createHash, randomUUID } from "node:crypto";
-import type { ModelVersionStatus } from "@cognate/types";
+import type { Evaluation, ModelVersionStatus } from "@cognate/types";
 import type { DomainEvent, EventStore } from "@mcptoolshop/attestia/event-store";
 import { MerkleTree } from "@mcptoolshop/attestia/proof";
-import type { RegistryState, TransitionEvent } from "./types.js";
+import type { RegistryState, TransitionEvent, TransitionOptions } from "./types.js";
 import { RegistryError } from "./types.js";
-import { transitionVersion } from "./registry.js";
+import { recordEvaluation, transitionVersion } from "./registry.js";
 
 function cognateEvent(
   type: string,
@@ -39,8 +39,55 @@ export interface AttestTransitionConfig {
   readonly streamPrefix?: string;
 }
 
-function makeStreamId(config: AttestTransitionConfig): string {
-  return `${config.streamPrefix ?? "cognate"}-${config.tenantId}-transitions`;
+function makeStreamId(config: AttestTransitionConfig, suffix = "transitions"): string {
+  return `${config.streamPrefix ?? "cognate"}-${config.tenantId}-${suffix}`;
+}
+
+async function appendOrThrow(
+  config: AttestTransitionConfig,
+  streamId: string,
+  event: DomainEvent,
+  what: string,
+): Promise<void> {
+  try {
+    await config.eventStore.append(streamId, [event]);
+  } catch (err) {
+    throw new RegistryError({
+      code: "attestia.append-failed",
+      message: `Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
+      hint: `The ${what} was not returned. The caller keeps the registry it passed in.`,
+    });
+  }
+}
+
+/**
+ * Record an evaluation on a version and append `cognate.evaluation.recorded` to the tenant's evaluations stream.
+ *
+ * One append, so the log and the returned snapshot can't disagree: the snapshot is returned only after the append
+ * succeeds.
+ */
+export async function attestEvaluation(
+  state: RegistryState,
+  config: AttestTransitionConfig,
+  evaluation: Evaluation,
+): Promise<RegistryState> {
+  const newState = recordEvaluation(state, evaluation);
+  await appendOrThrow(
+    config,
+    makeStreamId(config, "evaluations"),
+    cognateEvent("cognate.evaluation.recorded", evaluation.evaluator, evaluation.evaluatedAt, evaluation.modelVersionId, {
+      id: evaluation.id,
+      tenantId: evaluation.tenantId,
+      modelVersionId: evaluation.modelVersionId,
+      evaluator: evaluation.evaluator,
+      evaluatedAt: evaluation.evaluatedAt,
+      metrics: evaluation.metrics.map((m) => ({ ...m })),
+      overall: evaluation.overall,
+      notes: evaluation.notes,
+    }),
+    "evaluation",
+  );
+  return newState;
 }
 
 /**
@@ -56,9 +103,10 @@ export async function attestTransitionVersion(
   from: ModelVersionStatus,
   to: ModelVersionStatus,
   actorId: string,
-  reason: string
+  reason: string,
+  options: TransitionOptions = {},
 ): Promise<RegistryState> {
-  const newState = transitionVersion(state, modelVersionId, from, to, actorId, reason);
+  const newState = transitionVersion(state, modelVersionId, from, to, actorId, reason, options);
 
   const event: TransitionEvent = newState.transitions[modelVersionId]?.slice(-1)[0] ?? {
     modelVersionId,
@@ -85,6 +133,7 @@ export async function attestTransitionVersion(
             actorId: event.actorId,
             reason: event.reason,
             timestamp: event.timestamp,
+            ...(event.evaluationIds !== undefined ? { evaluationIds: [...event.evaluationIds] } : {}),
           },
         ),
       ],
@@ -121,6 +170,8 @@ export function buildTransitionProof(
           actorId: t.actorId,
           reason: t.reason,
           timestamp: t.timestamp,
+          // Only cited transitions carry this key, so the leaf of an uncited transition is unchanged.
+          ...(t.evaluationIds !== undefined ? { evaluationIds: t.evaluationIds } : {}),
         }),
       )
       .digest("hex"),

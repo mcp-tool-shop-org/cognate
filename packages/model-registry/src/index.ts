@@ -10,15 +10,18 @@ export {
   registerModel,
   registerVersion,
   transitionVersion,
+  recordEvaluation,
+  getEvaluations,
   getVersionHistory,
   getCurrentDeployedVersion,
 } from "./registry.js";
 
-export type { RegistryState, TransitionEvent } from "./types.js";
+export type { RegistryState, TransitionEvent, TransitionOptions } from "./types.js";
 export { RegistryError } from "./types.js";
 
 export type { AttestTransitionConfig } from "./attestation.js";
 export {
+  attestEvaluation,
   attestTransitionVersion,
   buildTransitionProof,
 } from "./attestation.js";

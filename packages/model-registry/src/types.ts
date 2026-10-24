@@ -20,6 +20,19 @@ export interface TransitionEvent {
   readonly reason: string;
   /** ISO 8601 timestamp of the transition. */
   readonly timestamp: string;
+  /**
+   * The evaluations this decision rests on, by id. Present only when the transition cited some, so a transition
+   * without citations is recorded (and hashed) exactly as before.
+   */
+  readonly evaluationIds?: readonly string[];
+}
+
+/**
+ * Options for a transition.
+ */
+export interface TransitionOptions {
+  /** Evaluations recorded on this version that the decision rests on. Each must exist; the list must not be empty. */
+  readonly evaluationIds?: readonly string[];
 }
 
 /**
@@ -32,6 +45,11 @@ export interface RegistryState {
   readonly versions: Readonly<Record<string, import("@cognate/types").ModelVersion>>;
   /** Transition history per version id. */
   readonly transitions: Readonly<Record<string, readonly TransitionEvent[]>>;
+  /**
+   * Evaluations per version id, in the order they were recorded. Optional so a snapshot saved before evaluations
+   * existed still loads; read it with `getEvaluations`.
+   */
+  readonly evaluations?: Readonly<Record<string, readonly import("@cognate/types").Evaluation[]>>;
 }
 
 /**

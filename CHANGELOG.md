@@ -4,6 +4,31 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **A model version can carry any number of evaluations, and a decision cites the ones it rests on.** Before, the only
+  way to record an evaluation was the `registered → evaluated` transition, so a second evaluation (a replication, a
+  pooled result) had nowhere to go: `evaluated → evaluated` was refused. A decision built on a run and a replication
+  that disagreed couldn't be recorded.
+  - `@cognate/model-registry`: `recordEvaluation`, `getEvaluations` and `attestEvaluation`, using the `Evaluation`
+    type from `@cognate/types`. `attestEvaluation` appends `cognate.evaluation.recorded` to
+    `cognate-<tenant>-evaluations`, and returns the new state only after the append succeeds. Recording is not a
+    transition. A rejected or retired version takes no more evaluations.
+  - `transitionVersion` and `attestTransitionVersion` take an optional `{ evaluationIds }`. Each cited id must be an
+    evaluation recorded on that version, and the list can't be empty. The ids are recorded on the transition, sent in
+    the event, and bound into its lineage hash. A transition that cites nothing is recorded, sent and hashed exactly as
+    before.
+  - `@cognate/node`: `POST /registry/versions/:id/evaluations` records an evaluation (201, with the event id). The
+    version, tenant and agent checks match the transition route. `POST /registry/versions/:id` passes
+    `evaluationIds` through. Evaluation events get inclusion proofs from `GET /events/:eventId`.
+
+### Changed
+
+- **An approved version can be rejected before it is deployed** (`approved → rejected`), for example when a
+  replication reverses the evaluation the approval rested on. Deployed and retired versions are unchanged.
+- `@cognate/model-registry` and `@cognate/node` enforce the org's 90% line-coverage floor. They measure 97.2% and
+  92.8%.
+
 ## [0.1.8] - 2026-10-14
 
 ### Security
