@@ -32,8 +32,8 @@ sidebar:
 | `preRegisterRun` | Record a `RunPreRegistration` before launch |
 | `recordRunOutcome` | Record a `RunOutcome` linked to a pre-registered run |
 | `getRunPreRegistration` / `getRunOutcomes` | Read pre-registrations and outcomes from the registry snapshot |
-| `attestRunPreRegistered` / `attestRunCompleted` | Append `cognate.run.pre_registered` and `cognate.run.completed` on the `cognate-${tenantId}-runs` stream |
-| `isSha256Hex` / `assertRunHashedIdentifiers` | Enforce the hashed-identifier rule and reject plaintext identifiers or account balance fields |
+| `attestRunPreRegistered` / `attestRunCompleted` | Append `cognate.run.preregistered` and `cognate.run.completed` on the `cognate-${tenantId}-runs` stream |
+| `isSha256Hex` / `validateHashedIdentifiers` / `validateRunPreRegistration` / `validateRunOutcome` | Enforce the hashed-identifier rule and reject plaintext identifiers or account balance fields |
 | `RegistryError` | `code`, `message`, `hint` |
 
 Version states: `registered`, `evaluated`, `approved`, `deployed`, `rejected`, `retired`.
@@ -72,7 +72,7 @@ Run statuses: `in_progress`, `completed`, `cancelled`, `lost`.
 
 ## @cognate/types
 
-Shared types only. Notable nouns: `Model`, `ModelVersion`, `RunPreRegistration`, `RunOutcome`, `RunCost`, `RunStatus`, `RunRetirement`, `Sha256Hex`, `Policy`, `PolicyRule`, `DatasetRef`, and the branded ids `HashId`, `Timestamp`, `TenantId`, `ActorId`.
+Shared types only. Notable nouns: `Model`, `ModelVersion`, `RunPreRegistration`, `RunOutcome`, `RunCost`, `RunCostBasis`, `RunStatus`, `RunRetirement`, `Policy`, `PolicyRule`, `DatasetRef`, and the branded ids `HashId`, `Timestamp`, `TenantId`, `ActorId`.
 
 Model architectures: `transformer`, `diffusion`, `mamba`, `rnn`, `cnn`, `hybrid`, `other`.
 

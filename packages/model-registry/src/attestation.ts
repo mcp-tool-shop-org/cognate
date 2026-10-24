@@ -202,7 +202,7 @@ export async function attestRunCompleted(
 export async function attestRunCompleted(
   config: AttestRunConfig,
   outcome: RunOutcome,
-  preRegistration?: RunPreRegistration,
+  preRegistration: RunPreRegistration,
 ): Promise<AttestedRunEvent<RunOutcome>>;
 export async function attestRunCompleted(
   stateOrConfig: RegistryState | AttestRunConfig,
@@ -216,9 +216,19 @@ export async function attestRunCompleted(
     ? undefined
     : (outcomeOrPreReg as RunPreRegistration | undefined);
 
+  if (!hasState && (!explicitPreReg || typeof explicitPreReg !== "object")) {
+    throw new RegistryError({
+      code: "PREREGISTRATION_NOT_FOUND",
+      message: `Stateless attestRunCompleted for outcome "${outcome.id}" requires the RunPreRegistration it fulfills.`,
+      hint: "Pass either a RegistryState containing the pre-registration or the explicit RunPreRegistration as the third argument.",
+    });
+  }
+
   const nextState = hasState
     ? recordRunOutcome(stateOrConfig, outcome)
-    : (validateRunOutcome(outcome, explicitPreReg), undefined);
+    : (validateRunPreRegistration(explicitPreReg!),
+      validateRunOutcome(outcome, explicitPreReg!),
+      undefined);
 
   if (outcome.tenantId !== config.tenantId) {
     throw new RegistryError({

@@ -237,12 +237,34 @@ export type ForbiddenPlaintextIdentifierKey =
   | "repo"
   | "githubOwner"
   | "github_owner"
+  | "owner"
+  | "repoOwner"
+  | "repo_owner"
+  | "hfOwner"
+  | "hf_owner"
+  | "githubUser"
+  | "github_user"
+  | "hfUser"
+  | "hf_user"
+  | "username"
+  | "user_name"
+  | "user"
+  | "author"
   | "account"
+  | "accountName"
+  | "account_name"
   | "email"
   | "authorEmail"
   | "author_email"
+  | "userEmail"
+  | "user_email"
   | "homePath"
-  | "home_path";
+  | "home_path"
+  | "handle"
+  | "githubHandle"
+  | "github_handle"
+  | "hfHandle"
+  | "hf_handle";
 
 /**
  * Account balance field names forbidden in run records.
@@ -250,13 +272,31 @@ export type ForbiddenPlaintextIdentifierKey =
  * the account's start or end balance.
  */
 export type ForbiddenAccountBalanceKey =
+  | "balance"
   | "startBalance"
   | "endBalance"
   | "startBalanceBeforeLaunch"
   | "start_balance"
   | "end_balance"
+  | "start_balance_before_launch"
+  | "endBalanceAfterRun"
+  | "startingBalance"
+  | "starting_balance"
+  | "endingBalance"
+  | "ending_balance"
+  | "remainingBalance"
+  | "remaining_balance"
+  | "initialBalance"
+  | "initial_balance"
+  | "finalBalance"
+  | "final_balance"
   | "accountBalance"
-  | "account_balance";
+  | "account_balance"
+  | "colabBalance"
+  | "colab_balance"
+  | "unitBalance"
+  | "creditBalance"
+  | "walletBalance";
 
 /**
  * Compile-time prohibition of plaintext account-naming fields and account balance fields.
@@ -275,6 +315,11 @@ export interface RunIdentifierHashes extends ForbidPlaintextAccountFields {
   readonly ggufSourceSha256?: HashId | null;
   readonly hfRepoSha256?: HashId | null;
   readonly githubOwnerSha256?: HashId | null;
+  readonly ownerSha256?: HashId | null;
+  readonly repoOwnerSha256?: HashId | null;
+  readonly githubUserSha256?: HashId | null;
+  readonly hfOwnerSha256?: HashId | null;
+  readonly usernameSha256?: HashId | null;
   readonly accountSha256?: HashId | null;
   readonly emailSha256?: HashId | null;
   readonly authorEmailSha256?: HashId | null;
