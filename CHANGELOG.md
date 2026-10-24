@@ -36,6 +36,10 @@ All notable changes to Cognate are documented in this file.
 
 ### Changed
 
+- **Test toolchain: vitest 1.6 to 4.1.12, with vite 8.3.5 declared as its peer.** It clears the high and critical
+  advisories in the dev tree (vitest, vite, tinypool, source-map-js) with no ignores or overrides; `pnpm audit
+  --audit-level high` over the whole tree is clean. Every test passes unchanged, and the coverage floors are
+  unchanged. vitest 4 measures coverage differently, so the figures moved (node lines 93.04 to 90.73).
 - **An approved version can be rejected before it is deployed** (`approved → rejected`), for example when a
   replication reverses the evaluation the approval rested on. Deployed and retired versions are unchanged.
 - `@cognate/node` enforces the org's 90% line-coverage floor. It measures 93.0%. `@cognate/model-registry` keeps
