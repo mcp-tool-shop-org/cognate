@@ -34,27 +34,59 @@ const VALID_TRANSITIONS: Readonly<
 
 const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
 
-const FORBIDDEN_BALANCE_KEY_RE =
-  /^(?:startBalance|endBalance|startBalanceBeforeLaunch|start_balance|end_balance|accountBalance|account_balance)$/i;
+const FORBIDDEN_BALANCE_KEY_RE = /balance/i;
 
 const FORBIDDEN_PLAINTEXT_ID_KEY_RE =
-  /^(?:ggufRepo|gguf_repo|ggufSource|gguf_source|hostedRepo|hosted_repo|hfRepo|hf_repo|repo|githubOwner|github_owner|account|email|authorEmail|author_email|homePath|home_path)$/i;
+  /^(?:(?:gguf|hosted|hf|model|source|target)?_?repo|(?:gguf|model)?_?source|(?:github|hf|repo|model|account)?_?owner|(?:github|hf|repo)?_?user(?:_?name)?|account(?:_?name)?|(?:author|user)?_?email|author|home_?path|(?:github|hf)?_?handle)$/i;
 
 const ACCOUNT_SHA256_KEY_RE =
-  /^(?:ggufRepoSha256|hostedRepoSha256|repoSha256|ggufSourceSha256|hfRepoSha256|githubOwnerSha256|accountSha256|emailSha256|authorEmailSha256|homePathSha256)$/i;
+  /^(?:(?:gguf|hosted|hf|model|source|target)?_?repo|(?:gguf|model)?_?source|(?:github|hf|repo|model|account)?_?owner|(?:github|hf|repo)?_?user(?:_?name)?|account(?:_?name)?|(?:author|user)?_?email|author|home_?path|(?:github|hf)?_?handle)_?sha256$/i;
 
 const ANY_SHA256_KEY_RE = /(?:Sha256|_sha256)$/i;
 
 const EMAIL_VALUE_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
 
 const HOME_PATH_VALUE_RE =
-  /(?:[A-Za-z][:$][\\/]+Users[\\/]+|(?:^|[\\/])Users[\\/]+(?!Public\b|Default\b|All Users\b)|(?:^|[\\/])home[\\/]+|(?:^|[\s"'(=])~[\\/]+)[^\s"'/\\]+/i;
+  /(?:[A-Za-z][:$][\\/]+Users[\\/]+(?!Public\b|Default\b|All Users\b)|(?:^|[\\/])Users[\\/]+(?!Public\b|Default\b|All Users\b)|(?:^|[\\/])home[\\/]+|(?:^|[\s"'(=])~[\\/]+)[^\s"'/\\]+/i;
 
 const REPO_URL_OR_HANDLE_VALUE_RE =
-  /(?:https?:\/\/)?(?:huggingface\.co|hf\.co|github\.com)\/[A-Za-z0-9._-]+|hf:\/\/[A-Za-z0-9._-]+|(?:^|[\s(])@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?\b/i;
+  /(?:https?:\/\/)?(?:huggingface\.co|hf\.co|github\.com)\/[A-Za-z0-9._-]+|hf:\/\/[A-Za-z0-9._-]+|(?<![A-Za-z0-9._%+-])@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?\b/i;
 
-const OWNER_REPO_SLUG_VALUE_RE =
-  /\b(?=[A-Za-z0-9._-]*[A-Za-z])[A-Za-z0-9][A-Za-z0-9._-]{0,38}\/(?=[A-Za-z0-9._-]*[A-Za-z])[A-Za-z0-9._-]{2,}\b/;
+const CANDIDATE_OWNER_REPO_RE =
+  /(?<![A-Za-z0-9._/:~-])([A-Za-z][A-Za-z0-9_-]{1,38})\/([A-Za-z0-9][A-Za-z0-9._-]{0,99})(?:\/([A-Za-z0-9._-]{1,120}\.(?:gguf|safetensors|bin|pt|pth|onnx)))?(?![A-Za-z0-9._/:-])/g;
+
+const NON_ACCOUNT_TOKEN_RE =
+  /^(?:v?\d+(?:\.\d+)*[a-z]?|(?:w|window|run|lane|arm|card|step|stage|phase|tier|r|e|s)\d[a-z0-9_-]*|arm[a-z0-9_-]*|a100|h100|b200|l4|t4|v100|rtx\d+|sm\d+|fp\d+|bf16|int\d+|q\d+_[a-z0-9_]+|node\d+|pnpm\d+|cuda\d+|cpu|gpu|tpu)$/i;
+
+const WORKSPACE_DIR_RE =
+  /^(?:src|dist|lib|bin|pkg|packages|tests|test|docs|site|scripts|schemas|config|stub|results|receipts|logs|data|out|tmp|worktrees|node_modules|public|assets|handbook|content|routes|middleware)$/i;
+
+const SOURCE_OR_LOG_FILE_RE =
+  /\.(?:log|json|jsonl|txt|md|ts|tsx|js|mjs|cjs|py|sh|yml|yaml|toml|lock|csv|html|css|sql)$/i;
+
+const RATIO_OR_PROSE_PAIR_RE =
+  /^(?:s|sec|secs|second|seconds|ms|min|mins|minute|minutes|hr|hrs|hour|hours|h|d|day|days|unit|units|tok|tokens|req|reqs|request|requests|call|calls|step|steps|epoch|epochs|run|runs|b|kb|mb|gb|tb|kib|mib|gib|tib|pass|fail|true|false|yes|no|on|off|in|out|read|write|train|val|valid|validation|test|dev|prod|staging|main|master|ci|cd|http|https|tcp|ip|udp|tls|ssl|ws|wss|grpc|rest|utf8|ascii|na|none|null|all|any|other|or|and|with|without|from|to|by|of|per|via|vs|max|avg|mean|sum|total|count|part|page|line|col|row|idx|id)$/i;
+
+function hasOwnerRepoSlug(value: string): boolean {
+  for (const match of value.matchAll(CANDIDATE_OWNER_REPO_RE)) {
+    const owner = match[1]!;
+    const repo = match[2]!;
+    const artifact = match[3];
+
+    if (owner.endsWith("-")) continue;
+    if (NON_ACCOUNT_TOKEN_RE.test(owner)) continue;
+    if (WORKSPACE_DIR_RE.test(owner)) continue;
+    if (artifact === undefined && SOURCE_OR_LOG_FILE_RE.test(repo)) continue;
+    if (
+      artifact === undefined &&
+      (RATIO_OR_PROSE_PAIR_RE.test(owner) || RATIO_OR_PROSE_PAIR_RE.test(repo))
+    ) {
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
 
 const VALID_RUN_STATUSES: readonly RunStatus[] = [
   "in_progress",
@@ -356,7 +388,7 @@ function containsPlaintextAccountValue(value: string): boolean {
     EMAIL_VALUE_RE.test(value) ||
     HOME_PATH_VALUE_RE.test(value) ||
     REPO_URL_OR_HANDLE_VALUE_RE.test(value) ||
-    OWNER_REPO_SLUG_VALUE_RE.test(value)
+    hasOwnerRepoSlug(value)
   );
 }
 
@@ -711,11 +743,11 @@ export function recordRunOutcome(
   }
 
   const priorForRun = getRunOutcomes(state, outcome.preRegistrationId);
-  const hasTerminalPrior = priorForRun.some((o) => o.status !== "in_progress");
-  if (hasTerminalPrior && outcome.status === "in_progress") {
+  const terminalPrior = priorForRun.find((o) => o.status !== "in_progress");
+  if (terminalPrior !== undefined) {
     throw new RegistryError({
       code: "INVALID_RUN_TRANSITION",
-      message: `Run "${outcome.preRegistrationId}" has already reached a terminal state and cannot return to "in_progress".`,
+      message: `Run "${outcome.preRegistrationId}" has already reached terminal state "${terminalPrior.status}" and cannot transition to "${outcome.status}".`,
       hint: "Only in_progress runs may transition to completed, cancelled, or lost.",
     });
   }
