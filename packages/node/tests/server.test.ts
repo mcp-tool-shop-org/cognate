@@ -264,7 +264,7 @@ describe("Cognate HTTP API", () => {
         method: "POST",
         body: { from: "registered", to: "deployed", actorId: "admin-1", reason: "Skip" },
       });
-      expect(status).toBe(400);
+      expect(status).toBe(404);
       expect(json.code).toBe("VERSION_NOT_FOUND");
     } finally {
       stop();
@@ -322,7 +322,7 @@ describe("Cognate HTTP API", () => {
         method: "POST",
         body: { approverId: "admin-1", timestamp: "2026-09-28T12:01:00Z" },
       });
-      expect(status).toBe(400);
+      expect(status).toBe(404);
       expect(json.code).toBe("identity.grant-not-found");
     } finally {
       stop();
@@ -483,7 +483,7 @@ describe("Cognate HTTP API", () => {
     try {
       const missing = { ...output, promptId: "missing" };
       const { status, json } = await fetchJson(port, "/prompts/missing/outputs", { method: "POST", body: { output: missing } });
-      expect(status).toBe(400);
+      expect(status).toBe(404);
       expect(json.code).toBe("store.prompt-not-found");
     } finally {
       stop();
@@ -619,7 +619,7 @@ describe("Cognate HTTP API", () => {
         method: "POST",
         body: { issuerId: "org/example" },
       });
-      expect(status).toBe(400);
+      expect(status).toBe(404);
       expect(json.code).toBe("vc.grant-not-found");
     } finally {
       stop();

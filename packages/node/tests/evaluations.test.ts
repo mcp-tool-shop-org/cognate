@@ -155,7 +155,7 @@ describe("POST /registry/versions/:id/evaluations", () => {
         "registry.evaluation-tenant-mismatch",
       );
       const unknown = await s.post("/registry/versions/v9/evaluations", { evaluation: { ...evaluation("e1"), modelVersionId: "v9" } });
-      expect(unknown).toMatchObject({ status: 400, json: { code: "VERSION_NOT_FOUND" } });
+      expect(unknown).toMatchObject({ status: 404, json: { code: "VERSION_NOT_FOUND" } });
     } finally {
       s.stop();
     }
@@ -176,7 +176,7 @@ describe("POST /registry/versions/:id/evaluations", () => {
       const r = await s.post("/registry/versions/v1/evaluations", { evaluation: evaluation("e1") });
       // The version doesn't exist on this server (its own creation needs no append), so the refusal comes first;
       // seed one through the registry route, which writes no event, and retry.
-      expect(r.status).toBe(400);
+      expect(r.status).toBe(404);
       await s.post("/registry/models", { model });
       await s.post("/registry/versions/v1", { version });
       const failed = await s.post("/registry/versions/v1/evaluations", { evaluation: evaluation("e1") });

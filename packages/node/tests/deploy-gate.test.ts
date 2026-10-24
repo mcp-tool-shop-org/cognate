@@ -498,7 +498,7 @@ describe("HTTP deploy gate", () => {
         repo: "acme/weights",
         release: "1.2.3",
       });
-      expect(status).toBe(400);
+      expect(status).toBe(404);
       expect(json.code).toBe("VERSION_NOT_FOUND");
       expect(calls).toEqual([]);
       expect(recorded.appended).toEqual([]);
