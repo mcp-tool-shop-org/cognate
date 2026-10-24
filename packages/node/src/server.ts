@@ -154,35 +154,35 @@ function checkRateLimitForAgent(agentId: string, pathname: string, nowMs: number
   return { allowed: true };
 }
 
-class BodyTooLargeError extends Error {
-  constructor() {
-    super("Request body exceeds 1 MiB limit.");
-  }
-}
+type RawBodyReadResult =
+  | { readonly ok: true; readonly body: Buffer }
+  | { readonly ok: false };
 
-function readRawBody(req: IncomingMessage): Promise<Buffer> {
+function readRawBody(req: IncomingMessage): Promise<RawBodyReadResult> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let total = 0;
-    let rejected = false;
+    let settled = false;
     req.on("data", (chunk: Buffer | string) => {
-      if (rejected) return;
+      if (settled) return;
       const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, "utf8");
       total += buf.length;
       if (total > MAX_BODY_BYTES) {
-        rejected = true;
-        reject(new BodyTooLargeError());
+        settled = true;
+        resolve({ ok: false });
         return;
       }
       chunks.push(buf);
     });
     req.on("end", () => {
-      if (!rejected) {
-        resolve(Buffer.concat(chunks));
+      if (!settled) {
+        settled = true;
+        resolve({ ok: true, body: Buffer.concat(chunks) });
       }
     });
     req.on("error", (err) => {
-      if (!rejected) {
+      if (!settled) {
+        settled = true;
         reject(err);
       }
     });
@@ -208,17 +208,14 @@ function checkHashedValue(res: ServerResponse, value: unknown, fieldPath: string
   try {
     validateHashedIdentifiers(value, fieldPath);
     return false;
-  } catch (err) {
-    if (err instanceof RegistryError) {
-      sendJson(res, 400, {
-        error: err.code,
-        code: err.code,
-        message: err.message,
-        hint: err.hint,
-      });
-      return true;
-    }
-    throw err;
+  } catch {
+    sendJson(res, 400, {
+      error: "PLAINTEXT_ACCOUNT_IDENTIFIER",
+      code: "PLAINTEXT_ACCOUNT_IDENTIFIER",
+      message: `Field '${fieldPath}' contains a plaintext account identifier. Sensitive fields must be hashed (e.g., 'sha256:...') before recording in the governance registry.`,
+      hint: "Hash PII, file paths, emails, and raw identifiers with SHA-256 before passing to the registry.",
+    });
+    return true;
   }
 }
 
@@ -314,7 +311,16 @@ export function createCognateServer(ctx: ServerContext) {
     const pathname = url.pathname;
 
     try {
-      const rawBody = await readRawBody(req);
+      const rawRead = await readRawBody(req);
+      if (!rawRead.ok) {
+        sendJson(res, 413, {
+          error: "auth.body-too-large",
+          code: "auth.body-too-large",
+          message: "Request body exceeds 1 MiB limit.",
+        });
+        return;
+      }
+      const rawBody = rawRead.body;
 
       if (pathname === "/health" && method === "GET") {
         handleHealth(res);
@@ -1172,14 +1178,6 @@ export function createCognateServer(ctx: ServerContext) {
 
       sendJson(res, 404, { error: "Not found", path: pathname, method });
     } catch (err) {
-      if (err instanceof BodyTooLargeError) {
-        sendJson(res, 413, {
-          error: "auth.body-too-large",
-          code: "auth.body-too-large",
-          message: err.message,
-        });
-        return;
-      }
       sendJson(res, 500, {
         error: "Internal server error",
         message: err instanceof Error ? err.message : String(err),

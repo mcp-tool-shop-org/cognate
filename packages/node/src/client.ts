@@ -127,6 +127,14 @@ export interface SignedClient {
   readonly request: (path: string, opts?: SignedClientRequestOptions) => Promise<Response>;
 }
 
+function trimTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (end > 0 && url.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+  return url.slice(0, end);
+}
+
 /**
  * Create a Node client signing helper that corrects clock offset from `GET /health`'s
  * `serverTime` and retries once on any `401` response.
@@ -134,7 +142,7 @@ export interface SignedClient {
 export function createSignedClient(options: SignedClientOptions): SignedClient {
   const fetchFn = options.fetchImpl ?? fetch;
   const nowFn = options.nowFn ?? (() => Date.now());
-  const baseUrl = options.baseUrl.replace(/\/+$/, "");
+  const baseUrl = trimTrailingSlashes(options.baseUrl);
   let clockOffsetMs = 0;
 
   async function syncClock(): Promise<number> {

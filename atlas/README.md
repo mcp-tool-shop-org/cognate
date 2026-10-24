@@ -1,15 +1,14 @@
 # cognate: how it works
 
-Mapped at 2026-10-24 from commit 7b6b9b2 by Atlas 1.24.0.
+Mapped at 2026-10-24 from commit 8db9173 by Atlas 1.24.0.
 
 ## What this is
 
 14 parts, mostly TypeScript (75 files), CSS (2), JavaScript (2) and Astro (1). Work enters through 6 doors; Docker Publish and Publish to GHCR each reach 9 parts, and Docker Publish is followed because it comes first by name. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.
 
-## What changed since 2026-10-24 (a476412)
+## What changed since 2026-10-24 (7b6b9b2)
 
-- packages/node/config/tenant-roots.json is now read by packages/node/src/middleware/signature.ts.
-- 4 files added and 7 changed content, across 3 parts.
+Nothing structural changed since 2026-10-24; 2 files changed content.
 
 ## What comes in
 

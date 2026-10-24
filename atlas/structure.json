@@ -810,7 +810,7 @@
             "createSignedClient",
             "signHttpRequest"
           ],
-          "hash": "352ba8760a32c0d38a90f0131dd6507758b2770a60d7f31738807d8f688c7eb9",
+          "hash": "2f352faf1e9141e08733f79eeb4184685913faca3d20160e230a23fc79562785",
           "importsFiles": [
             "packages/node/src/middleware/signature.ts"
           ],
@@ -1161,67 +1161,62 @@
               "line": 211
             },
             {
-              "in": "checkHashedValue",
-              "kind": "throw",
-              "line": 221
-            },
-            {
               "in": "keep",
               "kind": "catch",
-              "line": 302
+              "line": 299
             },
             {
               "in": "keep",
               "kind": "throw",
-              "line": 306
+              "line": 303
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 333
+              "line": 339
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 391
+              "line": 397
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 477
+              "line": 483
             },
             {
               "in": "createCognateServer",
               "kind": "throw",
-              "line": 478
+              "line": 484
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 627
+              "line": 633
             },
             {
               "in": "createCognateServer",
               "kind": "throw",
-              "line": 632
+              "line": 638
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 793
+              "line": 799
             },
             {
               "in": "createCognateServer",
               "kind": "throw",
-              "line": 798
+              "line": 804
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 1174
+              "line": 1180
             }
           ],
-          "hash": "66ad5907e059af2f4c0ecfcafee809e57bb142e487fffd5610bef1f8b9470ec5",
+          "hash": "cd94edd7b8d138e9526c28bc157760ffef31b8ce8e20b9dd0692ad65a5a0d71d",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/policy/src/index.ts",
@@ -3882,7 +3877,7 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "7b6b9b29cbf6ce95264703061ad89fa331c60cd4",
+    "commit": "8db91735116259a6faeb8201daf7bfe876ff4497",
     "tracked": 151
   },
   "landings": [
