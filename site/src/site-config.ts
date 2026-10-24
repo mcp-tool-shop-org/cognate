@@ -9,7 +9,7 @@ export const config: SiteConfig = {
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
-    badge: 'v0.1.0',
+    badge: 'v0.1.8',
     headline: 'Structural governance',
     headlineAccent: 'for autonomous intelligence.',
     description: 'Every model version, prompt, output, and policy decision — attested, immutable, and human-governed. Built on Attestia.',
@@ -39,7 +39,7 @@ export const config: SiteConfig = {
       kind: 'data-table',
       id: 'packages',
       title: 'Packages',
-      subtitle: 'Five libraries. No HTTP API in v0.1.0.',
+      subtitle: 'Six libraries and an HTTP server, bundled into @mcptoolshop/cognate on npm.',
       columns: ['Package', 'Role'],
       rows: [
         ['@cognate/types', 'Domain types. Zero dependencies.'],
@@ -47,6 +47,8 @@ export const config: SiteConfig = {
         ['@cognate/model-registry', 'Lifecycle from registered to deployed.'],
         ['@cognate/agent-identity', 'Grants, approvals, revocations.'],
         ['@cognate/prompt-store', 'Encrypted append-only prompt log.'],
+        ['@cognate/repomesh-bridge', 'RepoMesh release checks: verifyRelease before a deploy.'],
+        ['@cognate/node', "HTTP API server on port 4000. Appends governance acts to Attestia's log."],
       ],
     },
     {
