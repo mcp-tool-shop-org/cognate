@@ -119,6 +119,6 @@ The image is pushed to `ghcr.io/mcp-tool-shop-org/cognate` when a GitHub release
 
 No package sends telemetry. There is no analytics switch to turn off, because there is no analytics client. A deploy on the HTTP server calls RepoMesh `verifyRelease`. That call may reach the release ledger. It is the release check.
 
-## What v0.1.0 does not include
+## What this release does not include
 
-`@mcptoolshop/cognate` is on npm at 0.1.7. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.
+`@mcptoolshop/cognate` is on npm at 0.1.8. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.
