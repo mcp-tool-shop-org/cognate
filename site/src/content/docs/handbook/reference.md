@@ -47,6 +47,8 @@ Errors added with evaluations: `EVALUATION_ALREADY_RECORDED`, `EVALUATION_TENANT
 
 Run statuses: `in_progress`, `completed`, `cancelled`, `lost`.
 
+Run statuses: `in_progress`, `completed`, `cancelled`, `lost`.
+
 ## @cognate/agent-identity
 
 | Export | Role |
