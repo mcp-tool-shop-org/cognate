@@ -222,6 +222,14 @@ describe("attested evaluations", () => {
     expect(st.appended[0]?.events[0]?.payload).toMatchObject({ id: "e-19a", modelVersionId: "vB", overall: "pass" });
   });
 
+  it("refuses an evaluation for another tenant than the stream's, and appends nothing", async () => {
+    const st = store();
+    await expect(
+      attestEvaluation(base(), { eventStore: st.eventStore as never, tenantId: "t2" }, evaluation("e1")),
+    ).rejects.toMatchObject({ code: "EVALUATION_TENANT_MISMATCH" });
+    expect(st.appended).toHaveLength(0);
+  });
+
   it("returns no new state when the append fails", async () => {
     const failing = { append: () => Promise.reject(new Error("disk full")) };
     await expect(attestEvaluation(base(), { eventStore: failing as never, tenantId: "t1" }, evaluation("e1"))).rejects.toMatchObject({

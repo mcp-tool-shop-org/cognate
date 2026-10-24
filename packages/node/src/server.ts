@@ -298,6 +298,18 @@ export function createCognateServer(ctx: ServerContext) {
           release?: unknown;
         };
         if (transition.from && transition.to && transition.actorId && transition.reason && !transition.version) {
+          // A citation the server can't read is refused, never dropped: an uncited move would go through instead.
+          if (
+            transition.evaluationIds !== undefined &&
+            (!Array.isArray(transition.evaluationIds) || !transition.evaluationIds.every((id) => typeof id === "string"))
+          ) {
+            sendJson(res, 400, {
+              code: "registry.invalid-evaluation-ids",
+              message: "evaluationIds must be an array of evaluation id strings.",
+              hint: "Pass the recorded evaluation ids as an array of strings, or omit evaluationIds.",
+            });
+            return;
+          }
           const tenantId = getAgent(mutableState.identity, actorId)?.tenantId ?? "default";
           const stored = mutableState.registry.versions[versionId];
           // Only an approved version moving to deployed is checked. Other transitions never call RepoMesh.

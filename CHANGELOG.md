@@ -12,15 +12,19 @@ All notable changes to Cognate are documented in this file.
   that disagreed couldn't be recorded.
   - `@cognate/model-registry`: `recordEvaluation`, `getEvaluations` and `attestEvaluation`, using the `Evaluation`
     type from `@cognate/types`. `attestEvaluation` appends `cognate.evaluation.recorded` to
-    `cognate-<tenant>-evaluations`, and returns the new state only after the append succeeds. Recording is not a
-    transition. A rejected or retired version takes no more evaluations.
+    `cognate-<tenant>-evaluations`, and returns the new state only after the append succeeds. It refuses an
+    evaluation whose tenant isn't the config's, as the runs path does. Recording is not a transition. A rejected or
+    retired version takes no more evaluations.
   - `transitionVersion` and `attestTransitionVersion` take an optional `{ evaluationIds }`. Each cited id must be an
     evaluation recorded on that version, and the list can't be empty. The ids are recorded on the transition, sent in
     the event, and bound into its lineage hash. A transition that cites nothing is recorded, sent and hashed exactly as
     before.
-  - `@cognate/node`: `POST /registry/versions/:id/evaluations` records an evaluation (201, with the event id). The
-    version, tenant and agent checks match the transition route. `POST /registry/versions/:id` passes
-    `evaluationIds` through. Evaluation events get inclusion proofs from `GET /events/:eventId`.
+  - `@cognate/node`: `POST /registry/versions/:id/evaluations` records an evaluation (201, with the event id). It
+    checks the agent, that the evaluation names this version, and that the evaluation's tenant is the caller's and
+    the version's. `POST /registry/versions/:id` passes `evaluationIds` through, and refuses one that is not an array
+    of strings (`registry.invalid-evaluation-ids`) rather than dropping it. Evaluation events get inclusion proofs from
+    `GET /events/:eventId`. Snapshot reload keeps recorded evaluations, so a citation still resolves after a restart.
+    It keeps the pre-registered runs and run outcomes too, which reload had also dropped.
   - **Record an evaluation, then transition citing it.** Recording never moves the version, so every call is one
     append and the log can't be left half-written.
   - **`requireEvaluationCitations`, a setting:** `false` (default: no citations required, so every existing caller

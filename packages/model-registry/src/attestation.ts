@@ -89,6 +89,15 @@ export async function attestEvaluation(
   config: AttestTransitionConfig,
   evaluation: Evaluation,
 ): Promise<RegistryState> {
+  // The stream is named by config's tenant, so an evaluation for another tenant would land where its own tenant
+  // can't prove it.
+  if (evaluation.tenantId !== config.tenantId) {
+    throw new RegistryError({
+      code: "EVALUATION_TENANT_MISMATCH",
+      message: `Evaluation tenant "${evaluation.tenantId}" does not match the stream's tenant "${config.tenantId}".`,
+      hint: "Attest the evaluation with a config for its own tenant.",
+    });
+  }
   const newState = recordEvaluation(state, evaluation);
   await appendOrThrow(
     config,

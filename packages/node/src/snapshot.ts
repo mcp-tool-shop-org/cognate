@@ -70,6 +70,10 @@ function loadRegistry(path: string): RegistryState {
     models: saved.models ?? {},
     versions: saved.versions ?? {},
     transitions: saved.transitions ?? {},
+    // Optional maps: a snapshot saved before they existed has none, and keeps loading.
+    ...(saved.evaluations !== undefined ? { evaluations: saved.evaluations } : {}),
+    ...(saved.runPreRegistrations !== undefined ? { runPreRegistrations: saved.runPreRegistrations } : {}),
+    ...(saved.runOutcomes !== undefined ? { runOutcomes: saved.runOutcomes } : {}),
   };
 }
 

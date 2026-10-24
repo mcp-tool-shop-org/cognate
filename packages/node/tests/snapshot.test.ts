@@ -2,11 +2,18 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createRegistry, registerModel, registerVersion } from "@cognate/model-registry";
+import {
+  createRegistry,
+  getEvaluations,
+  recordEvaluation,
+  registerModel,
+  registerVersion,
+  transitionVersion,
+} from "@cognate/model-registry";
 import { createStore, logOutput, logPrompt } from "@cognate/prompt-store";
 import { loadSnapshots, saveSnapshots } from "../src/snapshot.js";
 import { resolveRuntimePaths } from "../src/runtime.js";
-import type { Agent, CapabilityGrant, Model, ModelVersion, Output, Prompt } from "@cognate/types";
+import type { Agent, CapabilityGrant, Evaluation, Model, ModelVersion, Output, Prompt } from "@cognate/types";
 
 const model = {
   id: "m1",
@@ -130,6 +137,33 @@ describe("snapshots", () => {
     expect(loaded.identity.grants.get("grant-1")?.status).toBe("pending");
     expect(loaded.prompts.prompts.get("p1")?.plaintextHash).toBe("hash1");
     expect(loaded.prompts.outputs.get("o1")?.plaintextHash).toBe("hash2");
+  });
+
+  it("reloads recorded evaluations, so a citation still resolves after a restart", () => {
+    const files = paths();
+    let registry = registerVersion(registerModel(createRegistry(), model), version);
+    registry = recordEvaluation(registry, {
+      id: "e-19a",
+      tenantId: "tenant-1",
+      modelVersionId: "v1",
+      evaluator: "rnd",
+      evaluatedAt: "2026-10-24T01:00:00Z",
+      metrics: [{ name: "false_refusals_sound", value: 4, threshold: 4.5, operator: "lte", passed: true }],
+      overall: "pass",
+      notes: "seeds 0-2",
+    } as Evaluation);
+    saveSnapshots(files, { registry, identity: { agents: new Map(), grants: new Map() }, prompts: createStore() });
+    const loaded = loadSnapshots(files);
+    expect(getEvaluations(loaded.registry, "v1").map((e) => e.id)).toEqual(["e-19a"]);
+    const cited = transitionVersion(loaded.registry, "v1", "registered", "evaluated", "rnd", "e", { evaluationIds: ["e-19a"] });
+    expect(cited.transitions["v1"]?.at(-1)?.evaluationIds).toEqual(["e-19a"]);
+    expect(() => recordEvaluation(loaded.registry, { ...getEvaluations(loaded.registry, "v1")[0]! })).toThrow(/already recorded/);
+  });
+
+  it("reloads an older registry snapshot that has no evaluations map", () => {
+    const files = paths();
+    writeFileSync(files.registry, JSON.stringify({ models: {}, versions: {}, transitions: {} }), "utf8");
+    expect(loadSnapshots(files).registry.evaluations).toBeUndefined();
   });
 
   it("starts empty when the files are missing", () => {

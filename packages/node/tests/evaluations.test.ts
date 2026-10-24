@@ -129,6 +129,21 @@ describe("POST /registry/versions/:id/evaluations", () => {
     }
   });
 
+  it("refuses a transition whose evaluationIds is not an array of strings, and records nothing", async () => {
+    const s = await withVersion();
+    try {
+      await s.post("/registry/versions/v1/evaluations", { evaluation: evaluation("e-19a") });
+      const before = s.rec.appended.length;
+      for (const evaluationIds of ["e-19a", null, [1], { 0: "e-19a" }]) {
+        const r = await s.post("/registry/versions/v1", { from: "registered", to: "evaluated", actorId: "rnd", reason: "x", evaluationIds });
+        expect(r).toMatchObject({ status: 400, json: { code: "registry.invalid-evaluation-ids" } });
+      }
+      expect(s.rec.appended.length).toBe(before);
+    } finally {
+      s.stop();
+    }
+  });
+
   it("refuses a missing body, a version or tenant mismatch, and an unknown version", async () => {
     const s = await withVersion();
     try {

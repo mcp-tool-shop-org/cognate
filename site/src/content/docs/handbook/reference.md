@@ -43,9 +43,7 @@ Version states: `registered`, `evaluated`, `approved`, `deployed`, `rejected`, `
 
 `requireEvaluationCitations` (transition option; server env `COGNATE_REQUIRE_EVALUATION_CITATIONS`): `false` (default), `"decisions"` or `"all"`.
 
-Errors added with evaluations: `EVALUATION_ALREADY_RECORDED`, `EVALUATION_TENANT_MISMATCH`, `EVALUATION_ON_CLOSED_VERSION`, `EVALUATION_NOT_FOUND`, `EVALUATION_IDS_EMPTY`, `EVALUATION_CITATION_REQUIRED`, `INVALID_CITATION_RULE`.
-
-Run statuses: `in_progress`, `completed`, `cancelled`, `lost`.
+Errors added with evaluations: `EVALUATION_ALREADY_RECORDED`, `EVALUATION_TENANT_MISMATCH`, `EVALUATION_ON_CLOSED_VERSION`, `EVALUATION_NOT_FOUND`, `EVALUATION_IDS_EMPTY`, `EVALUATION_CITATION_REQUIRED`, `INVALID_CITATION_RULE`. On the HTTP server, `registry.invalid-evaluation-ids` refuses a transition whose `evaluationIds` is not an array of strings.
 
 Run statuses: `in_progress`, `completed`, `cancelled`, `lost`.
 

@@ -154,7 +154,7 @@ Building in public. All core packages are implemented, tested, and building. Ins
 | Gate | Status |
 |------|--------|
 | Build | Passing |
-| Tests | 249 passing |
+| Tests | 253 passing |
 | Coverage | Over 90% of lines in policy, node, agent-identity and prompt-store, and over 98% in model-registry; model-registry enforces 98% lines and node a 90% floor |
 | Typecheck | Clean |
 | Docker | Image serves the governance API. The volume holds the event log and the three snapshots |
