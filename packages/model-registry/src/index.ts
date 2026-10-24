@@ -26,8 +26,14 @@ export {
 export type { RegistryState, TransitionEvent } from "./types.js";
 export { RegistryError } from "./types.js";
 
-export type { AttestTransitionConfig } from "./attestation.js";
+export type {
+  AttestTransitionConfig,
+  AttestRunConfig,
+  AttestedRunEvent,
+} from "./attestation.js";
 export {
   attestTransitionVersion,
+  attestRunPreRegistered,
+  attestRunCompleted,
   buildTransitionProof,
 } from "./attestation.js";

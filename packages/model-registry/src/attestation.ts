@@ -6,12 +6,12 @@
  */
 
 import { createHash, randomUUID } from "node:crypto";
-import type { ModelVersionStatus } from "@cognate/types";
+import type { ModelVersionStatus, RunOutcome, RunPreRegistration } from "@cognate/types";
 import type { DomainEvent, EventStore } from "@mcptoolshop/attestia/event-store";
 import { MerkleTree } from "@mcptoolshop/attestia/proof";
 import type { RegistryState, TransitionEvent } from "./types.js";
 import { RegistryError } from "./types.js";
-import { transitionVersion } from "./registry.js";
+import { getRunPreRegistration, preRegisterRun, recordRunOutcome, transitionVersion, validateRunOutcome, validateRunPreRegistration } from "./registry.js";
 
 function cognateEvent(
   type: string,
@@ -19,6 +19,7 @@ function cognateEvent(
   timestamp: string,
   correlationId: string,
   payload: Record<string, unknown>,
+  causationId?: string,
 ): DomainEvent {
   return {
     type,
@@ -28,6 +29,7 @@ function cognateEvent(
       actor,
       correlationId,
       source: "external",
+      ...(causationId !== undefined ? { causationId } : {}),
     },
     payload,
   };
@@ -39,8 +41,30 @@ export interface AttestTransitionConfig {
   readonly streamPrefix?: string;
 }
 
+export type AttestRunConfig = AttestTransitionConfig;
+
+export interface AttestedRunEvent<TRecord> {
+  readonly eventId: string;
+  readonly streamId: string;
+  readonly record: TRecord;
+}
+
 function makeStreamId(config: AttestTransitionConfig): string {
   return `${config.streamPrefix ?? "cognate"}-${config.tenantId}-transitions`;
+}
+
+function makeRunsStreamId(config: AttestRunConfig): string {
+  return `${config.streamPrefix ?? "cognate"}-${config.tenantId}-runs`;
+}
+
+function isRegistryState(value: unknown): value is RegistryState {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "models" in value &&
+    "versions" in value &&
+    !("eventStore" in value)
+  );
 }
 
 /**
@@ -98,6 +122,144 @@ export async function attestTransitionVersion(
   }
 
   return newState;
+}
+
+/**
+ * Validate a {@link RunPreRegistration} (enforcing the hashed-identifier rule
+ * and no-balance rule), record it in the registry snapshot when provided, and
+ * append `cognate.run.preregistered` to `cognate-${tenantId}-runs`.
+ */
+export async function attestRunPreRegistered(
+  state: RegistryState,
+  config: AttestRunConfig,
+  preRegistration: RunPreRegistration,
+): Promise<RegistryState>;
+export async function attestRunPreRegistered(
+  config: AttestRunConfig,
+  preRegistration: RunPreRegistration,
+): Promise<AttestedRunEvent<RunPreRegistration>>;
+export async function attestRunPreRegistered(
+  stateOrConfig: RegistryState | AttestRunConfig,
+  configOrPreReg: AttestRunConfig | RunPreRegistration,
+  maybePreReg?: RunPreRegistration,
+): Promise<RegistryState | AttestedRunEvent<RunPreRegistration>> {
+  const hasState = isRegistryState(stateOrConfig);
+  const config = (hasState ? configOrPreReg : stateOrConfig) as AttestRunConfig;
+  const preRegistration = (hasState ? maybePreReg : configOrPreReg) as RunPreRegistration;
+
+  const nextState = hasState
+    ? preRegisterRun(stateOrConfig, preRegistration)
+    : (validateRunPreRegistration(preRegistration), undefined);
+
+  if (preRegistration.tenantId !== config.tenantId) {
+    throw new RegistryError({
+      code: "TENANT_MISMATCH",
+      message: `Pre-registration tenant "${preRegistration.tenantId}" does not match config tenant "${config.tenantId}".`,
+      hint: "Ensure the pre-registration tenantId matches the stream config tenantId.",
+    });
+  }
+
+  const streamId = makeRunsStreamId(config);
+  const event = cognateEvent(
+    "cognate.run.preregistered",
+    preRegistration.approvedBy,
+    preRegistration.registeredAt,
+    preRegistration.id,
+    { ...preRegistration },
+  );
+
+  try {
+    await config.eventStore.append(streamId, [event]);
+  } catch (err) {
+    throw new RegistryError({
+      code: "attestia.append-failed",
+      message: `Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
+      hint: "The run pre-registration was not returned. The caller keeps the registry it passed in.",
+    });
+  }
+
+  if (nextState !== undefined) {
+    return nextState;
+  }
+  return {
+    eventId: event.metadata.eventId,
+    streamId,
+    record: preRegistration,
+  };
+}
+
+/**
+ * Validate a {@link RunOutcome} (enforcing the hashed-identifier rule,
+ * no-balance rule, and pre-registration linkage), record it in the registry
+ * snapshot when provided, and append `cognate.run.completed` to
+ * `cognate-${tenantId}-runs`.
+ */
+export async function attestRunCompleted(
+  state: RegistryState,
+  config: AttestRunConfig,
+  outcome: RunOutcome,
+): Promise<RegistryState>;
+export async function attestRunCompleted(
+  config: AttestRunConfig,
+  outcome: RunOutcome,
+  preRegistration?: RunPreRegistration,
+): Promise<AttestedRunEvent<RunOutcome>>;
+export async function attestRunCompleted(
+  stateOrConfig: RegistryState | AttestRunConfig,
+  configOrOutcome: AttestRunConfig | RunOutcome,
+  outcomeOrPreReg?: RunOutcome | RunPreRegistration,
+): Promise<RegistryState | AttestedRunEvent<RunOutcome>> {
+  const hasState = isRegistryState(stateOrConfig);
+  const config = (hasState ? configOrOutcome : stateOrConfig) as AttestRunConfig;
+  const outcome = (hasState ? outcomeOrPreReg : configOrOutcome) as RunOutcome;
+  const explicitPreReg = hasState
+    ? undefined
+    : (outcomeOrPreReg as RunPreRegistration | undefined);
+
+  const nextState = hasState
+    ? recordRunOutcome(stateOrConfig, outcome)
+    : (validateRunOutcome(outcome, explicitPreReg), undefined);
+
+  if (outcome.tenantId !== config.tenantId) {
+    throw new RegistryError({
+      code: "TENANT_MISMATCH",
+      message: `Outcome tenant "${outcome.tenantId}" does not match config tenant "${config.tenantId}".`,
+      hint: "Ensure the outcome tenantId matches the stream config tenantId.",
+    });
+  }
+
+  const linkedPreReg = hasState
+    ? getRunPreRegistration(stateOrConfig, outcome.preRegistrationId)
+    : explicitPreReg;
+  const actor = outcome.recordedBy ?? linkedPreReg?.approvedBy ?? outcome.tenantId;
+  const streamId = makeRunsStreamId(config);
+  const event = cognateEvent(
+    "cognate.run.completed",
+    actor,
+    outcome.recordedAt,
+    outcome.preRegistrationId,
+    { ...outcome },
+    outcome.preRegistrationId,
+  );
+
+  try {
+    await config.eventStore.append(streamId, [event]);
+  } catch (err) {
+    throw new RegistryError({
+      code: "attestia.append-failed",
+      message: `Attestia append failed: ${err instanceof Error ? err.message : String(err)}`,
+      hint: "The run outcome was not returned. The caller keeps the registry it passed in.",
+    });
+  }
+
+  if (nextState !== undefined) {
+    return nextState;
+  }
+  return {
+    eventId: event.metadata.eventId,
+    streamId,
+    record: outcome,
+  };
 }
 
 /**
