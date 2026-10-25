@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-The published package is `@mcptoolshop/cognate`. This repository is the pnpm workspace behind it. Node 22 or newer, and pnpm 10.28.2.
+The published package is `@mcptoolshop/cognate`: `npm install @mcptoolshop/cognate`, then import from its subpaths, such as `@mcptoolshop/cognate/policy`. The README's Quick Start has a policy example that runs as it is. This repository is the pnpm workspace behind it. Node 22 or newer, and pnpm 10.28.2.
 
 ## Verify the libraries
 
@@ -20,6 +20,17 @@ There is no global binary. Import the package you need from the workspace, or de
 
 ## Run the image
 
+**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one, and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` from the repository root after `pnpm -r build`, or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The shipped `docker-compose.yml` sets `COGNATE_TENANT_ROOTS_PATH` to `/run/cognate/tenant-roots.json` and shows the mount as a commented volume line. Uncomment that line with your file's host path, or add a `docker-compose.override.yml` beside it:
+
+```yaml
+services:
+  cognate-node:
+    volumes:
+      - ./tenant-roots.json:/run/cognate/tenant-roots.json:ro
+```
+
+Without the file, the server prints one JSON error line in the API's error shape (`auth.missing-tenant-roots`, with a hint) and exits 1. Set `COGNATE_DEBUG=1` to add the stack.
+
 ```bash
 docker compose up -d
 curl http://localhost:4000/health
@@ -29,9 +40,9 @@ docker compose down
 The health body is:
 
 ```json
-{ "status": "ok", "service": "cognate", "mode": "api" }
+{ "status": "ok", "service": "cognate", "mode": "api", "serverTime": "2026-10-24T12:00:00.000Z" }
 ```
 
-`mode` is `api` because the image runs `@cognate/node`. The `cognate-data` volume is mounted at `/app/data`. The process writes the event log at `/app/data/events.jsonl` and three snapshots under `/app/data/cognate/`: `registry.json`, `agents.json`, and `prompts.json`. A restart reads those snapshots back. Attestia uses the same event-log variable on its own volume. RepoMesh's image does not mount this log.
+`mode` is `api` because the image runs `@cognate/node`. `serverTime` is what signed clients sync their clock to. Every write and every `GET /events/:eventId` must be signed; the [README's migration guide](https://github.com/mcp-tool-shop-org/cognate#authentication--migration-guide) shows how. The `cognate-data` volume is mounted at `/app/data`. The process writes the event log at `/app/data/events.jsonl` and three snapshots under `/app/data/cognate/`: `registry.json`, `agents.json`, and `prompts.json`. A restart reads those snapshots back. Attestia uses the same event-log variable on its own volume. RepoMesh's image does not mount this log.
 
-The same Dockerfile is what GitHub pushes to `ghcr.io/mcp-tool-shop-org/cognate` when a release is published.
+The same Dockerfile builds the published image. The image is built by the release workflow from a `v*` tag, after the npm package publishes, and pushed to `ghcr.io/mcp-tool-shop-org/cognate` as `X.Y.Z`, `X.Y` and `sha-*`. `latest` moves only on a `v*` tag.

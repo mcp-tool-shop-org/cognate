@@ -7,6 +7,8 @@ sidebar:
 
 Every call takes the state you already have. None of these functions read the clock, the filesystem, or the network.
 
+The examples use the workspace names (`@cognate/policy` and so on). From npm, import the same functions from the bundle's subpaths: `@mcptoolshop/cognate/policy`, `@mcptoolshop/cognate/model-registry`, `@mcptoolshop/cognate/agent-identity` and `@mcptoolshop/cognate/prompt-store`.
+
 ## Policy
 
 `evaluatePolicy` returns one overall action. Precedence is `deny`, then `quarantine`, then `require-human-review`, then `allow`. A matched rule with severity `block` is what stops the call.

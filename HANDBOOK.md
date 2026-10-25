@@ -1,6 +1,6 @@
 # Cognate
 
-**Structural governance for autonomous intelligence.**
+**Structural governance for autonomous intelligence.** Version 1.0.0.
 
 Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia proves that something happened — an event, a transaction, a state transition — and binds that proof to a chain. Cognate uses those same attestation primitives to govern AI systems: what a model was permitted to do, what it actually did, and who authorized it.
 
@@ -33,6 +33,7 @@ pnpm verify
 | `@cognate/agent-identity` | `registerAgent`, `requestGrant`, `approveGrant`, `revokeCapability` | Granting a capability without an approval |
 | `@cognate/prompt-store` | `logPrompt`, `logOutput`, `encrypt`, `decrypt` | Storing plaintext prompts |
 | `@cognate/repomesh-bridge` | `verifyRelease`, `verifyAll` on the RepoMesh ledger | Running the ledger, anchoring to XRPL, or sharing Attestia's Merkle tree |
+| `@cognate/node` | The HTTP API on port 4000, `createSignedClient`, `signHttpRequest`, `generateEd25519KeyPair` | Unsigned writes (by default), acting outside the caller's tenant, or starting in `enforce` mode without operator tenant roots |
 
 Build scripts run `pnpm exec tsc` so the compiler resolves inside a pnpm workspace, including the Docker builder.
 
@@ -99,6 +100,17 @@ The store indexes by session, model version, agent, and time range. Those querie
 
 `docker compose up -d` builds `Dockerfile` and publishes port 4000. The process is `@cognate/node`. It serves the governance routes. A restart reads the three snapshots back from the volume.
 
+**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one, and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` from the repository root after `pnpm -r build`, or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The shipped `docker-compose.yml` sets `COGNATE_TENANT_ROOTS_PATH` to `/run/cognate/tenant-roots.json` and shows the mount as a commented volume line. Uncomment that line with your file's host path, or add a `docker-compose.override.yml` beside it:
+
+```yaml
+services:
+  cognate-node:
+    volumes:
+      - ./tenant-roots.json:/run/cognate/tenant-roots.json:ro
+```
+
+Without the file, the server prints one JSON error line in the API's error shape (`auth.missing-tenant-roots`, with a hint) and exits 1. Set `COGNATE_DEBUG=1` to add the stack.
+
 ```bash
 curl http://localhost:4000/health
 ```
@@ -109,12 +121,12 @@ curl http://localhost:4000/health
 
 The `cognate-data` volume mounts at `/app/data`. The event log is `/app/data/events.jsonl` (`ATTESTIA_EVENTS_FILE`). The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. `GET /events/:eventId` reads that log and returns the recorded event with an Attestia inclusion proof and the root. The caller sends the same signed `cognate-request-v1` headers as a write. An id that is not in this tenant's log is a miss, and the body has no proof. Prompt and output text stay out of the event. The route does not call RepoMesh. Attestia's compose uses the same event-log variable on its own `attestia-data` volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL.
 
-The image is pushed to `ghcr.io/mcp-tool-shop-org/cognate` when a GitHub release is published. Local builds use the same Dockerfile.
+The image is built by the release workflow from a `v*` tag, after the npm package publishes, and pushed to `ghcr.io/mcp-tool-shop-org/cognate` as `X.Y.Z`, `X.Y` and `sha-*`. `latest` moves only on a `v*` tag. Local builds use the same Dockerfile.
 
 ## Authentication and migration guide (`@cognate/node`)
 
-- **What is proved now (PR a):** `@cognate/node` enforces `cognate-request-v1` Ed25519 request signatures (`X-Agent-Id`, `X-Timestamp`, `X-Nonce`, `X-Key-Id`, `X-Signature`) over an 8-line canonical string and RFC 8785 JCS-canonical JSON bodies (`400 auth.body-not-canonical` otherwise), with a ±300 s timestamp window, a 600 s ordered replay store, and a uniform `401 auth.unauthenticated` response. Every route binds its body actor fields to the verified signer (`403 auth.actor-mismatch`) before RepoMesh or any Attestia append. Agent registration and grant approval require `delegate`, self-approval is refused (`403 auth.self-approval-forbidden`), `principal: "agent"` cannot register `principal: "human"` or grant `delegate`, an `owner` cannot rotate a human principal's key, and the operator-supplied tenant root key (`tenantRootsPath` or `COGNATE_TENANT_ROOTS_PATH`; no root keys ship in the repo or image) mints or approves a `delegate` directly only at bootstrap, while the tenant has no active `delegate`; by design, the tenant root keeps its recovery powers after bootstrap (it rotates a human or agent principal's key, revokes any principal, and approves non-delegate grants, and recovery from a compromised root means replacing it in the reviewed config and re-signing the tenant's delegate agents). Rotating a key hands that principal's authority to whoever holds the new key, and the root chooses the new key. So after the root rotates a human delegate's key, the root holds that delegate's authority, including minting new delegates (registering agents and approving `delegate` grants). And if the root revokes every active `delegate`, the tenant again has no active `delegate`, so the root can again mint one directly. A root derived from a test seed must never be configured in production. The server refuses the repository's own test root keys at startup (`auth.test-only-root-key-forbidden`) unless a test harness sets `allowTestOnlyRoots: true`, but it cannot recognise a root derived from any other seed known outside the deployment.
-- **What comes in PR (b) and current limits:** The `(agentId, nonce)` replay store is in-memory on a single server instance. Under PR (a), any sign-off-gated action must be signed by the authorizing principal itself; detached `cognate-approval-v1` approvals, durable `approvalId`s, the `cognate-<tenant>-identity` stream, `submittedBy` / `authorizedBy` on events, and the standalone offline verifier come in PR (b).
+- **What 1.0.0 enforces:** `@cognate/node` enforces `cognate-request-v1` Ed25519 request signatures (`X-Agent-Id`, `X-Timestamp`, `X-Nonce`, `X-Key-Id`, `X-Signature`) over an 8-line canonical string and RFC 8785 JCS-canonical JSON bodies (`400 auth.body-not-canonical` otherwise), with a ±300 s timestamp window, a 600 s ordered replay store, and a uniform `401 auth.unauthenticated` response. Every route binds its body actor fields to the verified signer (`403 auth.actor-mismatch`) before RepoMesh or any Attestia append. Agent registration and grant approval require `delegate`, self-approval is refused (`403 auth.self-approval-forbidden`), `principal: "agent"` cannot register `principal: "human"` or grant `delegate`, an `owner` cannot rotate a human principal's key, and the operator-supplied tenant root key (`tenantRootsPath` or `COGNATE_TENANT_ROOTS_PATH`; no root keys ship in the repo or image) mints or approves a `delegate` directly only at bootstrap, while the tenant has no active `delegate`; by design, the tenant root keeps its recovery powers after bootstrap (it rotates a human or agent principal's key, revokes any principal, and approves non-delegate grants, and recovery from a compromised root means replacing it in the reviewed config and re-signing the tenant's delegate agents). Rotating a key hands that principal's authority to whoever holds the new key, and the root chooses the new key. So after the root rotates a human delegate's key, the root holds that delegate's authority, including minting new delegates (registering agents and approving `delegate` grants). And if the root revokes every active `delegate`, the tenant again has no active `delegate`, so the root can again mint one directly. A root derived from a test seed must never be configured in production. The server refuses the repository's own test root keys at startup (`auth.test-only-root-key-forbidden`) unless a test harness sets `allowTestOnlyRoots: true`, but it cannot recognise a root derived from any other seed known outside the deployment.
+- **Not yet, and current limits:** The `(agentId, nonce)` replay store is in-memory on a single server instance. Today, any sign-off-gated action must be signed by the authorizing principal itself; detached `cognate-approval-v1` approvals, durable `approvalId`s, the `cognate-<tenant>-identity` stream, `submittedBy` / `authorizedBy` on events, and the standalone offline verifier are not in 1.0.0. Ids are global across tenants, so an id another tenant holds is refused as a duplicate.
 - **Migration guide:** Generate an Ed25519 key pair with `generateEd25519KeyPair()`, supply operator root public keys via `COGNATE_TENANT_ROOTS_PATH` (or `ServerContext.tenantRootsPath` / `ServerContext.tenantRoots`), bootstrap the tenant's first `delegate` via `POST /identity/agents` signed by that tenant root key while the tenant has no active `delegate`, and send requests with `createSignedClient` or `signHttpRequest` (which canonicalize bodies with JCS, sync clock offset from `GET /health`'s `serverTime`, and retry once on `401`). For a bounded migration window (at most 14 days), set `COGNATE_SIGNED_REQUESTS=log` and `COGNATE_SIGNED_REQUESTS_LOG_UNTIL=<RFC3339 UTC timestamp>`; `/identity/*` stays signed even in `log` mode, and unsigned events are marked `unsigned: true`.
 
 ## Threat model
@@ -124,9 +136,11 @@ The image is pushed to `ghcr.io/mcp-tool-shop-org/cognate` when a GitHub release
 3. Swapped weights are answered by the three hashes recorded at registration and `ModelVersion.repo` stored as `sha256:<hex>`. A mismatch is a different version, not a silent edit.
 4. Prompt injection is answered by evaluating policy before inference. A failing check does not execute.
 5. Tampered logs are answered by append-only records. Attestia's Merkle proofs are the settlement layer under those records.
+6. Cross-tenant access on the HTTP server is answered by tenant scoping: every route acts in the verified signer's tenant, a record naming another tenant is refused, and another tenant's id is answered as missing.
+7. A misused or misconfigured tenant root key is answered by operator-supplied roots only (none ship in the repo or image), a refusal to start in `enforce` mode without them, and a startup refusal of the repository's own test root keys. The root's powers are wide by design, so the operator holds the root key as carefully as the tenant itself.
 
 No package sends telemetry. There is no analytics switch to turn off, because there is no analytics client. A deploy on the HTTP server calls RepoMesh `verifyRelease`. That call may reach the release ledger. It is the release check.
 
 ## What this release does not include
 
-`@mcptoolshop/cognate` is `0.3.0`. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.
+`@mcptoolshop/cognate` is `1.0.0`. `@cognate/node` is the HTTP layer. It calls the libraries. It does not choose a model provider.

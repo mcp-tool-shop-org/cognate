@@ -4,15 +4,24 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-25
+
+The first release since 0.1.8. 0.2.0 and 0.3.0 were never published separately; their changes, listed here and under 0.2.0, ship in 1.0.0. From 1.0, versions follow semantic versioning: a change that breaks the HTTP API, the signed-request format or the event and attestation format comes with a new major version.
+
 ### Fixed
 
 - **`docker compose up` and a bare `node dist/index.js` no longer die on an uncaught error when the tenant roots file is missing.** A configuration error at startup now prints one JSON line on stderr in the API's error shape (`{"ok":false,"error":{"code","message","hint"}}`) and exits 1, with no stack trace unless `COGNATE_DEBUG=1` or `--debug` is set. `docker-compose.yml` sets `COGNATE_TENANT_ROOTS_PATH` and shows, as a commented volume, how to mount an operator-supplied roots file; no root key ships in the repository or image.
 
 ### Docs
 
+- The README, the handbook and the landing page are brought current for 1.0.0: a "What's new in 1.0.0" section and handbook page, the version and status, all seven packages (with `@cognate/repomesh-bridge` and `@cognate/node`), test counts and measured coverage (316 tests at release), and a threat-model entry for the tenant root key. The authentication sections say what 1.0.0 enforces and what is not in it yet, without internal PR labels.
+- **A quickstart that runs.** The README's npm example (`npm install @mcptoolshop/cognate`, then a policy evaluated from `@mcptoolshop/cognate/policy`) prints `deny` as written. `scripts/make-tenant-root.mjs <tenantId>` makes a new random tenant root key (`tenant-roots.json` and `tenant-root.secret.json`, both gitignored), so the server starts from a clone in three commands, and the Docker section gives the `docker-compose.override.yml` that mounts the roots file. The landing page's install and code cards use the npm names, and the docs say `@cognate/node` runs from the repository or the image, not from npm.
+- SECURITY.md and the handbook: the latest 1.x release receives security fixes; versions before 1.0 do not.
 - The README, SECURITY.md and the handbook say what rotating a human principal's key means: after the tenant root rotates a human delegate's key, the root holds that delegate's authority, including minting new delegates. They also say the root rotates a human or agent principal's key and revokes any principal, and that revoking every active `delegate` leaves the tenant with no active `delegate`, when the root can mint one directly. They say a root derived from a test seed must never be configured in production, and that startup refuses only the repository's own test root keys.
 
-## [0.3.0] - 2026-10-24
+### Tests
+
+- `@cognate/policy` enforces the org's 90% line-coverage floor. It measures 93.4% (coverage 93.4%, floor 90, target 90).
 
 ### Security
 
@@ -26,7 +35,7 @@ All notable changes to Cognate are documented in this file.
     - `5c`: A `principal: "agent"` cannot register a `principal: "human"` record (`403 auth.escalation-forbidden`).
     - `5d`: A `principal: "agent"` cannot request or approve a `delegate` capability grant (`403 auth.escalation-forbidden`).
     - `5e`: Key rotation (`POST /identity/agents/:id/key`) and revocation (`POST /identity/agents/:id/revoke`) are enforced; an `owner` cannot rotate a `principal: "human"`'s key (`403 auth.escalation-forbidden`), and rotated-out/revoked `kid`s are immediately refused (`401 auth.unauthenticated`).
-    - Operator-supplied per-tenant root public keys are loaded via `tenantRootsPath` or `COGNATE_TENANT_ROOTS_PATH` (`loadTenantRootsConfig`; no root keys ship in the repository or Docker image, startup in `enforce` mode requires operator-supplied roots with distinct `actorId`s, configured public keys are checked against all test fixture derivations as well as the entry's own tenant id, and test-only fixture keys require the context option `allowTestOnlyRoots: true` and log a startup warning when accepted). Root keys are resolved before agent records and mint or approve a `delegate` capability directly only at bootstrap while the tenant has no active `delegate` (`403 auth.bootstrap-already-completed` thereafter), while keeping their standing recovery powers after bootstrap (rotating a human principal's key and approving non-delegate grants).
+    - Operator-supplied per-tenant root public keys are loaded via `tenantRootsPath` or `COGNATE_TENANT_ROOTS_PATH` (`loadTenantRootsConfig`; no root keys ship in the repository or Docker image, startup in `enforce` mode requires operator-supplied roots with distinct `actorId`s, configured public keys are checked against all test fixture derivations as well as the entry's own tenant id, and test-only fixture keys require the context option `allowTestOnlyRoots: true` and log a startup warning when accepted). Root keys are resolved before agent records and mint or approve a `delegate` capability directly only at bootstrap while the tenant has no active `delegate` (`403 auth.bootstrap-already-completed` thereafter), while keeping their standing recovery powers after bootstrap (rotating a human or agent principal's key, revoking any principal, and approving non-delegate grants).
   - **Sunset-gated `log` mode.** `signedRequests` defaults to `"enforce"`. Starting in `"log"` mode requires `signedRequestsLogUntil` (`COGNATE_SIGNED_REQUESTS_LOG_UNTIL`) set to a future RFC 3339 UTC timestamp at most 14 days away; unsigned requests are refused after sunset, `/identity/*` routes require signatures even in `"log"` mode, and unsigned events in `"log"` mode are marked `unsigned: true` with a sanitized warning (`{ method, pathname, agentId, code }`).
   - **Hashed-identifier value checks.** Plaintext account-naming values on `agent.id`, `agent.owner`, `agent.name`, `model.owner`, `model.name`, `transition.actorId`, `evaluation.evaluator`, `grant.requestedBy`, `approverId`, and `policy.approvedBy` are refused (`400 PLAINTEXT_ACCOUNT_IDENTIFIER`) while the `owner` property key on `Agent` and `Model` remains allowed, and `ModelVersion.repo` must be stored as `sha256:<64 lowercase hex>`.
   - **Clock-offset sync and Node client signing helper.** `GET /health` returns `serverTime`, and `signHttpRequest` / `createSignedClient` (`packages/node/src/client.ts`) canonicalize bodies with JCS, sign requests, sync clock offset from `/health`, and retry once on `401`.
@@ -37,7 +46,7 @@ All notable changes to Cognate are documented in this file.
 - **`ModelVersion.repo` must be a `sha256:<64 lowercase hex>` digest.** Plaintext `owner/repo` strings on `ModelVersion.repo` are rejected with `PLAINTEXT_ACCOUNT_IDENTIFIER`.
 - **`json-canonicalize` is a direct dependency of `@cognate/node` and `@cognate/types`.**
 
-### Security (earlier in 0.3.0 cycle)
+### Security (earlier in this release)
 
 - **`@cognate/node` scopes every route to the authenticated agent's tenant.** Before, a caller authenticated in one
   tenant could act in another: transition its versions, record evaluations on them, register models and versions in
@@ -53,9 +62,8 @@ All notable changes to Cognate are documented in this file.
   - The refusal comes before RepoMesh is asked and before anything is appended.
   - The path id and the body id must agree when registering a version (`registry.version-id-mismatch`) and when
     logging an output (`prompts.prompt-id-mismatch`).
-- **This is necessary, not sufficient.** The caller's identity is still self-asserted: the server trusts an unsigned
-  `X-Agent-Id` header, so anyone who knows an agent id can act as that agent, in that agent's tenant. Signed requests
-  are the fix for that, and they are a separate change.
+- **Tenant scoping on its own was not enough.** It still took the caller's identity as given. The signed requests
+  above, in this same release, make the server verify who the caller is.
 - **Ids are global across tenants.** Registering a model, version, prompt, output, agent or grant whose id another
   tenant already holds is refused as a duplicate, which still shows that the id is taken.
 - **A tenant's first agent is seeded, not posted.** Every POST needs an existing agent, and an agent registers agents
@@ -96,7 +104,7 @@ All notable changes to Cognate are documented in this file.
 
 - **`@cognate/node` answers a missing id with 404, not 400:** `VERSION_NOT_FOUND`, `MODEL_NOT_FOUND`,
   `store.prompt-not-found`, `identity.agent-not-found`, `identity.grant-not-found` and `vc.grant-not-found`. The
-  codes and bodies are unchanged. `@cognate/node` is 0.1.1.
+  codes and bodies are unchanged.
 - **Test toolchain: vitest 1.6 to 4.1.12, with vite 8.3.5 declared as its peer.** It clears the high and critical
   advisories in the dev tree (vitest, vite, tinypool, source-map-js) with no ignores or overrides; `pnpm audit
   --audit-level high` over the whole tree is clean. Every test passes unchanged, and the coverage floors are
@@ -107,6 +115,8 @@ All notable changes to Cognate are documented in this file.
   the 98% floor set with the run records, and measures 98.8% with evaluations.
 
 ## [0.2.0] - 2026-10-24
+
+Not published separately; these changes ship in 1.0.0.
 
 ### Added
 
