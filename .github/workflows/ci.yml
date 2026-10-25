@@ -5,20 +5,19 @@ on:
     branches: [main]
     paths:
       - "**/*.ts"
-      - "package.json"
+      - "**/package.json"
       - "pnpm-lock.yaml"
       - "tsconfig*.json"
+      - "Dockerfile"
+      - "docker-compose*.yml"
+      - "scripts/**"
       - ".github/workflows/**"
       - "atlas/**"
+  # No paths filter on pull_request: build-and-test is meant to become a required check,
+  # and a paths-gated required check strands every pull request that touches none of the
+  # listed paths. The Docker quick start skips itself at step level for unrelated changes.
   pull_request:
     branches: [main]
-    paths:
-      - "**/*.ts"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "tsconfig*.json"
-      - ".github/workflows/**"
-      - "atlas/**"
   workflow_dispatch:
 
 concurrency:
