@@ -3584,4 +3584,30 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
     const fnFloor = Number(fnMatch?.[1] ?? 0);
     expect(fnFloor).toBeGreaterThanOrEqual(96);
   });
+
+  it("25. D: SECURITY.md and the handbook security page document the tenant root's standing recovery powers after bootstrap", () => {
+    const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+    const securityMd = readFileSync(resolve(repoRoot, "SECURITY.md"), "utf8");
+    const handbookSecurityMd = readFileSync(
+      resolve(repoRoot, "site/src/content/docs/handbook/security.md"),
+      "utf8",
+    );
+
+    for (const [docName, text] of [
+      ["SECURITY.md", securityMd],
+      ["site/src/content/docs/handbook/security.md", handbookSecurityMd],
+    ] as const) {
+      expect(
+        text,
+        `${docName} must state the tenant root keeps its recovery powers after bootstrap`,
+      ).toMatch(/keeps its recovery powers after bootstrap/i);
+      expect(
+        text,
+        `${docName} must state the root rotates a human principal's key and approves non-delegate grants`,
+      ).toMatch(/rotates a human principal's key and approves non-delegate grants/i);
+      expect(text, `${docName} must not claim the root has no power after bootstrap`).not.toMatch(
+        /no power after bootstrap/i,
+      );
+    }
+  });
 });
