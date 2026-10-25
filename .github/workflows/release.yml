@@ -7,6 +7,21 @@ name: Release
 # v0.1.0 is already a GitHub release of the libraries, before this package
 # existed. The first npm release after the 0.0.0 placeholder is v0.1.1+.
 # Bump packages/cognate/package.json, then git tag vX.Y.Z && git push origin vX.Y.Z.
+#
+# Only a v* tag push starts this workflow (there is no workflow_dispatch), and
+# the first publishing step checks the tag against packages/cognate/package.json.
+# The image job runs after the release job, so an image is built only from a tag
+# whose tests, npm publish and GitHub Release all succeeded.
+#
+# Compensators (irreversible actions, no skip allowed):
+#   | Action                | Undo                                               | Post-rollback state                 | Owner |
+#   |-----------------------|----------------------------------------------------|-------------------------------------|-------|
+#   | npm publish <version> | within 72 h `npm unpublish @mcptoolshop/cognate@<v>`; | version burned (cannot be reused);  | Mike  |
+#   |                       | after that `npm deprecate @mcptoolshop/cognate@<v>` | consumers pin to <prev>; ship <v+1> |       |
+#   | GitHub Release create | `gh release delete <tag> --cleanup-tag`            | release and tag removed             | Mike  |
+#   | GHCR image push       | `gh api -X DELETE orgs/mcp-tool-shop-org/packages/ | :<v>, :<v.minor>, :sha-<sha> removed; | Mike  |
+#   |                       |  container/cognate/versions/<id>`; move `latest`   | latest points at the previous tag   |       |
+#   |                       |  back by re-running docker.yml on the previous tag |                                     |       |
 
 on:
   push:
@@ -93,3 +108,13 @@ jobs:
             --title "@mcptoolshop/cognate ${GITHUB_REF_NAME}" \
             --generate-notes \
             --verify-tag
+
+  image:
+    name: Publish the image to GHCR
+    # Runs only after the release job's tests, npm publish and GitHub Release
+    # have succeeded.
+    needs: release
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker.yml
