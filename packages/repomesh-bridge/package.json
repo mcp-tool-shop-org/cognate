@@ -29,7 +29,7 @@
     "web3",
     "ai-governance"
   ],
-  "author": "mcp-tool-shop-org",
+  "author": "mcp-tool-shop",
   "license": "MIT",
   "engines": {
     "node": ">=22"
