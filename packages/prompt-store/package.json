@@ -29,14 +29,14 @@
     "prompt-store",
     "audit-log"
   ],
-  "author": "mcp-tool-shop-org",
+  "author": "mcp-tool-shop",
   "license": "MIT",
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
     "@cognate/types": "workspace:*",
-    "@mcptoolshop/attestia": "^2.0.5"
+    "@mcptoolshop/attestia": "^2.1.3"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.12",

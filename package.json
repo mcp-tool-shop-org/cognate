@@ -25,7 +25,7 @@
     "policy-engine",
     "web3"
   ],
-  "author": "mcp-tool-shop-org",
+  "author": "mcp-tool-shop",
   "license": "MIT",
   "homepage": "https://mcp-tool-shop-org.github.io/cognate/",
   "repository": {
@@ -39,6 +39,6 @@
     "vite": "^8.3.5"
   },
   "dependencies": {
-    "@mcptoolshop/attestia": "^2.0.5"
+    "@mcptoolshop/attestia": "^2.1.3"
   }
 }

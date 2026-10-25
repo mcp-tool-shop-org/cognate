@@ -100,16 +100,16 @@ The store indexes by session, model version, agent, and time range. Those querie
 
 `docker compose up -d` builds `Dockerfile` and publishes port 4000. The process is `@cognate/node`. It serves the governance routes. A restart reads the three snapshots back from the volume.
 
-**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one (`auth.missing-tenant-roots`), and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` from the repository root after `pnpm -r build`, or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The shipped `docker-compose.yml` does not set `COGNATE_TENANT_ROOTS_PATH`, so add a `docker-compose.override.yml` beside it:
+**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one, and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` from the repository root after `pnpm -r build`, or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The shipped `docker-compose.yml` sets `COGNATE_TENANT_ROOTS_PATH` to `/run/cognate/tenant-roots.json` and shows the mount as a commented volume line. Uncomment that line with your file's host path, or add a `docker-compose.override.yml` beside it:
 
 ```yaml
 services:
   cognate-node:
-    environment:
-      COGNATE_TENANT_ROOTS_PATH: /app/config/tenant-roots.json
     volumes:
-      - ./tenant-roots.json:/app/config/tenant-roots.json:ro
+      - ./tenant-roots.json:/run/cognate/tenant-roots.json:ro
 ```
+
+Without the file, the server prints one JSON error line in the API's error shape (`auth.missing-tenant-roots`, with a hint) and exits 1. Set `COGNATE_DEBUG=1` to add the stack.
 
 ```bash
 curl http://localhost:4000/health

@@ -191,16 +191,16 @@ import {
 
 The image runs `@cognate/node` and serves the governance API.
 
-**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one (`auth.missing-tenant-roots`), and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` (see [Quick Start](#run-the-http-server-from-this-repository)), or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The shipped `docker-compose.yml` does not set `COGNATE_TENANT_ROOTS_PATH`, so add a `docker-compose.override.yml` beside it:
+**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one, and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` (see [Quick Start](#run-the-http-server-from-this-repository)), or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The shipped `docker-compose.yml` sets `COGNATE_TENANT_ROOTS_PATH` to `/run/cognate/tenant-roots.json` and shows the mount as a commented volume line. Uncomment that line with your file's host path, or add a `docker-compose.override.yml` beside it:
 
 ```yaml
 services:
   cognate-node:
-    environment:
-      COGNATE_TENANT_ROOTS_PATH: /app/config/tenant-roots.json
     volumes:
-      - ./tenant-roots.json:/app/config/tenant-roots.json:ro
+      - ./tenant-roots.json:/run/cognate/tenant-roots.json:ro
 ```
+
+Without the file, the server prints one JSON error line in the API's error shape (`auth.missing-tenant-roots`, with a hint) and exits 1. Set `COGNATE_DEBUG=1` to add the stack.
 
 Once it is running, `/health` returns:
 
@@ -283,8 +283,8 @@ Version 1.0.0, building in public. All packages are implemented, tested, and bui
 | Gate | Status |
 |------|--------|
 | Build | Passing |
-| Tests | 305 passing (node 136, model-registry 58, policy 47, agent-identity 29, prompt-store 24, repomesh-bridge 9, cognate 2) |
-| Coverage | Lines: 94.2% in node, 93.4% in policy, 99.6% in model-registry, and 100% in agent-identity and prompt-store, with vitest coverage floors in those five packages |
+| Tests | 316 passing (node 147, model-registry 58, policy 47, agent-identity 29, prompt-store 24, repomesh-bridge 9, cognate 2) |
+| Coverage | Lines: 94.3% in node, 93.4% in policy, 99.6% in model-registry, and 100% in agent-identity, prompt-store and repomesh-bridge, with vitest coverage floors in those six packages |
 | Typecheck | Clean |
 | Docker | Image serves the governance API. The volume holds the event log and the three snapshots |
 | Shipcheck | Handbook, landing page, and repo metadata in this release |

@@ -32,4 +32,4 @@ A model version carries any number of evaluations: a run, its replication, a poo
 
 ## Toolchain
 
-vitest 4.1.12 and vite 8.3.5. The high and critical advisories in the dev tree are cleared at the root, with no ignores or overrides. 305 tests pass.
+vitest 4.1.12 and vite 8.3.5. The high and critical advisories in the dev tree are cleared at the root, with no ignores or overrides. 316 tests pass.

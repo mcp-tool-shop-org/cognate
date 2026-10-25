@@ -6,6 +6,15 @@
 # Both honor ATTESTIA_EVENTS_FILE, and each file has one writer. The log lock
 # fails closed if two processes advance the same file.
 #
+# Before the first start: the node runs in signed-requests enforce mode and
+# refuses to start without operator-supplied tenant root public keys. Create a
+# roots file of your own, outside this repository, and mount it read-only (see
+# the commented volume and COGNATE_TENANT_ROOTS_PATH below). Its shape,
+# { "version": 1, "roots": [...] }, is described in the README's
+# "Configure operator tenant root public keys" step. No root key, real or
+# example, ships in this repository or the image. Without the file the
+# container exits 1 and prints a structured error naming the variable to set.
+#
 # Usage:
 #   docker compose up -d
 #   docker compose down
@@ -28,8 +37,13 @@ services:
       COGNATE_AGENT_REGISTRY_PATH: "/app/data/cognate/agents.json"
       COGNATE_PROMPT_STORE_PATH: "/app/data/cognate/prompts.json"
       REPOMESH_FAIL_ON: "unverified"
+      # Required in enforce mode. Path of the roots file inside the container,
+      # matching the bind mount below.
+      COGNATE_TENANT_ROOTS_PATH: "/run/cognate/tenant-roots.json"
     volumes:
       - cognate-data:/app/data
+      # Mount your own roots file here. Replace the placeholder host path.
+      # - /path/to/your/tenant-roots.json:/run/cognate/tenant-roots.json:ro
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r => process.exit(r.ok ? 0 : 1))"]
       interval: 10s

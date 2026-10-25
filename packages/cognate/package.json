@@ -4,7 +4,7 @@
   "description": "AI governance attestation on Attestia's proof primitives — model lineage, policy, agent identity, and prompt integrity — with RepoMesh release checks.",
   "type": "module",
   "license": "MIT",
-  "author": "mcp-tool-shop-org",
+  "author": "mcp-tool-shop",
   "homepage": "https://mcp-tool-shop-org.github.io/cognate/",
   "repository": {
     "type": "git",
@@ -57,6 +57,7 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
+    "test:coverage": "vitest run",
     "lint": "tsc --noEmit"
   },
   "devDependencies": {
