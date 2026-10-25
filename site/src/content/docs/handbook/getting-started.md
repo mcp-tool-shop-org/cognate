@@ -20,7 +20,7 @@ There is no global binary. Import the package you need from the workspace, or de
 
 ## Run the image
 
-**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one, and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` from the repository root after `pnpm -r build`, or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The shipped `docker-compose.yml` sets `COGNATE_TENANT_ROOTS_PATH` to `/run/cognate/tenant-roots.json` and shows the mount as a commented volume line. Uncomment that line with your file's host path, or add a `docker-compose.override.yml` beside it:
+**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one, and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` from the repository root after `pnpm -r build`, or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The full form is `node scripts/make-tenant-root.mjs <tenantId> [outDir] [--force]`. The script refuses to replace an existing `tenant-roots.json` or `tenant-root.secret.json`: it writes nothing and exits 1 with the code `exists`. Pass `--force` only to replace both on purpose, because the old private seed cannot be recovered. The shipped `docker-compose.yml` sets `COGNATE_TENANT_ROOTS_PATH` to `/run/cognate/tenant-roots.json` and shows the mount as a commented volume line. Uncomment that line with your file's host path, or add a `docker-compose.override.yml` beside it:
 
 ```yaml
 services:
