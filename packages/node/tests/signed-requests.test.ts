@@ -3571,4 +3571,17 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
     );
     expect(large.replayStore.size()).toBe(1);
   });
+
+  it("24. N3: @cognate/node vitest functions coverage threshold is ratcheted to at least 96", () => {
+    const vitestConfigPath = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "vitest.config.ts",
+    );
+    const vitestConfigText = readFileSync(vitestConfigPath, "utf8");
+    const fnMatch = /functions:\s*(\d+)/.exec(vitestConfigText);
+    expect(fnMatch).not.toBeNull();
+    const fnFloor = Number(fnMatch?.[1] ?? 0);
+    expect(fnFloor).toBeGreaterThanOrEqual(96);
+  });
 });
