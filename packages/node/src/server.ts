@@ -888,10 +888,12 @@ export function createCognateServer(ctx: ServerContext) {
             return;
           }
 
+          const nowIso = new Date().toISOString() as import("@cognate/types").Timestamp;
           const tenantHasDelegate = Array.from(mutableState.identity.agents.values()).some(
             (existing) =>
               existing.tenantId === tenantId &&
-              existing.capabilities.some((c) => c.kind === "delegate"),
+              existing.status === "active" &&
+              hasCapability(mutableState.identity, existing.id, "delegate", nowIso),
           );
 
           if (caller.isTenantRoot) {
@@ -899,7 +901,7 @@ export function createCognateServer(ctx: ServerContext) {
               sendJson(res, 403, {
                 error: "auth.bootstrap-already-completed",
                 code: "auth.bootstrap-already-completed",
-                message: "Tenant root key bootstrap is only permitted for the tenant's first delegate agent.",
+                message: "Tenant root key bootstrap is only permitted while the tenant has no active delegate.",
                 hint: "Use an active delegate principal in the tenant to register additional agents.",
               });
               return;
@@ -918,7 +920,6 @@ export function createCognateServer(ctx: ServerContext) {
               return;
             }
           } else {
-            const nowIso = new Date().toISOString() as import("@cognate/types").Timestamp;
             if (!hasCapability(mutableState.identity, caller.agentId, "delegate", nowIso)) {
               sendJson(res, 403, {
                 error: "auth.missing-capability",
@@ -1080,14 +1081,32 @@ export function createCognateServer(ctx: ServerContext) {
             });
             return;
           }
-          if (requested.capability?.kind === "delegate" && caller.principal !== "human" && !caller.isTenantRoot) {
-            sendJson(res, 403, {
-              error: "auth.escalation-forbidden",
-              code: "auth.escalation-forbidden",
-              message: "An agent principal cannot grant the delegate capability.",
-              hint: "Only an active human delegate or the tenant root key can grant delegate.",
-            });
-            return;
+          if (requested.capability?.kind === "delegate") {
+            const serverNowIso = new Date().toISOString() as import("@cognate/types").Timestamp;
+            const tenantHasDelegate = Array.from(mutableState.identity.agents.values()).some(
+              (existing) =>
+                existing.tenantId === tenantId &&
+                existing.status === "active" &&
+                hasCapability(mutableState.identity, existing.id, "delegate", serverNowIso),
+            );
+            if (caller.isTenantRoot && tenantHasDelegate) {
+              sendJson(res, 403, {
+                error: "auth.bootstrap-already-completed",
+                code: "auth.bootstrap-already-completed",
+                message: "Tenant root key can mint a delegate capability only while the tenant has no active delegate.",
+                hint: "Use an active human delegate in the tenant to request additional delegate grants.",
+              });
+              return;
+            }
+            if (caller.principal !== "human" && !caller.isTenantRoot) {
+              sendJson(res, 403, {
+                error: "auth.escalation-forbidden",
+                code: "auth.escalation-forbidden",
+                message: "An agent principal cannot grant the delegate capability.",
+                hint: "Only an active human delegate or the tenant root key at bootstrap can grant delegate.",
+              });
+              return;
+            }
           }
         }
 
@@ -1125,14 +1144,31 @@ export function createCognateServer(ctx: ServerContext) {
             });
             return;
           }
-          if (storedGrant && storedGrant.capability.kind === "delegate" && caller.principal !== "human" && !caller.isTenantRoot) {
-            sendJson(res, 403, {
-              error: "auth.escalation-forbidden",
-              code: "auth.escalation-forbidden",
-              message: "An agent principal cannot grant the delegate capability.",
-              hint: "Only an active human delegate or the tenant root key can grant delegate.",
-            });
-            return;
+          if (storedGrant && storedGrant.capability.kind === "delegate") {
+            const tenantHasDelegate = Array.from(mutableState.identity.agents.values()).some(
+              (existing) =>
+                existing.tenantId === tenantId &&
+                existing.status === "active" &&
+                hasCapability(mutableState.identity, existing.id, "delegate", serverNowIso),
+            );
+            if (caller.isTenantRoot && tenantHasDelegate) {
+              sendJson(res, 403, {
+                error: "auth.bootstrap-already-completed",
+                code: "auth.bootstrap-already-completed",
+                message: "Tenant root key can approve a delegate capability only while the tenant has no active delegate.",
+                hint: "Use an active human delegate in the tenant to approve delegate grants.",
+              });
+              return;
+            }
+            if (caller.principal !== "human" && !caller.isTenantRoot) {
+              sendJson(res, 403, {
+                error: "auth.escalation-forbidden",
+                code: "auth.escalation-forbidden",
+                message: "An agent principal cannot grant the delegate capability.",
+                hint: "Only an active human delegate or the tenant root key at bootstrap can grant delegate.",
+              });
+              return;
+            }
           }
         }
 

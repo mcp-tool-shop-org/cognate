@@ -2123,4 +2123,100 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
     expect(polValidJson.evaluatedAt).not.toBe("2025-01-01T00:00:00Z");
     expect(Date.parse(polValidJson.evaluatedAt ?? "")).toBeGreaterThanOrEqual(beforePolMs - 1000);
   });
+
+  it("15. F4: tenant root key can mint a delegate only at bootstrap while the tenant has no active delegate", async () => {
+    const humanDelKey = makeDeterministicKeyPair("f4-human-del");
+    const plainKey = makeDeterministicKeyPair("f4-plain");
+
+    let identity = createIdentityRegistry();
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("f4-human-del", humanDelKey, {
+        principal: "human",
+        capabilities: [
+          {
+            id: "cap-f4-active-del",
+            kind: "delegate",
+            scope: "*",
+            grantedBy: ROOT_ACTOR_ID,
+            grantedAt: "2026-01-01T00:00:00Z",
+            expiresAt: null,
+          },
+        ],
+      }),
+    );
+    identity = addAgentToState(identity, seedAgentRecord("f4-plain", plainKey));
+    srv = await startServer(identity);
+
+    // (a) Root-signed request for a second delegate grant is refused with 403 auth.bootstrap-already-completed
+    const rootGrantReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/identity/grants",
+      agentId: ROOT_ACTOR_ID,
+      keyPair: ROOT_KEY,
+      body: {
+        grant: {
+          id: "grant-f4-root-del",
+          agentId: "f4-plain",
+          tenantId: TENANT,
+          capability: {
+            kind: "delegate",
+            scope: "*",
+            grantedBy: ROOT_ACTOR_ID,
+            grantedAt: "2026-10-24T12:00:00Z",
+            expiresAt: null,
+          },
+          requestedBy: ROOT_ACTOR_ID,
+          approvedBy: null,
+          status: "pending",
+          requestedAt: "2026-10-24T12:00:00Z",
+          approvedAt: null,
+        } satisfies CapabilityGrant,
+      },
+    });
+    const rootGrantRes = await fetch(`${srv.baseUrl}${rootGrantReq.path}`, rootGrantReq.init);
+    expect(rootGrantRes.status).toBe(403);
+    const rootGrantBody = (await rootGrantRes.json()) as { code?: string };
+    expect(rootGrantBody.code).toBe("auth.bootstrap-already-completed");
+
+    // (b) Human delegate requests a delegate grant, then root attempts to approve it -> 403 auth.bootstrap-already-completed
+    const humanGrantReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/identity/grants",
+      agentId: "f4-human-del",
+      keyPair: humanDelKey,
+      body: {
+        grant: {
+          id: "grant-f4-human-del",
+          agentId: "f4-plain",
+          tenantId: TENANT,
+          capability: {
+            kind: "delegate",
+            scope: "*",
+            grantedBy: "f4-human-del",
+            grantedAt: "2026-10-24T12:00:00Z",
+            expiresAt: null,
+          },
+          requestedBy: "f4-human-del",
+          approvedBy: null,
+          status: "pending",
+          requestedAt: "2026-10-24T12:00:00Z",
+          approvedAt: null,
+        } satisfies CapabilityGrant,
+      },
+    });
+    expect((await fetch(`${srv.baseUrl}${humanGrantReq.path}`, humanGrantReq.init)).status).toBe(200);
+
+    const rootApproveReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/identity/grants/grant-f4-human-del/approve",
+      agentId: ROOT_ACTOR_ID,
+      keyPair: ROOT_KEY,
+      body: { approverId: ROOT_ACTOR_ID, timestamp: "2026-10-24T12:05:00Z" },
+    });
+    const rootApproveRes = await fetch(`${srv.baseUrl}${rootApproveReq.path}`, rootApproveReq.init);
+    expect(rootApproveRes.status).toBe(403);
+    const rootApproveBody = (await rootApproveRes.json()) as { code?: string };
+    expect(rootApproveBody.code).toBe("auth.bootstrap-already-completed");
+  });
 });
