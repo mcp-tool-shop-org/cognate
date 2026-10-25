@@ -4,6 +4,10 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+### Docs
+
+- The README, SECURITY.md and the handbook say what rotating a human principal's key means: after the tenant root rotates a human delegate's key, the root holds that delegate's authority, including minting new delegates. They also say a root derived from a test seed must never be configured in production, and that startup refuses only the repository's own test root keys.
+
 ## [0.3.0] - 2026-10-24
 
 ### Security
