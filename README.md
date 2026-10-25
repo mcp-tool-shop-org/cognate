@@ -284,7 +284,7 @@ Version 1.0.0, building in public. All packages are implemented, tested, and bui
 |------|--------|
 | Build | Passing |
 | Tests | 305 passing (node 136, model-registry 58, policy 47, agent-identity 29, prompt-store 24, repomesh-bridge 9, cognate 2) |
-| Coverage | Lines: 94.2% in node, 93.4% in policy, 99.6% in model-registry, and 100% in agent-identity and prompt-store, with vitest coverage floors in every package that has code |
+| Coverage | Lines: 94.2% in node, 93.4% in policy, 99.6% in model-registry, and 100% in agent-identity and prompt-store, with vitest coverage floors in those five packages |
 | Typecheck | Clean |
 | Docker | Image serves the governance API. The volume holds the event log and the three snapshots |
 | Shipcheck | Handbook, landing page, and repo metadata in this release |
