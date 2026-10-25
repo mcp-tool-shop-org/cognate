@@ -1929,4 +1929,198 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       expect(res.status, `enforce mode path ${rawPath}`).toBe(400);
     }
   });
+
+  it("14. F3: capability expiry, approvedAt, and evaluatedAt use server time rather than request body timestamps", async () => {
+    const expiredDelKey = makeDeterministicKeyPair("f3-expired-del");
+    const activeDelKey = makeDeterministicKeyPair("f3-active-del");
+    const targetKey = makeDeterministicKeyPair("f3-target");
+
+    let identity = createIdentityRegistry();
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("f3-expired-del", expiredDelKey, {
+        principal: "human",
+        capabilities: [
+          {
+            kind: "delegate",
+            scope: "*",
+            grantedBy: ROOT_ACTOR_ID,
+            grantedAt: "2025-01-01T00:00:00Z",
+            expiresAt: "2026-01-01T00:00:00Z",
+          },
+        ],
+      }),
+    );
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("f3-active-del", activeDelKey, {
+        principal: "human",
+        capabilities: [
+          {
+            kind: "delegate",
+            scope: "*",
+            grantedBy: ROOT_ACTOR_ID,
+            grantedAt: "2025-01-01T00:00:00Z",
+            expiresAt: null,
+          },
+        ],
+      }),
+    );
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("f3-target", targetKey, {
+        owner: "f3-active-del",
+        principal: "agent",
+      }),
+    );
+
+    srv = await startServer(identity);
+
+    // Submit a pending grant for f3-target
+    const grantReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/identity/grants",
+      agentId: "f3-active-del",
+      keyPair: activeDelKey,
+      body: {
+        grant: {
+          id: "g-f3",
+          agentId: "f3-target",
+          tenantId: TENANT,
+          capability: {
+            kind: "inference",
+            scope: "*",
+            grantedBy: "f3-active-del",
+            grantedAt: "2026-10-24T12:00:00Z",
+            expiresAt: null,
+          },
+          requestedBy: "f3-active-del",
+          approvedBy: null,
+          status: "pending",
+          requestedAt: "2026-10-24T12:00:00Z",
+          approvedAt: null,
+        } satisfies CapabilityGrant,
+      },
+    });
+    expect((await fetch(`${srv.baseUrl}${grantReq.path}`, grantReq.init)).status).toBe(200);
+
+    // (a) Expired delegate with a backdated body timestamp (2025-06-01) is refused (403 auth.missing-capability)
+    const backdatedApproveReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/identity/grants/g-f3/approve",
+      agentId: "f3-expired-del",
+      keyPair: expiredDelKey,
+      body: {
+        approverId: "f3-expired-del",
+        timestamp: "2025-06-01T00:00:00Z",
+      },
+    });
+    const backdatedApproveRes = await fetch(
+      `${srv.baseUrl}${backdatedApproveReq.path}`,
+      backdatedApproveReq.init,
+    );
+    expect(backdatedApproveRes.status).toBe(403);
+    expect(((await backdatedApproveRes.json()) as { code?: string }).code).toBe(
+      "auth.missing-capability",
+    );
+
+    // (b) Active delegate approving with a backdated body timestamp records server time in approvedAt
+    const beforeApproveMs = Date.now();
+    const activeApproveReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/identity/grants/g-f3/approve",
+      agentId: "f3-active-del",
+      keyPair: activeDelKey,
+      body: {
+        approverId: "f3-active-del",
+        timestamp: "2020-01-01T00:00:00Z",
+      },
+    });
+    expect((await fetch(`${srv.baseUrl}${activeApproveReq.path}`, activeApproveReq.init)).status).toBe(200);
+
+    const vcReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/identity/grants/g-f3/vc",
+      agentId: "f3-active-del",
+      keyPair: activeDelKey,
+      body: { issuerId: "urn:cognate:test" },
+    });
+    const vcRes = await fetch(`${srv.baseUrl}${vcReq.path}`, vcReq.init);
+    expect(vcRes.status).toBe(200);
+    const vcBody = (await vcRes.json()) as {
+      credential?: {
+        credentialSubject?: { cognateCapabilityGrant?: { approvedAt?: string } };
+      };
+    };
+    const recordedApprovedAt =
+      vcBody.credential?.credentialSubject?.cognateCapabilityGrant?.approvedAt ?? "";
+    expect(recordedApprovedAt).not.toBe("2020-01-01T00:00:00Z");
+    expect(Date.parse(recordedApprovedAt)).toBeGreaterThanOrEqual(beforeApproveMs - 1000);
+
+    // (c) Policy evaluate checks capabilities at server time and records server time for evaluatedAt
+    const polBody = {
+      policy: {
+        id: "pol-f3",
+        tenantId: TENANT,
+        name: "Policy F3",
+        version: 1,
+        rules: [],
+        createdAt: "2026-10-24T12:00:00Z",
+        approvedBy: "f3-active-del",
+        status: "active",
+      },
+      context: {
+        tenantId: TENANT,
+        actorId: "f3-expired-del",
+        modelVersionId: "v-1",
+        agentId: "f3-expired-del",
+        timestamp: "2025-01-01T00:00:00Z",
+        promptText: "test",
+        outputText: null,
+        metadata: {
+          tokensIn: 1,
+          tokensOut: null,
+          latencyMs: null,
+          confidence: null,
+          finishReason: null,
+          tags: [],
+        },
+        agentCapabilities: [{ kind: "delegate" }],
+        counters: { callsInWindow: 1, windowSeconds: 60, spendInWindow: 0, spendCurrency: "USD" },
+      },
+    };
+    const polClaimedExpiredCap = makeSignedRequestInit({
+      method: "POST",
+      path: "/policy/evaluate",
+      agentId: "f3-expired-del",
+      keyPair: expiredDelKey,
+      body: polBody,
+    });
+    const polClaimedRes = await fetch(
+      `${srv.baseUrl}${polClaimedExpiredCap.path}`,
+      polClaimedExpiredCap.init,
+    );
+    expect(polClaimedRes.status).toBe(403);
+
+    const beforePolMs = Date.now();
+    const polValidReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/policy/evaluate",
+      agentId: "f3-expired-del",
+      keyPair: expiredDelKey,
+      body: {
+        ...polBody,
+        context: {
+          ...polBody.context,
+          timestamp: "2025-01-01T00:00:00Z",
+          agentCapabilities: [],
+        },
+      },
+    });
+    const polValidRes = await fetch(`${srv.baseUrl}${polValidReq.path}`, polValidReq.init);
+    expect(polValidRes.status).toBe(200);
+    const polValidJson = (await polValidRes.json()) as { evaluatedAt?: string };
+    expect(polValidJson.evaluatedAt).not.toBe("2025-01-01T00:00:00Z");
+    expect(Date.parse(polValidJson.evaluatedAt ?? "")).toBeGreaterThanOrEqual(beforePolMs - 1000);
+  });
 });

@@ -572,9 +572,11 @@ export function createCognateServer(ctx: ServerContext) {
             return;
           }
 
+          const serverNowIso = new Date().toISOString() as import("@cognate/types").Timestamp;
           let verifiedContext: EvaluationContext = {
             ...reqBody.context,
             actorId,
+            timestamp: serverNowIso,
           };
 
           if (reqBody.context.agentId !== null && reqBody.context.agentId !== undefined) {
@@ -590,7 +592,7 @@ export function createCognateServer(ctx: ServerContext) {
             const activeCaps = getActiveCapabilities(
               mutableState.identity,
               ctxAgent.id,
-              (reqBody.context.timestamp ?? new Date().toISOString()) as import("@cognate/types").Timestamp,
+              serverNowIso,
             );
             const activeKinds = new Set(activeCaps.map((c) => c.kind));
             if (
@@ -1105,13 +1107,14 @@ export function createCognateServer(ctx: ServerContext) {
             });
             return;
           }
+          const serverNowIso = new Date().toISOString() as import("@cognate/types").Timestamp;
           if (
             !caller.isTenantRoot &&
             !hasCapability(
               mutableState.identity,
               caller.agentId,
               "delegate",
-              String(approving.timestamp) as import("@cognate/types").Timestamp,
+              serverNowIso,
             )
           ) {
             sendJson(res, 403, {

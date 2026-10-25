@@ -120,7 +120,8 @@ export function handleIdentity(
     if (!grantId || !req.approverId || !req.timestamp) {
       return { ok: false, error: { code: "identity.missing-params", message: "Missing grantId, approverId, or timestamp", hint: "Provide all required fields" } };
     }
-    const result = approveGrant(mutableState.identity, grantId as HashId, req.approverId as ActorId, req.timestamp as Timestamp);
+    const serverNowIso = new Date().toISOString() as Timestamp;
+    const result = approveGrant(mutableState.identity, grantId as HashId, req.approverId as ActorId, serverNowIso);
     if (!result.ok) {
       return { ok: false, error: { code: result.error.code, message: result.error.message, hint: result.error.hint } };
     }

@@ -286,7 +286,7 @@ export function isCapabilityActive(
   atTimestamp: Timestamp
 ): boolean {
   if (capability.expiresAt === null) return true;
-  return atTimestamp < capability.expiresAt;
+  return Date.parse(atTimestamp) < Date.parse(capability.expiresAt);
 }
 
 /** Check if an agent has a specific capability kind. */
