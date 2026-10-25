@@ -42,7 +42,7 @@
     "@cognate/agent-identity": "workspace:*",
     "@cognate/prompt-store": "workspace:*",
     "@cognate/repomesh-bridge": "workspace:*",
-    "@mcptoolshop/attestia": "^2.0.5",
+    "@mcptoolshop/attestia": "^2.1.3",
     "json-canonicalize": "^2.0.0"
   },
   "devDependencies": {
