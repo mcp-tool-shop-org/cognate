@@ -4,6 +4,10 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`docker compose up` and a bare `node dist/index.js` no longer die on an uncaught error when the tenant roots file is missing.** A configuration error at startup now prints one JSON line on stderr in the API's error shape (`{"ok":false,"error":{"code","message","hint"}}`) and exits 1, with no stack trace unless `COGNATE_DEBUG=1` or `--debug` is set. `docker-compose.yml` sets `COGNATE_TENANT_ROOTS_PATH` and shows, as a commented volume, how to mount an operator-supplied roots file; no root key ships in the repository or image.
+
 ### Docs
 
 - The README, SECURITY.md and the handbook say what rotating a human principal's key means: after the tenant root rotates a human delegate's key, the root holds that delegate's authority, including minting new delegates. They also say the root rotates a human or agent principal's key and revokes any principal, and that revoking every active `delegate` leaves the tenant with no active `delegate`, when the root can mint one directly. They say a root derived from a test seed must never be configured in production, and that startup refuses only the repository's own test root keys.
