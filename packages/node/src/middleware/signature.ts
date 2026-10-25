@@ -17,8 +17,6 @@ import {
   type KeyObject,
 } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { canonicalize } from "json-canonicalize";
 import type {
   ActorId,
@@ -329,105 +327,156 @@ export function createReplayStore(windowMs: number = TIMESTAMP_WINDOW_MS): Repla
   };
 }
 
-const DEFAULT_TENANT_ROOTS: readonly TenantRootKeyEntry[] = [
-  {
-    tenantId: "tenant-a" as TenantId,
-    kid: "6e676438555d5783c9197c1ad0f7ffd21d30c017f3bc882014c90756d91224e3",
-    publicKey: "OU0e1p_4rG9FqAHKkPob3VddG3eBEbRs55JR2wL5TIM",
-    actorId: "sha256:1eb2c7ffd32e6a9291cd4efd2299924762626ee55c1735389964d32cfde7d9e4" as ActorId,
-  },
-  {
-    tenantId: "tenant-b" as TenantId,
-    kid: "e86478cb0dda167def172760eb69c635497dd3cfe3bc9849388f96ffdc6804f7",
-    publicKey: "Ts-MTztMri3vSZwiT87kz0E0CduYsTBJUxA590z8rf8",
-    actorId: "sha256:1db260dbecd1661cad913d91cffac9b0e6a599a6473888018f2e7faf6f60cf9e" as ActorId,
-  },
-  {
-    tenantId: "tenant-1" as TenantId,
-    kid: "0da1ca464230a946934b3cb540780cd8e373c09ed91ddbee6b11d61c2db93b82",
-    publicKey: "XzDwr56hT5N-BEz1XsGDqUY-SMPIrxA0sQRNcdztqZw",
-    actorId: "sha256:fb8a82c25f25e5586111c11392f74b608a3d7788ae017297400c162f6b37b8ba" as ActorId,
-  },
-  {
-    tenantId: "tenant-2" as TenantId,
-    kid: "e6eefe189d71d2af2de1fe3123f3883a1610c4b5b34ec7ef1ef362f8e7469633",
-    publicKey: "PHwYzQeINX-FOqVtLbBGHEFQZilra0h9o05jGe9JATY",
-    actorId: "sha256:d5a7dfe09d6ca55a4ee382cb089b33dc70485b293dcb0f35d2b86834636b5c1d" as ActorId,
-  },
-  {
-    tenantId: "tenant-alpha" as TenantId,
-    kid: "01b22dc4dd2b83d4836864d3d3bdbf3e6114e45f1e8edf02a4eced96a6f14555",
-    publicKey: "wXHOClpUcO09oocF1mM-GVMiIC9DDstjgJBmv2uaAxo",
-    actorId: "sha256:c70c67b6cee5e2a167656c35bc615ecb001709480eff4b34da0543c0ec87196f" as ActorId,
-  },
-  {
-    tenantId: "tenant-beta" as TenantId,
-    kid: "afffb6117780b291348a9b7c9a072bb01b471b299cdad962ce026039889d3242",
-    publicKey: "f3PKS9p8V_0FqPKUmoEtAk1QswiVMTjtOZW-b4uCIyA",
-    actorId: "sha256:742b8e311ea85dab19409e927073b9478b9deb20775218c1e866ee67477dde83" as ActorId,
-  },
-  {
-    tenantId: "default" as TenantId,
-    kid: "4d5c89eb76af7048bac488dbeb352e183a0d75002eaab7cbdc1dbcb2353494b0",
-    publicKey: "BwcSEoeZUWKnWTcO4MbJisHEfBBcjqcVApWS3TKvizI",
-    actorId: "sha256:ee221f2b46886aeccbb6bc461e83023a6107ffa1aa0b997515f16870ad3c9f2b" as ActorId,
-  },
-];
+export class TenantRootsConfigError extends Error {
+  readonly code: string;
+  readonly hint: string;
 
-export function validateTenantRootsList(roots: readonly TenantRootKeyEntry[]): readonly TenantRootKeyEntry[] {
+  constructor(params: { readonly code: string; readonly message: string; readonly hint: string }) {
+    super(params.message);
+    this.name = "TenantRootsConfigError";
+    this.code = params.code;
+    this.hint = params.hint;
+  }
+}
+
+export interface TenantRootValidationOptions {
+  readonly allowTestOnlyRoots?: boolean;
+}
+
+export interface LoadTenantRootsOptions extends TenantRootValidationOptions {
+  readonly env?: Record<string, string | undefined>;
+  readonly requireNonEmpty?: boolean;
+}
+
+function isDerivedTestRootEntry(entry: TenantRootKeyEntry): boolean {
+  if ((entry as { readonly testOnly?: boolean }).testOnly === true) {
+    return true;
+  }
+  const derivedSeedHex = sha256HexBytes(`cognate-test-root-seed:${entry.tenantId}`);
+  const derivedPub = generateEd25519KeyPair(derivedSeedHex).publicKey;
+  if (entry.publicKey === derivedPub) {
+    return true;
+  }
+  const derivedActorId = `sha256:${sha256HexBytes(`cognate-tenant-root:${entry.tenantId}`)}`;
+  return entry.actorId === derivedActorId;
+}
+
+export function validateTenantRootsList(
+  roots: readonly TenantRootKeyEntry[],
+  options?: TenantRootValidationOptions,
+): readonly TenantRootKeyEntry[] {
+  const allowTestOnlyRoots = options?.allowTestOnlyRoots === true;
   const seenTenants = new Set<string>();
   for (const entry of roots) {
     if (!entry || typeof entry.tenantId !== "string" || entry.tenantId.trim().length === 0) {
-      throw new Error("Invalid tenant root config: tenantId must be a non-empty string.");
+      throw new TenantRootsConfigError({
+        code: "auth.invalid-tenant-roots",
+        message: "Invalid tenant root config: tenantId must be a non-empty string.",
+        hint: "Ensure every entry in roots specifies a non-empty tenantId string.",
+      });
     }
     if (seenTenants.has(entry.tenantId)) {
-      throw new Error(`Invalid tenant root config: duplicate tenantId "${entry.tenantId}".`);
+      throw new TenantRootsConfigError({
+        code: "auth.invalid-tenant-roots",
+        message: `Invalid tenant root config: duplicate tenantId "${entry.tenantId}".`,
+        hint: "Each tenant may have at most one root public key entry.",
+      });
     }
     seenTenants.add(entry.tenantId);
     const derived = tryDeriveKid(entry.publicKey);
     if (derived === null) {
-      throw new Error(`Invalid tenant root config for "${entry.tenantId}": malformed Ed25519 publicKey.`);
+      throw new TenantRootsConfigError({
+        code: "auth.invalid-tenant-roots",
+        message: `Invalid tenant root config for "${entry.tenantId}": malformed Ed25519 publicKey.`,
+        hint: "Provide a 43-character base64url raw 32-byte Ed25519 public key.",
+      });
     }
     if (entry.kid !== derived) {
-      throw new Error(
-        `Invalid tenant root config for "${entry.tenantId}": kid "${entry.kid}" does not match sha256(publicKey) "${derived}".`,
-      );
+      throw new TenantRootsConfigError({
+        code: "auth.invalid-tenant-roots",
+        message: `Invalid tenant root config for "${entry.tenantId}": kid "${entry.kid}" does not match sha256(publicKey) "${derived}".`,
+        hint: "Set kid to the 64-character lowercase hex SHA-256 digest of the raw 32-byte public key.",
+      });
     }
     if (typeof entry.actorId !== "string" || !isValidAgentIdHeader(entry.actorId)) {
-      throw new Error(`Invalid tenant root config for "${entry.tenantId}": invalid actorId.`);
+      throw new TenantRootsConfigError({
+        code: "auth.invalid-tenant-roots",
+        message: `Invalid tenant root config for "${entry.tenantId}": invalid actorId.`,
+        hint: "Set actorId to a valid SHA-256 actor identifier.",
+      });
+    }
+    if (!allowTestOnlyRoots && isDerivedTestRootEntry(entry)) {
+      throw new TenantRootsConfigError({
+        code: "auth.test-only-root-key-forbidden",
+        message: `Tenant root entry for "${entry.tenantId}" is a test-only root key and is rejected at startup.`,
+        hint: "Supply operator-managed production root public keys, or set allowTestOnlyRoots: true in test harnesses.",
+      });
     }
   }
   return roots;
 }
 
 /**
- * Load and verify the committed per-tenant root key configuration.
+ * Load and verify the operator-supplied per-tenant root public key configuration.
  */
-export function loadTenantRootsConfig(configPath?: string): readonly TenantRootKeyEntry[] {
-  if (configPath !== undefined) {
-    const raw = readFileSync(configPath, "utf8");
-    const parsed = JSON.parse(raw) as TenantRootsConfig;
-    if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.roots)) {
-      throw new Error(`Invalid tenant roots config at "${configPath}".`);
-    }
-    return validateTenantRootsList(parsed.roots);
+export function loadTenantRootsConfig(
+  configPath?: string,
+  options?: LoadTenantRootsOptions,
+): readonly TenantRootKeyEntry[] {
+  const env = options?.env ?? process.env;
+  const resolvedPath = configPath?.trim() || env.COGNATE_TENANT_ROOTS_PATH?.trim();
+  const allowTestOnlyRoots =
+    options?.allowTestOnlyRoots === true || env.COGNATE_ALLOW_TEST_ONLY_ROOTS === "true";
+  const requireNonEmpty = options?.requireNonEmpty ?? true;
+
+  if (!resolvedPath) {
+    throw new TenantRootsConfigError({
+      code: "auth.missing-tenant-roots",
+      message: "No tenant root public key configuration was supplied.",
+      hint: "Pass tenantRootsPath or set COGNATE_TENANT_ROOTS_PATH to a JSON file containing tenant root public keys.",
+    });
   }
-  const moduleDir = fileURLToPath(new URL(".", import.meta.url));
-  const candidatePaths = [
-    resolve(moduleDir, "../../config/tenant-roots.json"),
-    resolve(process.cwd(), "packages/node/config/tenant-roots.json"),
-  ];
-  for (const candidate of candidatePaths) {
-    if (existsSync(candidate)) {
-      const raw = readFileSync(candidate, "utf8");
-      const parsed = JSON.parse(raw) as TenantRootsConfig;
-      if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.roots)) {
-        throw new Error(`Invalid tenant roots config at "${candidate}".`);
-      }
-      return validateTenantRootsList(parsed.roots);
-    }
+  if (!existsSync(resolvedPath)) {
+    throw new TenantRootsConfigError({
+      code: "auth.missing-tenant-roots",
+      message: `Tenant roots configuration file not found at "${resolvedPath}".`,
+      hint: "Verify that tenantRootsPath or COGNATE_TENANT_ROOTS_PATH points to an existing JSON file.",
+    });
   }
-  return validateTenantRootsList(DEFAULT_TENANT_ROOTS);
+  let parsed: TenantRootsConfig & { readonly testOnly?: boolean };
+  try {
+    const raw = readFileSync(resolvedPath, "utf8");
+    parsed = JSON.parse(raw) as TenantRootsConfig & { readonly testOnly?: boolean };
+  } catch {
+    throw new TenantRootsConfigError({
+      code: "auth.invalid-tenant-roots",
+      message: `Failed to parse tenant roots JSON configuration at "${resolvedPath}".`,
+      hint: 'Provide valid JSON matching { "version": 1, "roots": [...] }.',
+    });
+  }
+  if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.roots)) {
+    throw new TenantRootsConfigError({
+      code: "auth.invalid-tenant-roots",
+      message: `Invalid tenant roots config at "${resolvedPath}".`,
+      hint: 'Provide { "version": 1, "roots": [...] } with valid tenant root entries.',
+    });
+  }
+  if (!allowTestOnlyRoots && (parsed.testOnly === true || /test-only/i.test(resolvedPath))) {
+    throw new TenantRootsConfigError({
+      code: "auth.test-only-root-key-forbidden",
+      message: `Tenant roots configuration at "${resolvedPath}" is marked test-only and is rejected at startup.`,
+      hint: "Supply operator-managed production root public keys, or set allowTestOnlyRoots: true in test harnesses.",
+    });
+  }
+  const validated = validateTenantRootsList(parsed.roots, { allowTestOnlyRoots });
+  if (requireNonEmpty && validated.length === 0) {
+    throw new TenantRootsConfigError({
+      code: "auth.missing-tenant-roots",
+      message: `Tenant roots configuration at "${resolvedPath}" contains no root keys.`,
+      hint: "Configure at least one tenant root public key entry before starting in enforce mode.",
+    });
+  }
+  return validated;
 }
 
 /**

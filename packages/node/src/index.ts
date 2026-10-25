@@ -27,6 +27,9 @@ const ctx: ServerContext = {
   requireEvaluationCitations: citationRuleFromEnv(process.env),
   signedRequests: signedRequestsCfg.signedRequests,
   signedRequestsLogUntil: signedRequestsCfg.signedRequestsLogUntil,
+  ...(process.env.COGNATE_TENANT_ROOTS_PATH?.trim()
+    ? { tenantRootsPath: process.env.COGNATE_TENANT_ROOTS_PATH.trim() }
+    : {}),
   verifyRelease: (repo, version) => verifyRelease(repo, version, release.repomesh),
 };
 

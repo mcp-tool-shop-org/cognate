@@ -8,6 +8,7 @@ import { createRegistry as createIdentityRegistry, registerAgent } from "@cognat
 import { createStore as createPromptStore } from "@cognate/prompt-store";
 import { generateEd25519KeyPair, type Ed25519KeyPairMaterial } from "../src/middleware/signature.js";
 import { signHttpRequest } from "../src/client.js";
+import { TEST_ONLY_TENANT_ROOTS } from "./fixtures/test-only-tenant-roots.js";
 
 // Rate-limit buckets are per agent and path prefix, and module-level; a fresh agent per server keeps tests apart.
 let agentSeq = 0;
@@ -87,6 +88,8 @@ async function start(fail = false, requireEvaluationCitations?: RequireEvaluatio
     port: 0,
     host: "127.0.0.1",
     eventStore: rec.eventStore,
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
     ...(requireEvaluationCitations !== undefined ? { requireEvaluationCitations } : {}),
   });
   const port = await new Promise<number>((resolve) =>

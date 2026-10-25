@@ -7,6 +7,7 @@ import { createStore as createPromptStore, logPrompt } from "@cognate/prompt-sto
 import { generateEd25519KeyPair, type Ed25519KeyPairMaterial } from "../src/middleware/signature.js";
 import { signHttpRequest } from "../src/client.js";
 import type { Agent, CapabilityGrant, Evaluation, Model, ModelVersion, ModelVersionStatus, Prompt } from "@cognate/types";
+import { TEST_ONLY_TENANT_ROOTS } from "./fixtures/test-only-tenant-roots.js";
 
 // Every route takes its tenant from the authenticated caller. Tenant 2's agent calls with tenant 1's ids; each refusal
 // must append nothing, change nothing, and (where an id is named) look exactly like a miss.
@@ -181,6 +182,8 @@ async function start() {
     state: seeded(a, b),
     port: 0,
     host: "127.0.0.1",
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
     eventStore: {
       append(streamId: string, events: readonly unknown[]) {
         appended.push(streamId);

@@ -11,6 +11,7 @@ import { proveRecordedEvent } from "../src/event-proof.js";
 import { createCognateServer } from "../src/server.js";
 import { generateEd25519KeyPair, type Ed25519KeyPairMaterial } from "../src/middleware/signature.js";
 import { signHttpRequest } from "../src/client.js";
+import { TEST_ONLY_TENANT_ROOTS } from "./fixtures/test-only-tenant-roots.js";
 
 const TIMESTAMP = "2026-10-01T12:00:00Z";
 const agentKeys = new Map<string, Ed25519KeyPairMaterial>();
@@ -189,7 +190,11 @@ function policyBody(promptText: string, actorId = "proof-agent-1") {
 }
 
 async function listen(ctx: Parameters<typeof createCognateServer>[0]) {
-  const { server } = createCognateServer(ctx);
+  const { server } = createCognateServer({
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
+    ...ctx,
+  });
   return new Promise<{ port: number; stop: () => void }>((resolve) => {
     server.listen(0, "127.0.0.1", () => {
       const addr = server.address();

@@ -7,6 +7,7 @@ import { createRegistry as createIdentityRegistry, registerAgent } from "@cognat
 import { createStore as createPromptStore } from "@cognate/prompt-store";
 import { generateEd25519KeyPair } from "../src/middleware/signature.js";
 import { signHttpRequest } from "../src/client.js";
+import { TEST_ONLY_TENANT_ROOTS } from "./fixtures/test-only-tenant-roots.js";
 
 const TEST_AGENT_ID = "test-agent-1";
 const TEST_TIMESTAMP = "2026-09-28T12:00:00Z";
@@ -66,6 +67,8 @@ async function startTestServer(eventStore?: ReturnType<typeof recordingStore>["e
     port: 0,
     host: "127.0.0.1",
     eventStore: eventStore ?? recorded.eventStore,
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
   });
 
   return new Promise<{

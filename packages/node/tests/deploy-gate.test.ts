@@ -12,6 +12,7 @@ import {
 } from "@cognate/model-registry";
 import { createRegistry as createIdentityRegistry, registerAgent } from "@cognate/agent-identity";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
+import { TEST_ONLY_TENANT_ROOTS } from "./fixtures/test-only-tenant-roots.js";
 
 const TEST_TIMESTAMP = "2026-09-28T12:00:00Z";
 const REPO_HASH = `sha256:${createHash("sha256").update("acme/weights").digest("hex")}`;
@@ -120,6 +121,8 @@ async function start(opts: {
     port: 0,
     host: "127.0.0.1",
     eventStore: opts.eventStore ?? recorded.eventStore,
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
     ...(opts.verifyRelease ? { verifyRelease: opts.verifyRelease } : {}),
     ...(opts.releaseFailOn ? { releaseFailOn: opts.releaseFailOn } : {}),
   });

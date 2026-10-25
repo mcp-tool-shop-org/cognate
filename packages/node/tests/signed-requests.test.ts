@@ -9,6 +9,7 @@ import {
 import { createRegistry as createModelRegistry } from "@cognate/model-registry";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
 import { createCognateServer, type ServerContext } from "../src/server.js";
+import { TEST_ONLY_TENANT_ROOTS, TEST_ONLY_TENANT_ROOTS_PATH } from "./fixtures/test-only-tenant-roots.js";
 
 const ED25519_PKCS8_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
@@ -250,6 +251,8 @@ async function startServer(
     port: 0,
     host: "127.0.0.1",
     eventStore: store as ServerContext["eventStore"],
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
     ...(extra ?? {}),
   } as ServerContext);
 
@@ -1489,7 +1492,9 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
         COGNATE_SIGNED_REQUESTS_LOG_UNTIL: sunset,
       }),
     ).toEqual({ signedRequests: "log", signedRequestsLogUntil: sunset });
-    expect(sigMod.loadTenantRootsConfig().length).toBeGreaterThanOrEqual(7);
+    expect(
+      sigMod.loadTenantRootsConfig(TEST_ONLY_TENANT_ROOTS_PATH, { allowTestOnlyRoots: true }).length,
+    ).toBeGreaterThanOrEqual(7);
   });
 
   it("11. additional branch coverage: approval-required constraint, root bootstrap cap limit, delegate revoke, and validation helpers", async () => {
@@ -1676,5 +1681,125 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
     expect(handleIdentity(dummyState, "/identity/grants", "POST", {}).ok).toBe(false);
     expect(handleIdentity(dummyState, "/identity/agents//revoke", "POST", {}).ok).toBe(false);
     expect(handleIdentity(dummyState, "/identity/grants//vc", "POST", {}).ok).toBe(false);
+  });
+
+  it("12. F1: tenant root keys require operator config in enforce mode, test-only fixtures require allowTestOnlyRoots, and no committed root uses test seeds", async () => {
+    const { existsSync, readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const { TEST_ONLY_TENANT_ROOTS, TEST_ONLY_TENANT_ROOTS_PATH } = await import(
+      "./fixtures/test-only-tenant-roots.js"
+    );
+
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const committedConfigPath = resolve(testDir, "../config/tenant-roots.json");
+    const dockerfilePath = resolve(testDir, "../../../Dockerfile");
+
+    // (a) No committed root in packages/node/config/tenant-roots.json equals sha256("cognate-test-root-seed:" + tenantId)
+    if (existsSync(committedConfigPath)) {
+      const committed = JSON.parse(readFileSync(committedConfigPath, "utf8")) as {
+        roots?: Array<{ tenantId: string; publicKey: string }>;
+      };
+      const roots = committed.roots ?? [];
+      for (const entry of roots) {
+        const derivedTestPub = makeKeyPairFromSeedHex(
+          sha256Hex(`cognate-test-root-seed:${entry.tenantId}`),
+        ).publicKey;
+        expect(entry.publicKey).not.toBe(derivedTestPub);
+      }
+      expect(roots).toEqual([]);
+    }
+
+    // (b) Dockerfile copies no tenant-roots config into the production image
+    const dockerfileText = readFileSync(dockerfilePath, "utf8");
+    expect(dockerfileText).not.toContain("packages/node/config");
+
+    // (c) In enforce mode, server refuses to start without operator-supplied roots, with structured error (code, message, hint)
+    const { store } = createFakeEventStore();
+    let missingErr: unknown = null;
+    try {
+      createCognateServer({
+        state: {
+          registry: createModelRegistry(),
+          identity: createIdentityRegistry(),
+          prompts: createPromptStore(),
+        },
+        port: 0,
+        host: "127.0.0.1",
+        eventStore: store as ServerContext["eventStore"],
+        signedRequests: "enforce",
+      });
+    } catch (err) {
+      missingErr = err;
+    }
+    expect(missingErr).toMatchObject({
+      code: "auth.missing-tenant-roots",
+      message: expect.any(String),
+      hint: expect.any(String),
+    });
+
+    // (d) Test-only root keys are rejected at startup unless allowTestOnlyRoots is explicitly set
+    let testKeyErr: unknown = null;
+    try {
+      createCognateServer({
+        state: {
+          registry: createModelRegistry(),
+          identity: createIdentityRegistry(),
+          prompts: createPromptStore(),
+        },
+        port: 0,
+        host: "127.0.0.1",
+        eventStore: store as ServerContext["eventStore"],
+        signedRequests: "enforce",
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+      });
+    } catch (err) {
+      testKeyErr = err;
+    }
+    expect(testKeyErr).toMatchObject({
+      code: "auth.test-only-root-key-forbidden",
+      message: expect.any(String),
+      hint: expect.any(String),
+    });
+
+    let testPathErr: unknown = null;
+    try {
+      createCognateServer({
+        state: {
+          registry: createModelRegistry(),
+          identity: createIdentityRegistry(),
+          prompts: createPromptStore(),
+        },
+        port: 0,
+        host: "127.0.0.1",
+        eventStore: store as ServerContext["eventStore"],
+        signedRequests: "enforce",
+        tenantRootsPath: TEST_ONLY_TENANT_ROOTS_PATH,
+      });
+    } catch (err) {
+      testPathErr = err;
+    }
+    expect(testPathErr).toMatchObject({
+      code: "auth.test-only-root-key-forbidden",
+      message: expect.any(String),
+      hint: expect.any(String),
+    });
+
+    // Explicit test flag allows the test-only fixture roots
+    expect(() =>
+      createCognateServer({
+        state: {
+          registry: createModelRegistry(),
+          identity: createIdentityRegistry(),
+          prompts: createPromptStore(),
+        },
+        port: 0,
+        host: "127.0.0.1",
+        eventStore: store as ServerContext["eventStore"],
+        signedRequests: "enforce",
+        tenantRootsPath: TEST_ONLY_TENANT_ROOTS_PATH,
+        allowTestOnlyRoots: true,
+      } as ServerContext),
+    ).not.toThrow();
   });
 });

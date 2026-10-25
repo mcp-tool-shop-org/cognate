@@ -36,6 +36,7 @@ import { handlePrompts } from "./routes/prompts.js";
 import { checkRateLimit, createRateLimitState, type RateLimitConfig } from "./middleware/rate-limit.js";
 import {
   MAX_BODY_BYTES,
+  TenantRootsConfigError,
   UNIFORM_UNAUTHENTICATED_BODY,
   createReplayStore,
   isJcsCanonicalJsonBytes,
@@ -103,13 +104,18 @@ export interface ServerContext {
    */
   readonly signedRequestsLogUntil?: string;
   /**
-   * Optional explicit per-tenant root public key entries (defaults to committed `packages/node/config/tenant-roots.json`).
+   * Optional explicit per-tenant root public key entries supplied by the operator.
    */
   readonly tenantRoots?: readonly TenantRootKeyEntry[];
   /**
-   * Optional path to a per-tenant root public key JSON configuration file.
+   * Optional path to an operator-supplied per-tenant root public key JSON configuration file
+   * (or set `COGNATE_TENANT_ROOTS_PATH`). Required in `"enforce"` mode when `tenantRoots` is not passed.
    */
   readonly tenantRootsPath?: string;
+  /**
+   * Explicit test-only flag allowing test fixture root keys (`testOnly: true` or test-seed keys).
+   */
+  readonly allowTestOnlyRoots?: boolean;
   /**
    * Optional server-side callback for sanitized authentication and `log`-mode warnings.
    */
@@ -273,9 +279,30 @@ export function createCognateServer(ctx: ServerContext) {
     ctx.signedRequests ?? "enforce",
     ctx.signedRequestsLogUntil,
   );
-  const tenantRoots = ctx.tenantRoots
-    ? validateTenantRootsList(ctx.tenantRoots)
-    : loadTenantRootsConfig(ctx.tenantRootsPath);
+  const allowTestOnlyRoots =
+    ctx.allowTestOnlyRoots === true || process.env.COGNATE_ALLOW_TEST_ONLY_ROOTS === "true";
+  let tenantRoots: readonly TenantRootKeyEntry[];
+  if (ctx.tenantRoots !== undefined) {
+    tenantRoots = validateTenantRootsList(ctx.tenantRoots, { allowTestOnlyRoots });
+    if (signedRequestsMode === "enforce" && tenantRoots.length === 0) {
+      throw new TenantRootsConfigError({
+        code: "auth.missing-tenant-roots",
+        message: "At least one tenant root public key is required in enforce mode.",
+        hint: "Supply non-empty tenantRoots, tenantRootsPath, or COGNATE_TENANT_ROOTS_PATH.",
+      });
+    }
+  } else if (
+    ctx.tenantRootsPath !== undefined ||
+    (process.env.COGNATE_TENANT_ROOTS_PATH?.trim() ?? "") !== "" ||
+    signedRequestsMode === "enforce"
+  ) {
+    tenantRoots = loadTenantRootsConfig(ctx.tenantRootsPath, {
+      allowTestOnlyRoots,
+      requireNonEmpty: signedRequestsMode === "enforce",
+    });
+  } else {
+    tenantRoots = [];
+  }
   const replayStore = createReplayStore();
 
   const mutableState: ServerState = {
@@ -1193,6 +1220,7 @@ export {
   MAX_BODY_BYTES,
   MAX_LOG_MODE_SUNSET_MS,
   TIMESTAMP_WINDOW_MS,
+  TenantRootsConfigError,
   UNIFORM_UNAUTHENTICATED_BODY,
   buildCanonicalRequestString,
   canonicalizeJsonBody,

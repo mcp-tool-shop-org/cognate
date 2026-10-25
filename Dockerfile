@@ -69,7 +69,6 @@ COPY --from=builder /build/packages/agent-identity/dist packages/agent-identity/
 COPY --from=builder /build/packages/prompt-store/dist packages/prompt-store/dist
 COPY --from=builder /build/packages/repomesh-bridge/dist packages/repomesh-bridge/dist
 COPY --from=builder /build/packages/node/dist packages/node/dist
-COPY --from=builder /build/packages/node/config packages/node/config
 COPY --from=builder /build/packages/cognate/dist packages/cognate/dist
 
 ENV NODE_ENV=production
