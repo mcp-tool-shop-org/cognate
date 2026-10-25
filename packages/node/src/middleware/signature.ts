@@ -56,6 +56,9 @@ const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
 const NONCE_RE = /^[A-Za-z0-9_-]{22,64}$/;
 const AGENT_ID_RE = /^[A-Za-z0-9._:-]{1,128}$/;
 const PCT_CONTROL_RE = /%(?:0[0-9a-f]|1[0-9a-f]|7f)/i;
+const PCT_FORBIDDEN_PATH_CHAR_RE = /%(?:2e|2f|5c)/i;
+const PCT_DOUBLE_ENCODING_RE = /%25[0-9a-f]{2}/i;
+const DOT_SEGMENT_RE = /(?:^|\/)\.\.?(?:\/|$)/;
 
 /**
  * Single uniform 401 response body for every pre-signature authentication failure (Ruling 8).
@@ -155,10 +158,99 @@ export function generateEd25519KeyPair(seedHex?: string): Ed25519KeyPairMaterial
   return { seedHex: resolvedSeedHex, publicKey, kid };
 }
 
+export type NormalizedPathResult =
+  | { readonly ok: true; readonly pathname: string }
+  | {
+      readonly ok: false;
+      readonly error: {
+        readonly error: string;
+        readonly code: string;
+        readonly message: string;
+        readonly hint: string;
+      };
+    };
+
+/**
+ * Single path-normalisation function shared by the signed-path rule (`/identity/*` always signed)
+ * and HTTP route dispatch. Refuses any raw path containing a percent-encoded `.`, `/` or `\`
+ * (any case), a double encoding, a backslash, or a dot segment.
+ */
+export function normalizeRequestPathname(rawUrl: string): NormalizedPathResult {
+  if (typeof rawUrl !== "string" || rawUrl.length === 0 || !rawUrl.startsWith("/")) {
+    return {
+      ok: false,
+      error: {
+        error: "auth.invalid-path",
+        code: "auth.invalid-path",
+        message: "Request path is malformed.",
+        hint: "Send a canonical request path starting with '/'.",
+      },
+    };
+  }
+  const qIdx = rawUrl.indexOf("?");
+  const hIdx = rawUrl.indexOf("#");
+  let endIdx = rawUrl.length;
+  if (qIdx !== -1 && qIdx < endIdx) endIdx = qIdx;
+  if (hIdx !== -1 && hIdx < endIdx) endIdx = hIdx;
+  const rawPath = rawUrl.slice(0, endIdx);
+
+  if (
+    rawPath.includes("..") ||
+    rawPath.includes("\\") ||
+    DOT_SEGMENT_RE.test(rawPath) ||
+    PCT_FORBIDDEN_PATH_CHAR_RE.test(rawPath) ||
+    PCT_DOUBLE_ENCODING_RE.test(rawPath)
+  ) {
+    return {
+      ok: false,
+      error: {
+        error: "auth.invalid-path",
+        code: "auth.invalid-path",
+        message:
+          "Request path contains forbidden dot segments, backslashes, double encoding, or percent-encoded path characters.",
+        hint: "Send a single-encoded canonical request path without '.', '/', or '\\' escapes or dot segments.",
+      },
+    };
+  }
+  try {
+    const url = new URL(rawUrl, "http://localhost");
+    const pathname = url.pathname;
+    if (
+      pathname.includes("..") ||
+      pathname.includes("\\") ||
+      DOT_SEGMENT_RE.test(pathname) ||
+      PCT_FORBIDDEN_PATH_CHAR_RE.test(pathname) ||
+      PCT_DOUBLE_ENCODING_RE.test(pathname)
+    ) {
+      return {
+        ok: false,
+        error: {
+          error: "auth.invalid-path",
+          code: "auth.invalid-path",
+          message: "Normalised request pathname contains forbidden segments.",
+          hint: "Send a single-encoded canonical request path without dot segments.",
+        },
+      };
+    }
+    return { ok: true, pathname };
+  } catch {
+    return {
+      ok: false,
+      error: {
+        error: "auth.invalid-path",
+        code: "auth.invalid-path",
+        message: "Request path is malformed.",
+        hint: "Send a valid canonical URL path.",
+      },
+    };
+  }
+}
+
 /**
  * Validate the strict path grammar for signed requests (Ruling 3):
  * single-line ASCII starting with `/`, no query string (`?`), no `\r`/`\n` or
- * control characters, and no percent-encoded control bytes (`%00`..`%1f`, `%7f`).
+ * control characters, no percent-encoded control bytes (`%00`..`%1f`, `%7f`),
+ * and no dot segments, double encoding, or percent-encoded `.`, `/`, or `\`.
  */
 export function isValidRequestPath(path: string): boolean {
   if (typeof path !== "string" || path.length === 0 || path.length > 2048) {
@@ -167,7 +259,7 @@ export function isValidRequestPath(path: string): boolean {
   if (!path.startsWith("/") || path.includes("?") || path.includes("#")) {
     return false;
   }
-  if (path.includes("//") || path.includes("..")) {
+  if (path.includes("//") || !normalizeRequestPathname(path).ok) {
     return false;
   }
   for (let i = 0; i < path.length; i++) {
@@ -582,9 +674,11 @@ export function verifySignedRequest(params: {
   if (!isValidRequestMethod(method)) {
     return { ok: false, reason: "invalid-method" };
   }
-  if (!isValidRequestPath(rawUrl)) {
+  const normalizedPath = normalizeRequestPathname(rawUrl);
+  if (!normalizedPath.ok || !isValidRequestPath(rawUrl)) {
     return { ok: false, reason: "invalid-path" };
   }
+  const pathname = normalizedPath.pathname;
   if (method === "GET" && rawBody.length > 0) {
     return { ok: false, reason: "get-with-body" };
   }
@@ -605,7 +699,7 @@ export function verifySignedRequest(params: {
   const timestampMs = Date.parse(timestampHeader);
   const hasAnySignatureHeader =
     nonceHeader !== undefined || keyIdHeader !== undefined || signatureHeader !== undefined;
-  const isIdentityRoute = rawUrl === "/identity" || rawUrl.startsWith("/identity/");
+  const isIdentityRoute = pathname === "/identity" || pathname.startsWith("/identity/");
 
   // Check if request is unsigned and eligible for sunset-gated `log` mode (Ruling 7)
   if (!hasAnySignatureHeader) {
@@ -627,7 +721,7 @@ export function verifySignedRequest(params: {
     }
     params.onLogModeWarning?.({
       method,
-      pathname: rawUrl,
+      pathname,
       agentId: agentIdHeader,
       code: "auth.unsigned-request-logged",
     });

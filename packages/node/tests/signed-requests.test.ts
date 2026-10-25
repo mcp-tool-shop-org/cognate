@@ -1802,4 +1802,131 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       } as ServerContext),
     ).not.toThrow();
   });
+
+  it("13. F2: path normalisation refuses percent-encoded dot/slash/backslash, double encoding, and dot segments with 400 in both log and enforce mode", async () => {
+    const { request: httpRequest } = await import("node:http");
+
+    function sendRawPath(
+      baseUrl: string,
+      method: "GET" | "POST",
+      rawPath: string,
+      headers: Record<string, string>,
+      rawBody: string,
+    ): Promise<{ status: number; text: string }> {
+      const parsedUrl = new URL(baseUrl);
+      return new Promise((resolve, reject) => {
+        const req = httpRequest(
+          {
+            hostname: parsedUrl.hostname,
+            port: Number(parsedUrl.port),
+            method,
+            path: rawPath,
+            headers: {
+              ...headers,
+              ...(method === "POST"
+                ? {
+                    "Content-Type": "application/json",
+                    "Content-Length": String(Buffer.byteLength(rawBody, "utf8")),
+                  }
+                : {}),
+            },
+          },
+          (res) => {
+            const chunks: Buffer[] = [];
+            res.on("data", (c: Buffer) => chunks.push(c));
+            res.on("end", () =>
+              resolve({
+                status: res.statusCode ?? 0,
+                text: Buffer.concat(chunks).toString("utf8"),
+              }),
+            );
+          },
+        );
+        req.on("error", reject);
+        if (method === "POST" && rawBody.length > 0) {
+          req.write(rawBody);
+        }
+        req.end();
+      });
+    }
+
+    const delKey = makeDeterministicKeyPair("f2-del");
+    const newAgentKey = makeDeterministicKeyPair("f2-new");
+    let identity = createIdentityRegistry();
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("f2-del", delKey, {
+        principal: "human",
+        capabilities: [
+          {
+            kind: "delegate",
+            scope: "*",
+            grantedBy: ROOT_ACTOR_ID,
+            grantedAt: "2026-10-24T12:00:00Z",
+            expiresAt: null,
+          },
+        ],
+      }),
+    );
+
+    const forbiddenPaths = [
+      "/registry/%2e%2e/identity/agents",
+      "/registry/%2E%2e/identity/agents",
+      "/identity%2fagents",
+      "/identity%5cagents",
+      "/registry/%252e%252e/identity/agents",
+      "/registry/../identity/agents",
+    ];
+
+    const payload = {
+      agent: seedAgentRecord("f2-created", newAgentKey, {
+        owner: "f2-del",
+        principal: "human",
+      }),
+    };
+
+    // (a) In log mode
+    const sunset = new Date(Date.now() + 3600_000).toISOString();
+    srv = await startServer(identity, {
+      signedRequests: "log",
+      signedRequestsLogUntil: sunset,
+    });
+    for (const rawPath of forbiddenPaths) {
+      const res = await sendRawPath(
+        srv.baseUrl,
+        "POST",
+        rawPath,
+        {
+          "X-Agent-Id": "f2-del",
+          "X-Timestamp": new Date().toISOString(),
+        },
+        jcsStringify(payload),
+      );
+      expect(res.status, `log mode path ${rawPath}`).toBe(400);
+    }
+    await srv.close();
+    srv = null;
+
+    // (b) In enforce mode
+    srv = await startServer(identity, {
+      signedRequests: "enforce",
+    });
+    for (const rawPath of forbiddenPaths) {
+      const signed = makeSignedRequestInit({
+        method: "POST",
+        path: rawPath,
+        agentId: "f2-del",
+        keyPair: delKey,
+        body: payload,
+      });
+      const res = await sendRawPath(
+        srv.baseUrl,
+        "POST",
+        rawPath,
+        signed.init.headers as Record<string, string>,
+        signed.rawBody,
+      );
+      expect(res.status, `enforce mode path ${rawPath}`).toBe(400);
+    }
+  });
 });

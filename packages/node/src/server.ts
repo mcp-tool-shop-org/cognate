@@ -42,6 +42,7 @@ import {
   isJcsCanonicalJsonBytes,
   isValidPublicKeyBase64Url,
   loadTenantRootsConfig,
+  normalizeRequestPathname,
   validateSignedRequestsConfig,
   validateTenantRootsList,
   verifySignedRequest,
@@ -333,9 +334,13 @@ export function createCognateServer(ctx: ServerContext) {
 
   const server = createServer(async (req, res) => {
     const rawUrl = req.url ?? "/";
-    const url = new URL(rawUrl, "http://" + (req.headers.host ?? "localhost"));
     const method = req.method ?? "GET";
-    const pathname = url.pathname;
+    const normalizedPath = normalizeRequestPathname(rawUrl);
+    if (!normalizedPath.ok) {
+      sendJson(res, 400, normalizedPath.error);
+      return;
+    }
+    const pathname = normalizedPath.pathname;
 
     try {
       const rawRead = await readRawBody(req);
@@ -1237,6 +1242,7 @@ export {
   isValidSignatureHeader,
   isValidTimestampHeader,
   loadTenantRootsConfig,
+  normalizeRequestPathname,
   sha256HexBytes,
   signCanonicalRequest,
   signedRequestsConfigFromEnv,
