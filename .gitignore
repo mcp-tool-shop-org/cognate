@@ -14,3 +14,5 @@ site/.astro/
 site/dist/
 site/node_modules/
 .polyglot-cache.json
+tenant-roots.json
+tenant-root.secret.json

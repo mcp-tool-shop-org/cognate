@@ -31,6 +31,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     strategy:
       matrix:
@@ -38,6 +39,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
 
@@ -59,6 +62,112 @@ jobs:
 
       - name: Test with coverage
         run: pnpm test:coverage
+
+      # The tenant root script writes the private seed with mode 600, and sets it again
+      # when the file already exists. The second run starts from a file made group-readable,
+      # so it fails if the explicit chmod goes missing. Linux only (Windows has no mode bits).
+      - name: Tenant root script keeps the secret file at mode 600
+        if: matrix.node-version == 22
+        run: |
+          dir="$(mktemp -d)"
+          node scripts/make-tenant-root.mjs ci-tenant "$dir"
+          for run in 1 2; do
+            mode="$(stat -c %a "$dir/tenant-root.secret.json")"
+            echo "run $run: tenant-root.secret.json mode $mode"
+            if [ "$mode" != "600" ]; then
+              echo "::error::tenant-root.secret.json has mode $mode, expected 600 (run $run)"
+              exit 1
+            fi
+            if [ "$run" = "1" ]; then
+              chmod 644 "$dir/tenant-root.secret.json"
+              node scripts/make-tenant-root.mjs ci-tenant "$dir"
+            fi
+          done
+
+      # The Docker quick start runs only when the change can affect it. The skip is decided
+      # here, at step level, so this job always reports and a required check never goes missing.
+      - name: Does this change touch the Docker quick start?
+        id: docker_paths
+        if: matrix.node-version == 22
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          run=true
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+            echo "$changed"
+            if ! echo "$changed" | grep -qE '^(packages/node/|Dockerfile$|docker-compose[^/]*$|scripts/make-tenant-root\.mjs$|\.github/workflows/ci\.yml$)'; then
+              run=false
+              echo "No file in packages/node/**, Dockerfile, docker-compose*, scripts/make-tenant-root.mjs or ci.yml changed; skipping the Docker quick start."
+            fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - name: Docker quick start starts with a roots file and refuses cleanly without one
+        if: matrix.node-version == 22 && steps.docker_paths.outputs.run == 'true'
+        env:
+          ROOTS_DIR: ${{ runner.temp }}/cognate-roots
+        run: |
+          set -euo pipefail
+          mkdir -p "$ROOTS_DIR"
+          node scripts/make-tenant-root.mjs ci-tenant "$ROOTS_DIR"
+          cat > "$RUNNER_TEMP/compose.ci.yml" <<YAML
+          services:
+            cognate-node:
+              volumes:
+                - $ROOTS_DIR/tenant-roots.json:/run/cognate/tenant-roots.json:ro
+          YAML
+          docker compose -f docker-compose.yml build
+
+          # 1. With the documented mount, the server starts and /health answers.
+          docker compose -f docker-compose.yml -f "$RUNNER_TEMP/compose.ci.yml" up -d
+          ok=false
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4000/health > "$RUNNER_TEMP/health.json" 2>/dev/null; then ok=true; break; fi
+            sleep 2
+          done
+          docker compose -f docker-compose.yml -f "$RUNNER_TEMP/compose.ci.yml" logs --no-color > "$RUNNER_TEMP/up.log" 2>&1 || true
+          docker compose -f docker-compose.yml -f "$RUNNER_TEMP/compose.ci.yml" down -v
+          if [ "$ok" != "true" ]; then
+            echo "::error::/health did not answer with the roots file mounted"
+            cat "$RUNNER_TEMP/up.log"
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/health.json"; echo
+
+          # 2. With no roots file the container exits non-zero with one structured error and no stack.
+          set +e
+          docker compose -f docker-compose.yml run --rm --no-deps -T cognate-node > "$RUNNER_TEMP/noroots.log" 2>&1
+          code=$?
+          set -e
+          docker compose -f docker-compose.yml down -v
+          cat "$RUNNER_TEMP/noroots.log"
+          if [ "$code" -eq 0 ]; then
+            echo "::error::the container started without a roots file (exit 0)"
+            exit 1
+          fi
+          if grep -qE '^[[:space:]]+at |Node\.js v' "$RUNNER_TEMP/noroots.log"; then
+            echo "::error::a stack trace reached the log"
+            exit 1
+          fi
+          line="$(grep -m1 '^{' "$RUNNER_TEMP/noroots.log" || true)"
+          if [ -z "$line" ]; then
+            echo "::error::no structured error line in the log"
+            exit 1
+          fi
+          echo "$line" | node -e '
+            let d = "";
+            process.stdin.on("data", (c) => (d += c));
+            process.stdin.on("end", () => {
+              const j = JSON.parse(d);
+              const e = j.error || {};
+              const bad = j.ok !== false || !e.code || !e.message || !e.hint;
+              if (bad) { console.error("::error::not the {ok:false,error:{code,message,hint}} shape: " + d); process.exit(1); }
+              console.log("structured error ok: " + e.code);
+            });'
+          echo "no-roots start exited $code with a structured error"
 
       - name: Dependency vulnerability scan
         run: |
