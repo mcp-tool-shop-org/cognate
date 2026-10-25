@@ -405,7 +405,6 @@ export function createReplayStore(windowMs: number = TIMESTAMP_WINDOW_MS): Repla
 
   return {
     hasSeen(agentId: string, nonce: string, nowMs = Date.now()): boolean {
-      prune(nowMs);
       const key = `${agentId}:${nonce}`;
       const expiryMs = entries.get(key);
       return expiryMs !== undefined && expiryMs >= nowMs;
@@ -806,7 +805,10 @@ export function verifySignedRequest(params: {
     keyId: keyIdHeader,
   });
 
-  function refuseAfterDummyVerify(reason: string): SignatureAuthResult {
+  function refuseAfterDummyVerify(reason: string, replayChecked = false): SignatureAuthResult {
+    if (!replayChecked) {
+      replayStore.hasSeen(agentIdHeader as string, nonceHeader as string, nowMs);
+    }
     verifyCanonicalRequestSignature(canonical, signatureHeader as string, DUMMY_VERIFY_PUBLIC_KEY_B64URL);
     return { ok: false, reason };
   }
@@ -866,7 +868,7 @@ export function verifySignedRequest(params: {
 
   // Step 5: Read-only nonce check in replay store before signature verification (Ruling 4)
   if (replayStore.hasSeen(agentIdHeader, nonceHeader, nowMs)) {
-    return refuseAfterDummyVerify("replay-detected");
+    return refuseAfterDummyVerify("replay-detected", true);
   }
 
   // Step 6: Ed25519 signature verification over 8-line `cognate-request-v1` canonical string

@@ -3360,4 +3360,215 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+
+  it("23. N2: replay check is O(1) on every path with constant store work across store sizes and prunes only on recordVerified", () => {
+    const activeKey = makeDeterministicKeyPair("n2-active");
+    const inactiveKey = makeDeterministicKeyPair("n2-inactive");
+    const oldKey = makeDeterministicKeyPair("n2-old");
+    const otherKey = makeDeterministicKeyPair("n2-other");
+
+    let identity = createIdentityRegistry();
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("n2-active", activeKey, { revokedKids: [oldKey.kid] }),
+    );
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("n2-inactive", inactiveKey, { status: "revoked" }),
+    );
+
+    const nowMs = Date.parse("2026-10-24T12:00:00.000Z");
+    const nowIso = new Date(nowMs).toISOString();
+    const rawBody = Buffer.from(jcsStringify({ model: makeModelRecord("m-n2", "n2-active") }), "utf8");
+    const replayedNonce = randomBytes(16).toString("base64url");
+
+    function makeHeaders(overrides: {
+      agentId: string;
+      timestamp?: string;
+      nonce?: string;
+      kid?: string;
+      keyPair?: TestKeyPair;
+      signPath?: string;
+    }) {
+      const ts = overrides.timestamp ?? nowIso;
+      const nonce = overrides.nonce ?? randomBytes(16).toString("base64url");
+      const kp = overrides.keyPair ?? activeKey;
+      const kid = overrides.kid ?? kp.kid;
+      const canonical = buildCanonicalRequest({
+        method: "POST",
+        path: overrides.signPath ?? "/registry/models",
+        bodyBytes: rawBody,
+        timestamp: ts,
+        nonce,
+        agentId: overrides.agentId,
+        kid,
+      });
+      const sig = signCanonicalString(canonical, kp.seedHex);
+      return {
+        "x-agent-id": overrides.agentId,
+        "x-timestamp": ts,
+        "x-nonce": nonce,
+        "x-key-id": kid,
+        "x-signature": sig,
+      };
+    }
+
+    const refusalCases: Array<{
+      name: string;
+      expectedReason: string;
+      headers: () => Record<string, string>;
+    }> = [
+      {
+        name: "invalid-signature",
+        expectedReason: "invalid-signature",
+        headers: () => makeHeaders({ agentId: "n2-active", signPath: "/registry/other" }),
+      },
+      {
+        name: "replay-detected",
+        expectedReason: "replay-detected",
+        headers: () => makeHeaders({ agentId: "n2-active", nonce: replayedNonce }),
+      },
+      {
+        name: "unknown-principal",
+        expectedReason: "unknown-principal",
+        headers: () => makeHeaders({ agentId: "n2-unknown-agent" }),
+      },
+      {
+        name: "inactive-agent",
+        expectedReason: "inactive-agent",
+        headers: () => makeHeaders({ agentId: "n2-inactive", keyPair: inactiveKey }),
+      },
+      {
+        name: "revoked-kid",
+        expectedReason: "revoked-kid",
+        headers: () => makeHeaders({ agentId: "n2-active", keyPair: oldKey }),
+      },
+      {
+        name: "kid-mismatch",
+        expectedReason: "kid-mismatch",
+        headers: () => makeHeaders({ agentId: "n2-active", kid: otherKey.kid, keyPair: otherKey }),
+      },
+      {
+        name: "root-kid-mismatch",
+        expectedReason: "root-kid-mismatch",
+        headers: () => makeHeaders({ agentId: ROOT_ACTOR_ID, kid: otherKey.kid, keyPair: otherKey }),
+      },
+      {
+        name: "stale-timestamp",
+        expectedReason: "stale-timestamp",
+        headers: () =>
+          makeHeaders({
+            agentId: "n2-active",
+            timestamp: new Date(nowMs - 360_000).toISOString(),
+          }),
+      },
+    ];
+
+    function countRefusalStoreWork(storeSize: number) {
+      const replayStore = createReplayStore();
+      replayStore.recordVerified("n2-active", replayedNonce, nowMs, nowMs);
+      for (let i = 0; i < storeSize; i++) {
+        replayStore.recordVerified(
+          `n2-fill-${i}`,
+          `nonce-${i}-xxxxxxxxxxxxxxxx`,
+          nowMs - 10_000,
+          nowMs - 10_000,
+        );
+      }
+      expect(replayStore.size()).toBe(storeSize + 1);
+
+      const results: Record<
+        string,
+        { hasSeenCalls: number; mapGetCalls: number; mapEntriesIterated: number }
+      > = {};
+
+      const origHasSeen = replayStore.hasSeen.bind(replayStore);
+      const origMapGet = Map.prototype.get;
+      const origMapIterator = Map.prototype[Symbol.iterator];
+
+      for (const tc of refusalCases) {
+        const headers = tc.headers();
+        let hasSeenCalls = 0;
+        let mapGetCalls = 0;
+        let mapEntriesIterated = 0;
+
+        replayStore.hasSeen = (agentId: string, nonce: string, now?: number) => {
+          hasSeenCalls += 1;
+          return origHasSeen(agentId, nonce, now);
+        };
+        Map.prototype.get = function (this: Map<unknown, unknown>, key: unknown) {
+          if (typeof key === "string" && key.includes(":")) {
+            mapGetCalls += 1;
+          }
+          return origMapGet.call(this, key);
+        };
+        Map.prototype[Symbol.iterator] = function (this: Map<unknown, unknown>) {
+          const iter = origMapIterator.call(this);
+          return {
+            next() {
+              const step = iter.next();
+              if (!step.done) {
+                mapEntriesIterated += 1;
+              }
+              return step;
+            },
+            [Symbol.iterator]() {
+              return this;
+            },
+          };
+        } as typeof origMapIterator;
+
+        try {
+          const res = verifySignedRequest({
+            method: "POST",
+            rawUrl: "/registry/models",
+            headers,
+            rawBody,
+            identity,
+            tenantRoots: TEST_ONLY_TENANT_ROOTS,
+            replayStore,
+            mode: "enforce",
+            logUntilMs: null,
+            nowMs,
+          });
+          expect(res.ok, tc.name).toBe(false);
+          if (!res.ok) {
+            expect(res.reason, tc.name).toBe(tc.expectedReason);
+          }
+        } finally {
+          replayStore.hasSeen = origHasSeen;
+          Map.prototype.get = origMapGet;
+          Map.prototype[Symbol.iterator] = origMapIterator;
+        }
+
+        results[tc.name] = { hasSeenCalls, mapGetCalls, mapEntriesIterated };
+      }
+      return { replayStore, results };
+    }
+
+    const small = countRefusalStoreWork(100);
+    const large = countRefusalStoreWork(5000);
+
+    for (const tc of refusalCases) {
+      // Every refusal path executes exactly 1 O(1) lookup and 0 map iterations regardless of store size
+      expect(large.results[tc.name], `${tc.name} large store work`).toEqual({
+        hasSeenCalls: 1,
+        mapGetCalls: 1,
+        mapEntriesIterated: 0,
+      });
+      expect(large.results[tc.name], `${tc.name} constant work 100 vs 5000`).toEqual(
+        small.results[tc.name],
+      );
+    }
+
+    // Pruning runs in recordVerified (after verification succeeds) and removes expired nonces
+    const afterExpiryMs = nowMs + 600_000;
+    large.replayStore.recordVerified(
+      "n2-active",
+      randomBytes(16).toString("base64url"),
+      afterExpiryMs,
+      afterExpiryMs,
+    );
+    expect(large.replayStore.size()).toBe(1);
+  });
 });
