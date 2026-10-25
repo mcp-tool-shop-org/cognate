@@ -19,6 +19,7 @@
   "scripts": {
     "build": "pnpm exec tsc",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "lint": "tsc --noEmit"
   },
