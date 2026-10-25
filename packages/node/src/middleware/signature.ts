@@ -394,7 +394,7 @@ export function createReplayStore(windowMs: number = TIMESTAMP_WINDOW_MS): Repla
 
   function prune(nowMs: number): void {
     for (const [key, expiryMs] of entries) {
-      if (expiryMs <= nowMs) {
+      if (expiryMs < nowMs) {
         entries.delete(key);
       }
     }
@@ -405,7 +405,7 @@ export function createReplayStore(windowMs: number = TIMESTAMP_WINDOW_MS): Repla
       prune(nowMs);
       const key = `${agentId}:${nonce}`;
       const expiryMs = entries.get(key);
-      return expiryMs !== undefined && expiryMs > nowMs;
+      return expiryMs !== undefined && expiryMs >= nowMs;
     },
     recordVerified(agentId: string, nonce: string, timestampMs: number, nowMs = Date.now()): void {
       prune(nowMs);

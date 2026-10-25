@@ -2323,4 +2323,118 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       ]),
     ).toThrow(/duplicate actorId/i);
   });
+
+  it("17. F6: replay store refuses replays at exact +300.000 s and at +599.000 s for a request dated +299 s", () => {
+    const agentKey = makeDeterministicKeyPair("f6-agent");
+    let identity = createIdentityRegistry();
+    identity = addAgentToState(identity, seedAgentRecord("f6-agent", agentKey));
+    const replayStore = createReplayStore();
+
+    const t0Ms = Date.parse("2026-10-24T12:00:00.000Z");
+    const rawBody = Buffer.from(jcsStringify({ model: makeModelRecord("m-f6", "f6-agent") }), "utf8");
+
+    // (a) Request dated at t0, verified at t0, replayed at exact t0 + 300_000 ms (+300.000 s)
+    const tsA = new Date(t0Ms).toISOString();
+    const nonceA = randomBytes(16).toString("base64url");
+    const canonicalA = buildCanonicalRequest({
+      method: "POST",
+      path: "/registry/models",
+      bodyBytes: rawBody,
+      timestamp: tsA,
+      nonce: nonceA,
+      agentId: "f6-agent",
+      kid: agentKey.kid,
+    });
+    const sigA = signCanonicalString(canonicalA, agentKey.seedHex);
+    const headersA = {
+      "x-agent-id": "f6-agent",
+      "x-timestamp": tsA,
+      "x-nonce": nonceA,
+      "x-key-id": agentKey.kid,
+      "x-signature": sigA,
+    };
+
+    const firstA = verifySignedRequest({
+      method: "POST",
+      rawUrl: "/registry/models",
+      headers: headersA,
+      rawBody,
+      identity,
+      tenantRoots: TEST_ONLY_TENANT_ROOTS,
+      replayStore,
+      mode: "enforce",
+      logUntilMs: null,
+      nowMs: t0Ms,
+    });
+    expect(firstA.ok).toBe(true);
+
+    const replayAt300s = verifySignedRequest({
+      method: "POST",
+      rawUrl: "/registry/models",
+      headers: headersA,
+      rawBody,
+      identity,
+      tenantRoots: TEST_ONLY_TENANT_ROOTS,
+      replayStore,
+      mode: "enforce",
+      logUntilMs: null,
+      nowMs: t0Ms + 300_000,
+    });
+    expect(replayAt300s.ok).toBe(false);
+    if (!replayAt300s.ok) {
+      expect(replayAt300s.reason).toBe("replay-detected");
+    }
+
+    // (b) Request dated at t0 + 299 s, verified at t0, replayed at exact t0 + 599_000 ms (+599.000 s)
+    const tsB = new Date(t0Ms + 299_000).toISOString();
+    const nonceB = randomBytes(16).toString("base64url");
+    const canonicalB = buildCanonicalRequest({
+      method: "POST",
+      path: "/registry/models",
+      bodyBytes: rawBody,
+      timestamp: tsB,
+      nonce: nonceB,
+      agentId: "f6-agent",
+      kid: agentKey.kid,
+    });
+    const sigB = signCanonicalString(canonicalB, agentKey.seedHex);
+    const headersB = {
+      "x-agent-id": "f6-agent",
+      "x-timestamp": tsB,
+      "x-nonce": nonceB,
+      "x-key-id": agentKey.kid,
+      "x-signature": sigB,
+    };
+
+    const firstB = verifySignedRequest({
+      method: "POST",
+      rawUrl: "/registry/models",
+      headers: headersB,
+      rawBody,
+      identity,
+      tenantRoots: TEST_ONLY_TENANT_ROOTS,
+      replayStore,
+      mode: "enforce",
+      logUntilMs: null,
+      nowMs: t0Ms,
+    });
+    expect(firstB.ok).toBe(true);
+
+    const replayAt599s = verifySignedRequest({
+      method: "POST",
+      rawUrl: "/registry/models",
+      headers: headersB,
+      rawBody,
+      identity,
+      tenantRoots: TEST_ONLY_TENANT_ROOTS,
+      replayStore,
+      mode: "enforce",
+      logUntilMs: null,
+      nowMs: t0Ms + 599_000,
+    });
+    expect(replayAt599s.ok).toBe(false);
+    if (!replayAt599s.ok) {
+      expect(replayAt599s.reason).toBe("replay-detected");
+    }
+  });
 });
