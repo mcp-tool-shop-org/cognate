@@ -63,8 +63,9 @@ jobs:
         run: pnpm test:coverage
 
       # The tenant root script writes the private seed with mode 600, and sets it again
-      # when the file already exists. The second run starts from a file made group-readable,
-      # so it fails if the explicit chmod goes missing. Linux only (Windows has no mode bits).
+      # when --force replaces an existing file. The forced run starts from a file made group-readable,
+      # so it fails if the explicit chmod goes missing. A run without --force must refuse and leave
+      # the file alone. Linux only (Windows has no mode bits).
       - name: Tenant root script keeps the secret file at mode 600
         if: matrix.node-version == 22
         run: |
@@ -79,7 +80,17 @@ jobs:
             fi
             if [ "$run" = "1" ]; then
               chmod 644 "$dir/tenant-root.secret.json"
-              node scripts/make-tenant-root.mjs ci-tenant "$dir"
+              # Without --force the script must refuse and touch nothing (the file stays 644)...
+              if node scripts/make-tenant-root.mjs ci-tenant "$dir" 2>/dev/null; then
+                echo "::error::the script overwrote an existing key without --force"
+                exit 1
+              fi
+              if [ "$(stat -c %a "$dir/tenant-root.secret.json")" != "644" ]; then
+                echo "::error::a refused run changed the secret file"
+                exit 1
+              fi
+              # ...and with --force it replaces both and sets the mode back to 600.
+              node scripts/make-tenant-root.mjs ci-tenant "$dir" --force
             fi
           done
 
