@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRegistry, registerModel, registerVersion } from "../src/registry.js";
-import { attestTransitionVersion, buildTransitionProof } from "../src/attestation.js";
+import { attestRegisterVersion, attestTransitionVersion, buildTransitionProof } from "../src/attestation.js";
 import { RegistryError } from "../src/types.js";
 import type { Model, ModelVersion } from "@cognate/types";
 
@@ -103,5 +103,29 @@ describe("attestia transition log", () => {
   it("returns null when a version has no transitions", () => {
     expect(buildTransitionProof(registered(), "v1")).toBeNull();
     expect(buildTransitionProof(registered(), "missing")).toBeNull();
+  });
+
+  it("attests version registration and refuses non-registered initial status", async () => {
+    const baseState = registerModel(createRegistry(), model);
+    expect(() =>
+      registerVersion(baseState, { ...version, id: "v-bad", status: "approved" }),
+    ).toThrow(RegistryError);
+
+    const appended: unknown[] = [];
+    const next = await attestRegisterVersion(
+      baseState,
+      {
+        tenantId: "tenant-1",
+        eventStore: {
+          async append(streamId, event) {
+            appended.push(streamId, event);
+          },
+        },
+      },
+      { ...version, id: "v-attested" },
+      "actor-1",
+    );
+    expect(next.versions["v-attested"]?.status).toBe("registered");
+    expect(appended[0]).toBe("cognate-tenant-1-transitions");
   });
 });

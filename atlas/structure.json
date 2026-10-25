@@ -50,13 +50,14 @@
       "externals": 0,
       "files": [
         {
-          "hash": "b64501247e6243037afafa8a002a7169519d856398408b52200aa6d9c58f99e9",
+          "hash": "91823d613667b5d5b43f66a6122a60d0cb1fbb2a2ba3c6015737796aaf4b8e1d",
           "path": "packages/agent-identity/package.json"
         },
         {
           "exports": [
             "approveGrant",
             "createRegistry",
+            "deriveKeyIdFromPublicKey",
             "getActiveCapabilities",
             "getAgent",
             "getGrantsForAgent",
@@ -65,9 +66,11 @@
             "registerAgent",
             "rejectGrant",
             "requestGrant",
-            "revokeCapability"
+            "revokeAgent",
+            "revokeCapability",
+            "rotateAgentKey"
           ],
-          "hash": "f1988277689ee1739b8dd55f9cec27c5f79979b25687c77f3f9c631376c0d4d1",
+          "hash": "02435b985cd7e264ad5967ff049c79c47cd0a849df416c79543ef62e78471ca7",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/agent-identity/src/types.ts"
@@ -79,7 +82,7 @@
           "path": "packages/agent-identity/src/identity.ts"
         },
         {
-          "hash": "c33ba922857d5fdc726005867476dcfd7a0cfa103048ca515bc7721f20950e20",
+          "hash": "4b237542a458839d85162145672436be8c08bb9d0897243df9fe2f742df68963",
           "importOrder": [
             "packages/agent-identity/src/types.ts",
             "packages/agent-identity/src/vc-types.ts",
@@ -96,7 +99,7 @@
           "reexportsOnly": true
         },
         {
-          "hash": "d54240fde8b3005763c9a0c1f510854b7f12f4fce429bca2a65ba7d59a3c9bf3",
+          "hash": "0ba35d69acc1ec28f1af99fdf01fbed4d7eb528023f94527c213b042920a2424",
           "importsFiles": [
             "packages/types/src/index.ts"
           ],
@@ -128,7 +131,7 @@
           "path": "packages/agent-identity/src/vc-types.ts"
         },
         {
-          "hash": "40354a1d835d24a6f763e9e9af8f0ece4f29e3d012a46f444228a2e8fa84d6b5",
+          "hash": "6105155f2efa810831b36b6c1b335edf344aec514ca615be3884b5ed5e920091",
           "importsFiles": [
             "packages/agent-identity/src/identity.ts"
           ],
@@ -149,7 +152,7 @@
           "path": "packages/agent-identity/tsconfig.json"
         },
         {
-          "hash": "316a7807e4cf85ddb1af7c951b9fbd4c42c900386402069711d4da9f547c5285",
+          "hash": "ca245a53d2f87c52408e68d78137d760ac68954828af9e416dfbab66a548fcdc",
           "path": "packages/agent-identity/vitest.config.ts"
         }
       ],
@@ -161,19 +164,19 @@
       "origin": "authored",
       "outsidePlaces": [
         {
-          "reads": 6,
+          "reads": 8,
           "where": [
             "caller"
           ],
           "writes": 0
         }
       ],
-      "outsideReads": 6,
+      "outsideReads": 8,
       "role": "code",
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 8,
+      "testedBy": 11,
       "unresolvedSites": 0
     },
     {
@@ -221,7 +224,7 @@
           "path": "packages/cognate/README.zh.md"
         },
         {
-          "hash": "873c101eed6e3fe61a847873af3d276a74d4dbd1e6eb5366f590d4147dcc3f9a",
+          "hash": "e35811c86b774b145658bb6fa43072e58de385aac52c3c17da1a3d59fd9018d5",
           "path": "packages/cognate/package.json"
         },
         {
@@ -312,7 +315,7 @@
           "reexportsOnly": true
         },
         {
-          "hash": "c6c21dd5d494a2ea3abdf2d9dd653a228734e98435e719a0882e742ce09ee647",
+          "hash": "9bebb06d0af5956cf17915db86dab90f38c4c203ec779ae52036507fff25146e",
           "importOrder": [
             "packages/cognate/src/index.ts",
             "packages/cognate/src/policy.ts",
@@ -398,27 +401,80 @@
       "externals": 0,
       "files": [
         {
-          "hash": "8c8a75a2839a7fd70889106f5883a42d8847ae49ffc6173a8d2f7b345776750e",
+          "hash": "75c62aefa69cb99f9b42585d5df22034cf69265de9fc300a60f5d8a5716eee19",
           "path": "packages/model-registry/package.json"
         },
         {
           "exports": [
+            "attestEvaluation",
+            "attestRunCompleted",
+            "attestRunPreRegistered",
             "attestTransitionVersion",
             "buildTransitionProof"
           ],
           "failurePaths": [
             {
+              "in": "appendOrThrow",
+              "kind": "catch",
+              "line": 72
+            },
+            {
+              "in": "appendOrThrow",
+              "kind": "throw",
+              "line": 73
+            },
+            {
+              "in": "attestEvaluation",
+              "kind": "throw",
+              "line": 95
+            },
+            {
               "in": "attestTransitionVersion",
               "kind": "catch",
-              "line": 92
+              "line": 182
             },
             {
               "in": "attestTransitionVersion",
               "kind": "throw",
-              "line": 93
+              "line": 183
+            },
+            {
+              "in": "attestRunPreRegistered",
+              "kind": "throw",
+              "line": 221
+            },
+            {
+              "in": "attestRunPreRegistered",
+              "kind": "catch",
+              "line": 239
+            },
+            {
+              "in": "attestRunPreRegistered",
+              "kind": "throw",
+              "line": 240
+            },
+            {
+              "in": "attestRunCompleted",
+              "kind": "throw",
+              "line": 286
+            },
+            {
+              "in": "attestRunCompleted",
+              "kind": "throw",
+              "line": 300
+            },
+            {
+              "in": "attestRunCompleted",
+              "kind": "catch",
+              "line": 323
+            },
+            {
+              "in": "attestRunCompleted",
+              "kind": "throw",
+              "line": 324
             }
           ],
-          "hash": "d39975b6e81d3ce8e743719c56bdbc005d62d7faec62ffb0a9e6257f163d05de",
+          "hash": "98e9097ed01f89de3aacdacc62929d4f2b5a9f6b49c845059327780969eb40b0",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/model-registry/src/types.ts",
@@ -432,7 +488,7 @@
           "path": "packages/model-registry/src/attestation.ts"
         },
         {
-          "hash": "1d7554b860f5d698ee41f15c959c85d0fd9e4ffb31b423f31bffaf44c5aaa88a",
+          "hash": "fde2b1a24b609355226423b551eee3528cb51c59a81c24a4284be01b7dc83e61",
           "importOrder": [
             "packages/model-registry/src/registry.ts",
             "packages/model-registry/src/types.ts",
@@ -450,44 +506,194 @@
           "exports": [
             "createRegistry",
             "getCurrentDeployedVersion",
+            "getEvaluations",
+            "getRunOutcomes",
+            "getRunPreRegistration",
             "getVersionHistory",
+            "isSha256Hex",
+            "preRegisterRun",
+            "recordEvaluation",
+            "recordRunOutcome",
             "registerModel",
             "registerVersion",
-            "transitionVersion"
+            "transitionVersion",
+            "validateHashedIdentifiers",
+            "validateRunOutcome",
+            "validateRunPreRegistration"
           ],
           "failurePaths": [
             {
               "in": "registerModel",
               "kind": "throw",
-              "line": 45
+              "line": 130
             },
             {
               "in": "registerVersion",
               "kind": "throw",
-              "line": 70
+              "line": 157
             },
             {
               "in": "registerVersion",
               "kind": "throw",
-              "line": 77
+              "line": 165
+            },
+            {
+              "in": "registerVersion",
+              "kind": "throw",
+              "line": 172
             },
             {
               "in": "transitionVersion",
               "kind": "throw",
-              "line": 111
+              "line": 210
             },
             {
               "in": "transitionVersion",
               "kind": "throw",
-              "line": 119
+              "line": 218
             },
             {
               "in": "transitionVersion",
               "kind": "throw",
-              "line": 128
+              "line": 227
+            },
+            {
+              "in": "transitionVersion",
+              "kind": "throw",
+              "line": 237
+            },
+            {
+              "in": "transitionVersion",
+              "kind": "throw",
+              "line": 245
+            },
+            {
+              "in": "transitionVersion",
+              "kind": "throw",
+              "line": 253
+            },
+            {
+              "in": "transitionVersion",
+              "kind": "throw",
+              "line": 262
+            },
+            {
+              "in": "recordEvaluation",
+              "kind": "throw",
+              "line": 313
+            },
+            {
+              "in": "recordEvaluation",
+              "kind": "throw",
+              "line": 320
+            },
+            {
+              "in": "recordEvaluation",
+              "kind": "throw",
+              "line": 327
+            },
+            {
+              "in": "recordEvaluation",
+              "kind": "throw",
+              "line": 336
+            },
+            {
+              "in": "requireNonEmptyString",
+              "kind": "throw",
+              "line": 415
+            },
+            {
+              "in": "validateHashedIdentifiers",
+              "kind": "throw",
+              "line": 442
+            },
+            {
+              "in": "validateHashedIdentifiers",
+              "kind": "throw",
+              "line": 460
+            },
+            {
+              "in": "validateHashedIdentifiers",
+              "kind": "throw",
+              "line": 467
+            },
+            {
+              "in": "validateHashedIdentifiers",
+              "kind": "throw",
+              "line": 475
+            },
+            {
+              "in": "validateHashedIdentifiers",
+              "kind": "throw",
+              "line": 487
+            },
+            {
+              "in": "validateRunPreRegistration",
+              "kind": "throw",
+              "line": 535
+            },
+            {
+              "in": "validateRunOutcome",
+              "kind": "throw",
+              "line": 577
+            },
+            {
+              "in": "validateRunOutcome",
+              "kind": "throw",
+              "line": 584
+            },
+            {
+              "in": "validateRunOutcome",
+              "kind": "throw",
+              "line": 593
+            },
+            {
+              "in": "validateRunOutcome",
+              "kind": "throw",
+              "line": 609
+            },
+            {
+              "in": "validateRunOutcome",
+              "kind": "throw",
+              "line": 620
+            },
+            {
+              "in": "validateRunOutcome",
+              "kind": "throw",
+              "line": 630
+            },
+            {
+              "in": "validateRunOutcome",
+              "kind": "throw",
+              "line": 637
+            },
+            {
+              "in": "validateRunOutcome",
+              "kind": "throw",
+              "line": 658
+            },
+            {
+              "in": "preRegisterRun",
+              "kind": "throw",
+              "line": 692
+            },
+            {
+              "in": "recordRunOutcome",
+              "kind": "throw",
+              "line": 742
+            },
+            {
+              "in": "recordRunOutcome",
+              "kind": "throw",
+              "line": 752
+            },
+            {
+              "in": "recordRunOutcome",
+              "kind": "throw",
+              "line": 762
             }
           ],
-          "hash": "4133b018bc2c53b1c8f9e76dc59e22c819f0460f335d2dc5b858babb4619fc93",
+          "hash": "a467953a4cd40a2944e4b0c03d2a5eb64cb9b3a64bc9bc8fd5b2f02f17c7ee33",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/model-registry/src/types.ts"
@@ -499,7 +705,7 @@
           "path": "packages/model-registry/src/registry.ts"
         },
         {
-          "hash": "305815119e15e75a23cd97e6a4eb3b53295f4eecd4f658fc558e454ba70486f9",
+          "hash": "3fbe492ec60cdaba16986759f12bacc3d5029bc2958a9bcd2f6725007c74b6ea",
           "importsFiles": [
             "packages/types/src/index.ts"
           ],
@@ -523,7 +729,22 @@
           "testFramework": "vitest"
         },
         {
-          "hash": "6be648e570c600966b4ff04c7cb1467648363bb02ab147eadfca8e3ef9bbae98",
+          "hash": "c5748101fe37b259bd0174d46ac19b765cc9128e7e44c1fdc2ff647a17da3156",
+          "importOrder": [
+            "packages/types/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/model-registry/src/types.ts"
+          ],
+          "importsFiles": [
+            "packages/model-registry/src/index.ts",
+            "packages/model-registry/src/types.ts",
+            "packages/types/src/index.ts"
+          ],
+          "path": "packages/model-registry/tests/evaluations.test.ts",
+          "testFramework": "vitest"
+        },
+        {
+          "hash": "a12335eb8b5ce842553862439521c22bbf338933ed12af475371a6cab64e25a3",
           "importsFiles": [
             "packages/model-registry/src/registry.ts",
             "packages/model-registry/src/types.ts",
@@ -533,11 +754,23 @@
           "testFramework": "vitest"
         },
         {
+          "hash": "66e13e685a9590fd271ff9e982ab8edd5c5d803fc9c7e8eb7b895ecef532d9dd",
+          "importsFiles": [
+            "packages/model-registry/src/index.ts",
+            "packages/types/src/index.ts"
+          ],
+          "names": [
+            "packages/model-registry/src/registry.ts"
+          ],
+          "path": "packages/model-registry/tests/runs.test.ts",
+          "testFramework": "vitest"
+        },
+        {
           "hash": "acd5603719960fea0049a7b4fb2dda51dcff07540af8fe0126956c05eefa2a38",
           "path": "packages/model-registry/tsconfig.json"
         },
         {
-          "hash": "316a7807e4cf85ddb1af7c951b9fbd4c42c900386402069711d4da9f547c5285",
+          "hash": "89887b2efb76eb9f28b6efc881740d2823e60524efc56c631108c3da013a9b40",
           "path": "packages/model-registry/vitest.config.ts"
         }
       ],
@@ -551,7 +784,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 8,
+      "testedBy": 13,
       "unresolvedSites": 0
     },
     {
@@ -565,8 +798,23 @@
       "externals": 0,
       "files": [
         {
-          "hash": "9c238bf5cdba0e50559763431c85fba737fff902695fb498b08e48eafe9e20d3",
+          "hash": "3aea0637c08dc84e5c7069d99ba1c0378bca75e6aa153764d96739a89ef5ccf6",
+          "path": "packages/node/config/tenant-roots.json"
+        },
+        {
+          "hash": "91bb060149c196cabd49c4686918853d129bb148db8ba26b637f3bf24975bcc7",
           "path": "packages/node/package.json"
+        },
+        {
+          "exports": [
+            "createSignedClient",
+            "signHttpRequest"
+          ],
+          "hash": "2f352faf1e9141e08733f79eeb4184685913faca3d20160e230a23fc79562785",
+          "importsFiles": [
+            "packages/node/src/middleware/signature.ts"
+          ],
+          "path": "packages/node/src/client.ts"
         },
         {
           "exports": [
@@ -587,24 +835,31 @@
               "line": 129
             }
           ],
-          "hash": "82983d5577e12e7789120cba15589dd8d7dc35175009ac09f61881b0e9853f50",
+          "hash": "f34c08b224b71fc94c4b88c4ac933edf97e49ec12e414f695c65e757718c5be2",
           "path": "packages/node/src/event-proof.ts"
         },
         {
-          "hash": "696002fde16dda4f335e932abee70b994d8f6d598f92f10f1d6330652cfe2b52",
+          "hash": "45fa1ac404c1d35a176292f48e04ea7c1c6b187b6833d528b921c2fd0fdb6193",
           "importOrder": [
             "packages/repomesh-bridge/src/index.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/release-gate.ts",
+            "packages/node/src/routes/evaluations.ts",
             "packages/node/src/runtime.ts",
             "packages/node/src/server.ts"
           ],
           "importsFiles": [
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/release-gate.ts",
+            "packages/node/src/routes/evaluations.ts",
             "packages/node/src/runtime.ts",
             "packages/node/src/server.ts",
             "packages/repomesh-bridge/src/index.ts"
           ],
-          "path": "packages/node/src/index.ts"
+          "path": "packages/node/src/index.ts",
+          "reexportsAll": [
+            "packages/node/src/server.ts"
+          ]
         },
         {
           "exports": [
@@ -632,6 +887,125 @@
         },
         {
           "exports": [
+            "buildCanonicalRequestString",
+            "canonicalizeJsonBody",
+            "createReplayStore",
+            "deriveKid",
+            "generateEd25519KeyPair",
+            "isJcsCanonicalJsonBytes",
+            "isValidAgentIdHeader",
+            "isValidKeyIdHeader",
+            "isValidNonceHeader",
+            "isValidPublicKeyBase64Url",
+            "isValidRequestMethod",
+            "isValidRequestPath",
+            "isValidSignatureHeader",
+            "isValidTimestampHeader",
+            "loadTenantRootsConfig",
+            "sha256HexBytes",
+            "signCanonicalRequest",
+            "signedRequestsConfigFromEnv",
+            "tryDeriveKid",
+            "validateSignedRequestsConfig",
+            "validateTenantRootsList",
+            "verifyCanonicalRequestSignature",
+            "verifySignedRequest"
+          ],
+          "failurePaths": [
+            {
+              "in": "deriveKid",
+              "kind": "throw",
+              "line": 118
+            },
+            {
+              "in": "createEd25519PrivateKeyFromSeedHex",
+              "kind": "throw",
+              "line": 125
+            },
+            {
+              "in": "createEd25519PublicKeyFromBase64Url",
+              "kind": "throw",
+              "line": 137
+            },
+            {
+              "in": "verifyCanonicalRequestSignature",
+              "kind": "catch",
+              "line": 265
+            },
+            {
+              "in": "isJcsCanonicalJsonBytes",
+              "kind": "catch",
+              "line": 284
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 381
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 384
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 389
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 392
+            },
+            {
+              "in": "validateTenantRootsList",
+              "kind": "throw",
+              "line": 397
+            },
+            {
+              "in": "loadTenantRootsConfig",
+              "kind": "throw",
+              "line": 411
+            },
+            {
+              "in": "loadTenantRootsConfig",
+              "kind": "throw",
+              "line": 425
+            },
+            {
+              "in": "validateSignedRequestsConfig",
+              "kind": "throw",
+              "line": 442
+            },
+            {
+              "in": "validateSignedRequestsConfig",
+              "kind": "throw",
+              "line": 450
+            },
+            {
+              "in": "validateSignedRequestsConfig",
+              "kind": "throw",
+              "line": 456
+            },
+            {
+              "in": "validateSignedRequestsConfig",
+              "kind": "throw",
+              "line": 461
+            }
+          ],
+          "hash": "91c8391bca25f56eee86a5a95b9792c3371324ae697ca437aba9b97299bfe17e",
+          "importOrder": [
+            "packages/types/src/index.ts",
+            "packages/agent-identity/src/index.ts"
+          ],
+          "importsFiles": [
+            "packages/agent-identity/src/index.ts",
+            "packages/types/src/index.ts"
+          ],
+          "path": "packages/node/src/middleware/signature.ts"
+        },
+        {
+          "exports": [
             "checkDeploy",
             "parseReleaseFailOn",
             "releaseAccepted",
@@ -655,16 +1029,35 @@
         },
         {
           "exports": [
+            "citationRuleFromEnv",
+            "parseEvaluationRequest"
+          ],
+          "failurePaths": [
+            {
+              "in": "citationRuleFromEnv",
+              "kind": "throw",
+              "line": 19
+            }
+          ],
+          "hash": "a2cb7514256f5b54e0938709bcb49245ce1500e2f85ba68218db8a7c6667381d",
+          "importsFiles": [
+            "packages/model-registry/src/index.ts",
+            "packages/types/src/index.ts"
+          ],
+          "path": "packages/node/src/routes/evaluations.ts"
+        },
+        {
+          "exports": [
             "handleHealth"
           ],
-          "hash": "398c23cd80fb538c708386253bbf4318f0aa001fe0bb722bf22dac2f5d103f71",
+          "hash": "a01b6cb430f713fddb3bcc724f9ad25fe652889e6d0759155a7b6817ad48c2e2",
           "path": "packages/node/src/routes/health.ts"
         },
         {
           "exports": [
             "handleIdentity"
           ],
-          "hash": "893f348de391cd635ecf12826ee266f9cc255367a4e044c562a6d8aee6b886dd",
+          "hash": "a56c0198745034b5d46dab03eff3b452065f91d2ef856744e61ae78a65dc9cc5",
           "importOrder": [
             "packages/agent-identity/src/index.ts",
             "packages/types/src/index.ts",
@@ -763,76 +1156,104 @@
           ],
           "failurePaths": [
             {
-              "in": "parseBody",
+              "in": "checkHashedValue",
               "kind": "catch",
-              "line": 90
+              "line": 211
             },
             {
               "in": "keep",
               "kind": "catch",
-              "line": 141
+              "line": 299
             },
             {
               "in": "keep",
               "kind": "throw",
-              "line": 145
+              "line": 303
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 166
+              "line": 339
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 199
+              "line": 397
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 366
+              "line": 483
             },
             {
               "in": "createCognateServer",
               "kind": "throw",
-              "line": 371
+              "line": 484
             },
             {
               "in": "createCognateServer",
               "kind": "catch",
-              "line": 452
+              "line": 633
+            },
+            {
+              "in": "createCognateServer",
+              "kind": "throw",
+              "line": 638
+            },
+            {
+              "in": "createCognateServer",
+              "kind": "catch",
+              "line": 799
+            },
+            {
+              "in": "createCognateServer",
+              "kind": "throw",
+              "line": 804
+            },
+            {
+              "in": "createCognateServer",
+              "kind": "catch",
+              "line": 1180
             }
           ],
-          "hash": "7eccb77917c7c97eb074dba9264847dbd8f372a059b68265bdb85b933ef5a796",
+          "hash": "cd94edd7b8d138e9526c28bc157760ffef31b8ce8e20b9dd0692ad65a5a0d71d",
           "importOrder": [
             "packages/types/src/index.ts",
+            "packages/policy/src/index.ts",
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
             "packages/prompt-store/src/index.ts",
             "packages/node/src/routes/health.ts",
             "packages/node/src/routes/policy.ts",
             "packages/node/src/routes/registry.ts",
+            "packages/node/src/routes/evaluations.ts",
             "packages/node/src/routes/identity.ts",
             "packages/node/src/routes/prompts.ts",
-            "packages/node/src/middleware/auth.ts",
             "packages/node/src/middleware/rate-limit.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/snapshot.ts",
             "packages/node/src/release-gate.ts",
-            "packages/node/src/event-proof.ts"
+            "packages/node/src/event-proof.ts",
+            "packages/node/src/tenant.ts",
+            "packages/node/src/client.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
             "packages/node/src/event-proof.ts",
-            "packages/node/src/middleware/auth.ts",
             "packages/node/src/middleware/rate-limit.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/release-gate.ts",
+            "packages/node/src/routes/evaluations.ts",
             "packages/node/src/routes/health.ts",
             "packages/node/src/routes/identity.ts",
             "packages/node/src/routes/policy.ts",
             "packages/node/src/routes/prompts.ts",
             "packages/node/src/routes/registry.ts",
             "packages/node/src/snapshot.ts",
+            "packages/node/src/tenant.ts",
+            "packages/policy/src/index.ts",
             "packages/prompt-store/src/index.ts",
             "packages/types/src/index.ts"
           ],
@@ -857,15 +1278,15 @@
             {
               "in": "loadPrompts",
               "kind": "throw",
-              "line": 94
+              "line": 98
             },
             {
               "in": "loadPrompts",
               "kind": "throw",
-              "line": 101
+              "line": 105
             }
           ],
-          "hash": "1d19957a2c7fb38cb722a3cd08f6e5d8a94fa8e8d0e368a28856362fafa784c4",
+          "hash": "681c03f1a8325111aa44b96ad968d843dd445b706aaffaee3dd7529cc6cbe690",
           "importOrder": [
             "packages/model-registry/src/index.ts",
             "packages/agent-identity/src/index.ts",
@@ -881,10 +1302,34 @@
           "path": "packages/node/src/snapshot.ts"
         },
         {
-          "hash": "1302d35c5230bf3b8c9a13bad3e748b9839f010298f9eaabdc2876254ebd2379",
+          "exports": [
+            "idMismatch",
+            "refuseForeignRecord",
+            "refuseHiddenAgent",
+            "refuseHiddenGrant",
+            "refuseHiddenModel",
+            "refuseHiddenPrompt",
+            "refuseHiddenVersion",
+            "versionNotFound"
+          ],
+          "hash": "844eb7cecfbb16afae523dbc233c81a0ed65976163b1627088e7b65c56ff0c95",
+          "importOrder": [
+            "packages/types/src/index.ts",
+            "packages/node/src/server.ts"
+          ],
+          "importsFiles": [
+            "packages/node/src/server.ts",
+            "packages/types/src/index.ts"
+          ],
+          "path": "packages/node/src/tenant.ts"
+        },
+        {
+          "hash": "c0dfbd64ae81254cb7e7c39a3c838c8adeada978acf54242af80bb3341a28f6b",
           "importOrder": [
             "packages/node/src/server.ts",
             "packages/node/src/release-gate.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts",
             "packages/model-registry/src/index.ts",
             "packages/agent-identity/src/index.ts",
             "packages/prompt-store/src/index.ts"
@@ -892,6 +1337,8 @@
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/release-gate.ts",
             "packages/node/src/server.ts",
             "packages/prompt-store/src/index.ts"
@@ -900,18 +1347,47 @@
           "testFramework": "vitest"
         },
         {
-          "hash": "5cfc11ed6a36e3f8ffaf4457580e60d47c29f044bc15f7ed6dbeed3b7d189ed3",
+          "hash": "d7cff1eea38ca3b7ae3ea48fe6e21d1388b9cc75fa445b94c2fe9d4fd1fcddac",
+          "importOrder": [
+            "packages/node/src/server.ts",
+            "packages/node/src/event-proof.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/node/src/routes/evaluations.ts",
+            "packages/agent-identity/src/index.ts",
+            "packages/prompt-store/src/index.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts"
+          ],
+          "importsFiles": [
+            "packages/agent-identity/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/event-proof.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/routes/evaluations.ts",
+            "packages/node/src/server.ts",
+            "packages/prompt-store/src/index.ts"
+          ],
+          "path": "packages/node/tests/evaluations.test.ts",
+          "testFramework": "vitest"
+        },
+        {
+          "hash": "bcece4e5a4ce3c7e3c232247b1c188998c9ca67dbe25673c5788b764e7dd50af",
           "importOrder": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
             "packages/prompt-store/src/index.ts",
             "packages/node/src/event-proof.ts",
-            "packages/node/src/server.ts"
+            "packages/node/src/server.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
             "packages/node/src/event-proof.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/server.ts",
             "packages/prompt-store/src/index.ts"
           ],
@@ -934,18 +1410,22 @@
           "testFramework": "vitest"
         },
         {
-          "hash": "8d6b8f440990980c0ca79e848e7d6a348a9bc88c33ab227c4b09b3101e3f04ee",
+          "hash": "423fe02c2bfa6e4bc4a38bed1be3150c4797fca49ff20dda37d328693d89ab09",
           "importOrder": [
             "packages/node/src/server.ts",
             "packages/node/src/routes/registry.ts",
             "packages/node/src/routes/prompts.ts",
             "packages/model-registry/src/index.ts",
             "packages/agent-identity/src/index.ts",
-            "packages/prompt-store/src/index.ts"
+            "packages/prompt-store/src/index.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
             "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
             "packages/node/src/routes/prompts.ts",
             "packages/node/src/routes/registry.ts",
             "packages/node/src/server.ts",
@@ -955,7 +1435,32 @@
           "testFramework": "vitest"
         },
         {
-          "hash": "7ed421baad81fbab298a6ea7c089e7e4c7b975b082fc8f021e6009f833438efd",
+          "hash": "717bf7b3048111b3363e69b2f2ca7536142638e5db23d06fda4f55291daf066c",
+          "importOrder": [
+            "packages/types/src/index.ts",
+            "packages/agent-identity/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/prompt-store/src/index.ts",
+            "packages/node/src/server.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/routes/identity.ts"
+          ],
+          "importsFiles": [
+            "packages/agent-identity/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/routes/identity.ts",
+            "packages/node/src/server.ts",
+            "packages/prompt-store/src/index.ts",
+            "packages/types/src/index.ts"
+          ],
+          "path": "packages/node/tests/signed-requests.test.ts",
+          "testFramework": "vitest"
+        },
+        {
+          "hash": "6662472ff1eb00a0ee17d35e68b830970eb64ebf09e20061a0490ac0d0370a03",
           "importOrder": [
             "packages/model-registry/src/index.ts",
             "packages/prompt-store/src/index.ts",
@@ -974,11 +1479,34 @@
           "testFramework": "vitest"
         },
         {
+          "hash": "644f7f6e1d7b36db0e537017a2cb41a6cf223f0315eb0489fb829382defd820c",
+          "importOrder": [
+            "packages/node/src/server.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/agent-identity/src/index.ts",
+            "packages/prompt-store/src/index.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/client.ts",
+            "packages/types/src/index.ts"
+          ],
+          "importsFiles": [
+            "packages/agent-identity/src/index.ts",
+            "packages/model-registry/src/index.ts",
+            "packages/node/src/client.ts",
+            "packages/node/src/middleware/signature.ts",
+            "packages/node/src/server.ts",
+            "packages/prompt-store/src/index.ts",
+            "packages/types/src/index.ts"
+          ],
+          "path": "packages/node/tests/tenant-scoping.test.ts",
+          "testFramework": "vitest"
+        },
+        {
           "hash": "6e2369cbc791956c36103dd8081ebc2f9ed2fc174a4186a72f86f0f094e98fcb",
           "path": "packages/node/tsconfig.json"
         },
         {
-          "hash": "316a7807e4cf85ddb1af7c951b9fbd4c42c900386402069711d4da9f547c5285",
+          "hash": "055e4c20b39543dbb464f51c76ecfe2ff35b4309a5395f7ef1dc491fcc5292b6",
           "path": "packages/node/vitest.config.ts"
         }
       ],
@@ -990,20 +1518,34 @@
       "origin": "authored",
       "outsidePlaces": [
         {
-          "reads": 1,
+          "reads": 5,
           "where": [
             "caller"
           ],
           "writes": 3
+        },
+        {
+          "reads": 3,
+          "where": [
+            "cwd"
+          ],
+          "writes": 0
+        },
+        {
+          "reads": 2,
+          "where": [
+            "cwd:packages/"
+          ],
+          "writes": 0
         }
       ],
-      "outsideReads": 1,
+      "outsideReads": 10,
       "outsideWrites": 3,
       "role": "code",
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 7,
+      "testedBy": 11,
       "unresolvedSites": 0
     },
     {
@@ -1017,7 +1559,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "4a3f6443a7c249a6c8cad77095377b04ec6ffce187ea64077d265d605c3a9d9d",
+          "hash": "91a958741dff80f11e6ce3e66389d0c5fdde20bdd666e1abde8389959c888222",
           "path": "packages/policy/package.json"
         },
         {
@@ -1030,15 +1572,15 @@
             {
               "in": "evaluateRegex",
               "kind": "catch",
-              "line": 220
+              "line": 227
             },
             {
               "in": "evaluateRegex",
               "kind": "catch",
-              "line": 237
+              "line": 244
             }
           ],
-          "hash": "5ec6ce20a4c49107d478f9754aab2cb455d3943ae627ad894b31c61275ba0f97",
+          "hash": "ab3a7287d3d9b88158a5c4e1e56118dfedcd6d91aa74a952776328c7590baf80",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/policy/src/types.ts"
@@ -1059,14 +1601,14 @@
           "reexportsOnly": true
         },
         {
-          "hash": "2cdd656b2f7bf264249910e6eccd12aa48a95da278ca5084fbf6440a7e0b8617",
+          "hash": "74dbb2a867ea940d84c82d16286a554ed843919b28d7e6a910aff4737d4bec00",
           "importsFiles": [
             "packages/types/src/index.ts"
           ],
           "path": "packages/policy/src/types.ts"
         },
         {
-          "hash": "98087612e0b5b593d69c568c09f7a6e36e9c216978a1a082166005abb7879034",
+          "hash": "0e52be5ddf00e8aab604ceaa646f12ac3783d8b87b415352f3d1654241b6e146",
           "importsFiles": [
             "packages/policy/src/evaluator.ts",
             "packages/policy/src/index.ts"
@@ -1093,7 +1635,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 2,
+      "testedBy": 8,
       "unresolvedSites": 0
     },
     {
@@ -1107,7 +1649,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "1d229679cc5904b98fcf13cc54f3a89e328643645ce0e1ac02458210e048845b",
+          "hash": "4ba75d1f120abac9f79922fded1835e9686dcef240fface0725623211480ccd2",
           "path": "packages/prompt-store/package.json"
         },
         {
@@ -1119,15 +1661,15 @@
             {
               "in": "attestLogPrompt",
               "kind": "catch",
-              "line": 81
+              "line": 84
             },
             {
               "in": "attestLogOutput",
               "kind": "catch",
-              "line": 127
+              "line": 133
             }
           ],
-          "hash": "aff234914c8905bd4df44819e9116104165a6796229cccd788c579eb119a284a",
+          "hash": "614b4d54835722c1ee5aba7fe07c9ecdf56d42cb44673d037bc723ae79cf5db9",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/prompt-store/src/store.ts"
@@ -1184,7 +1726,7 @@
           "path": "packages/prompt-store/src/store.ts"
         },
         {
-          "hash": "5ba22a8f63a7ed709479b1767f9c624ba84eca0573c7946c85d114e6d172da37",
+          "hash": "a32e2fc2a352b62f9b4ed188fdbc97f27f511e22eb3b55db312d056ca543b484",
           "importOrder": [
             "packages/prompt-store/src/store.ts",
             "packages/prompt-store/src/attestation.ts",
@@ -1219,7 +1761,7 @@
           "path": "packages/prompt-store/tsconfig.json"
         },
         {
-          "hash": "316a7807e4cf85ddb1af7c951b9fbd4c42c900386402069711d4da9f547c5285",
+          "hash": "8c33ca1451776fbd01505ade38ced1da215fe2cbfd1275782d84e426941bfa74",
           "path": "packages/prompt-store/vitest.config.ts"
         }
       ],
@@ -1231,19 +1773,19 @@
       "origin": "authored",
       "outsidePlaces": [
         {
-          "reads": 8,
+          "reads": 9,
           "where": [
             "caller"
           ],
           "writes": 0
         }
       ],
-      "outsideReads": 8,
+      "outsideReads": 9,
       "role": "code",
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 9,
+      "testedBy": 12,
       "unresolvedSites": 0
     },
     {
@@ -1257,7 +1799,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "62e1542da673fa06c636bc8cae918fea43b2623342c5c0a0ce85037e8f9f1dee",
+          "hash": "52ce2e01f55ee9119f820b5d41dfe4fae7cc700fbbed0143d9ead138e64fa318",
           "path": "packages/repomesh-bridge/package.json"
         },
         {
@@ -1337,7 +1879,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "642c02eca43d61528d76b3f34fdf4a9d3c3972e733e74bf48f410c0a857aca71",
+          "hash": "3e5325b5af80302f6c32567f7bc7fdc69c8989f6b195d620c55688c1e5b6fac1",
           "path": "CHANGELOG.md"
         },
         {
@@ -1345,11 +1887,11 @@
           "path": "Caddyfile"
         },
         {
-          "hash": "0e863a964ef3445f9eafb50b0aeb38a149b53cc75de481c8409692d96a853aff",
+          "hash": "3c4597a01f9deee259a309327df0d2d0317a94491f290399b19b4cbd5893bab0",
           "path": "Dockerfile"
         },
         {
-          "hash": "2bc1109dde8b2d3fea35ebe0c47248b06638380def170a257a6cc8bc1ac4c117",
+          "hash": "b852e72170bf4dfdbbd607934523f3de8a39fd811d02054d09a7953bc7a6875c",
           "path": "HANDBOOK.md"
         },
         {
@@ -1377,7 +1919,7 @@
           "path": "README.ja.md"
         },
         {
-          "hash": "d0fe0a3091c4c5b4fc3e4d43c890f825a314eec34e5d7a72a081824078d72549",
+          "hash": "45c54f504584f5b24fd6f882bc982fd2bc8700838d8f1bf650cebf11df2ee373",
           "path": "README.md"
         },
         {
@@ -1393,7 +1935,7 @@
           "path": "SCORECARD.md"
         },
         {
-          "hash": "be5799921672f6c9265f915d4eff93238c94dd270c2c9cf9c1b3f2741a954d2a",
+          "hash": "b817edce9f560b7001d9e417e6b1b13011df5552b6eb12f67fd3413188011a05",
           "path": "SECURITY.md"
         },
         {
@@ -1413,11 +1955,11 @@
           "path": "node.json"
         },
         {
-          "hash": "086bba88ba76f2043727067c8f8f876a368783dc2ebcebce5d1320c9dec797f1",
+          "hash": "2e943c006f0001a831450c64d92c2f33b3e53a57013100476081e00fe946c5d0",
           "path": "package.json"
         },
         {
-          "hash": "e53afda314ce6036817e0192603a1552fa29c5d100a017d052b014ba7b70f9ac",
+          "hash": "06f3666e3752697d754e09a4f34c05f29c08d35775900814a82f119b12ad3927",
           "path": "pnpm-lock.yaml"
         },
         {
@@ -1508,15 +2050,15 @@
           "path": "site/src/content/docs/handbook/index.md"
         },
         {
-          "hash": "071730b23de14c60d32570c6a0cc7f5d72dba97052ba2c44dfb8760effc21695",
+          "hash": "bb1db4aa9128a43796f2432c2a9dbd887b007b9247090e87739a168d898f53f7",
           "path": "site/src/content/docs/handbook/reference.md"
         },
         {
-          "hash": "481b38252cc1d1a8611eadad77121eb49e07e528a611688e157dd2439de9522d",
+          "hash": "0bd40cb5d4c29e2b70e76f2a503a44c2e5e6d3409f686dfda02e906a10531c9d",
           "path": "site/src/content/docs/handbook/security.md"
         },
         {
-          "hash": "67c9e9ce755b64f4fb9eedcb43ddcb0a746d3cc356f9e7080fdf07145e95f173",
+          "hash": "6eb69e49354b0484a37c2fd5e0e3b4441f42d743fcf6a09a4ea9cbbff8eb7abd",
           "path": "site/src/content/docs/handbook/usage.md"
         },
         {
@@ -1533,7 +2075,7 @@
         },
         {
           "constantOnly": true,
-          "hash": "5bce89ed804f5d0719cc0044482b4f1ac50ce02ba6492c9244e24eacf5acad34",
+          "hash": "9d6e36f547c168643a5a81f031280e2693ec7ce7852b3ee1cde4181801108c57",
           "path": "site/src/site-config.ts"
         },
         {
@@ -1593,11 +2135,11 @@
       "externals": 0,
       "files": [
         {
-          "hash": "119f80d2b02b1916d2e7fdf0354182793414835c0e90fa6275dcc46377cae2d1",
+          "hash": "55b367f0a502bbc93e2dcbc74a9cfd530ca344557fff2422c8132734788f7aa2",
           "path": "packages/types/package.json"
         },
         {
-          "hash": "0d2708400c8b845e830bfbc3814eea462f1ea6f920cf7936e9fa799f958ce8f6",
+          "hash": "b705afaf5cb0f023df00eeab160f8f75e142471afe19f868da220126c1cde36d",
           "path": "packages/types/src/index.ts"
         },
         {
@@ -1615,7 +2157,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 13,
+      "testedBy": 18,
       "unresolvedSites": 0
     }
   ],
@@ -1729,12 +2271,12 @@
         {
           "boundary": "model-registry",
           "depth": 0,
-          "files": 6
+          "files": 8
         },
         {
           "boundary": "node",
           "depth": 0,
-          "files": 18
+          "files": 25
         },
         {
           "boundary": "policy",
@@ -1936,7 +2478,7 @@
           "config": "packages/model-registry/vitest.config.ts",
           "coverage": true,
           "dir": "packages/model-registry",
-          "files": 2,
+          "files": 4,
           "job": "build-and-test",
           "runner": "vitest",
           "step": "Test with coverage",
@@ -1949,7 +2491,7 @@
           "config": "packages/node/vitest.config.ts",
           "coverage": true,
           "dir": "packages/node",
-          "files": 5,
+          "files": 8,
           "job": "build-and-test",
           "runner": "vitest",
           "step": "Test with coverage",
@@ -2082,12 +2624,12 @@
         {
           "boundary": "model-registry",
           "depth": 0,
-          "files": 8
+          "files": 10
         },
         {
           "boundary": "node",
           "depth": 0,
-          "files": 20
+          "files": 27
         },
         {
           "boundary": "policy",
@@ -2361,12 +2903,12 @@
         {
           "boundary": "model-registry",
           "depth": 0,
-          "files": 8
+          "files": 10
         },
         {
           "boundary": "node",
           "depth": 0,
-          "files": 20
+          "files": 27
         },
         {
           "boundary": "policy",
@@ -2891,12 +3433,12 @@
         {
           "boundary": "model-registry",
           "depth": 0,
-          "files": 6
+          "files": 8
         },
         {
           "boundary": "node",
           "depth": 0,
-          "files": 18
+          "files": 25
         },
         {
           "boundary": "policy",
@@ -3135,7 +3677,7 @@
         {
           "config": "packages/model-registry/vitest.config.ts",
           "dir": "packages/model-registry",
-          "files": 2,
+          "files": 4,
           "job": "release",
           "runner": "vitest",
           "step": "Run tests",
@@ -3147,7 +3689,7 @@
         {
           "config": "packages/node/vitest.config.ts",
           "dir": "packages/node",
-          "files": 5,
+          "files": 8,
           "job": "release",
           "runner": "vitest",
           "step": "Run tests",
@@ -3335,8 +3877,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "324888396a110aae607bb84e9996c320de45eed9",
-    "tracked": 141
+    "commit": "8db91735116259a6faeb8201daf7bfe876ff4497",
+    "tracked": 151
   },
   "landings": [
     {
@@ -3357,6 +3899,34 @@
         }
       ],
       "target": "packages/cognate/package.json",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "packages/model-registry/tests/runs.test.ts",
+          "call": "literal",
+          "confidence": "ast",
+          "fromTests": true
+        }
+      ],
+      "target": "packages/model-registry",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "packages/node/src/middleware/signature.ts",
+          "call": "existsSync",
+          "confidence": "ast"
+        },
+        {
+          "by": "packages/node/src/middleware/signature.ts",
+          "call": "readFileSync",
+          "confidence": "ast"
+        }
+      ],
+      "target": "packages/node/config/tenant-roots.json",
       "writers": []
     },
     {
@@ -3407,7 +3977,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 15,
+  "testFiles": 20,
   "unassigned": [],
   "unseen": [
     {

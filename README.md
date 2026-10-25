@@ -120,7 +120,7 @@ import {
 The image runs `@cognate/node` and serves the governance API. `/health` returns:
 
 ```json
-{ "status": "ok", "service": "cognate", "mode": "api" }
+{ "status": "ok", "service": "cognate", "mode": "api", "serverTime": "2026-10-24T12:00:00.000Z" }
 ```
 
 ```bash
@@ -129,7 +129,48 @@ curl http://localhost:4000/health
 docker compose down
 ```
 
-The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data/events.jsonl`. The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. `GET /events/:eventId` reads that log and returns the recorded event with an Attestia inclusion proof and the root. The caller sends the same agent headers as a write. An id that is not in this tenant's log is a miss, and the body has no proof. Prompt and output text stay out of the event. The route does not call RepoMesh. Attestia's compose uses the same event-log variable on its own volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL. The image is published to GHCR when a GitHub release is published.
+The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data/events.jsonl`. The snapshots are `/app/data/cognate/registry.json`, `/app/data/cognate/agents.json`, and `/app/data/cognate/prompts.json`. `GET /events/:eventId` reads that log and returns the recorded event with an Attestia inclusion proof and the root. The caller sends the same signed `cognate-request-v1` headers as a write. An id that is not in this tenant's log is a miss, and the body has no proof. Prompt and output text stay out of the event. The route does not call RepoMesh. Attestia's compose uses the same event-log variable on its own volume. Each file has one writer. RepoMesh's image does not mount this log. `REPOMESH_FAIL_ON` defaults to `unverified`: only a PASS deploys. Set it to `fail` to allow an UNVERIFIED release through. The image does not set a ledger URL. The image is published to GHCR when a GitHub release is published.
+
+---
+
+## Authentication & Migration Guide
+
+### What is proved now (PR a)
+
+- **Ed25519 request signing (`cognate-request-v1`).** By default (`signedRequests: "enforce"`), every `POST` and `GET /events/:eventId` must carry `X-Agent-Id`, `X-Timestamp`, `X-Nonce`, `X-Key-Id`, and `X-Signature` over the 8-line canonical request string (`cognate-request-v1\n<METHOD>\n<PATH>\n<BODY_SHA256>\n<X-Timestamp>\n<X-Nonce>\n<X-Agent-Id>\n<X-Key-Id>`). `POST` bodies must be RFC 8785 JCS-canonical UTF-8 (`400 auth.body-not-canonical` otherwise). `kid` is the 64-character lowercase hex SHA-256 of the raw 32-byte Ed25519 public key.
+- **Ordered replay protection and uniform 401.** `X-Timestamp` must be within ±300 s of server time (`GET /health` exposes `serverTime`). The in-memory replay store checks `(agentId, nonce)` read-only before signature verification, records it only after the signature verifies, and retains it across the full 600 s validity span. Every pre-signature authentication failure returns an identical `401` with `code: "auth.unauthenticated"`.
+- **Actor binding (`403 auth.actor-mismatch`).** The actor on every route (`transition.actorId`, `evaluation.evaluator`, `grant.requestedBy`, `grant.capability.grantedBy`, `approverId`, `agent.owner`, `prompt.agentId`, `model.owner`, `context.actorId`, `context.agentId`, and `context.agentCapabilities`) is bound to the verified signer before RepoMesh or any event append.
+- **Privilege escalation guards and root key bootstrap.** Agent registration (`POST /identity/agents`) and grant approval (`POST /identity/grants/:id/approve`) require an active `delegate` capability. Self-approval is refused (`403 auth.self-approval-forbidden`). Pre-populated `agent.capabilities` are refused except when the tenant's operator-supplied root public key (`tenantRootsPath` or `COGNATE_TENANT_ROOTS_PATH`) bootstraps the tenant's first `delegate`. Root mints or approves a `delegate` directly only at bootstrap, while the tenant has no active `delegate`; by design, the tenant root keeps its recovery powers after bootstrap (it rotates a human principal's key and approves non-delegate grants, and recovery from a compromised root means replacing it in the reviewed config and re-signing the tenant's delegate agents). No tenant root key ships in the repository or Docker image, and the server refuses to start in `enforce` mode without operator-supplied roots (`auth.missing-tenant-roots`). An agent principal (`principal: "agent"`) cannot register a human principal (`principal: "human"`) or grant `delegate`, and an `owner` cannot rotate a human principal's key. Key rotation (`POST /identity/agents/:id/key`) and revocation (`POST /identity/agents/:id/revoke`) immediately invalidate old `kid`s.
+
+### What is not proved yet (coming in PR b) and current limits
+
+- **Single-instance replay store.** The `(agentId, nonce)` replay store is in-memory on a single `@cognate/node` process; multi-instance deployments do not share replay state.
+- **Detached approvals, identity stream, and offline verification come in PR (b).** Under PR (a), any sign-off-gated action must be signed directly by the authorizing principal. Detached `cognate-approval-v1` approvals (allowing an agent to submit a transition carrying a separate human signature), durable `approvalId` consumption, the attested `cognate-<tenant>-identity` event stream, `submittedBy` / `authorizedBy` event fields, the standalone offline verifier, and RepoMesh root-key anchoring are scheduled for PR (b).
+
+### Migrating existing agents to Ed25519 keys
+
+1. **Generate an Ed25519 key pair** using `generateEd25519KeyPair()` from `@cognate/node`:
+   ```ts
+   import { generateEd25519KeyPair, createSignedClient } from "@cognate/node";
+
+   const keyPair = generateEd25519KeyPair();
+   // keyPair.publicKey (43-char base64url raw 32-byte key), keyPair.kid (64-char sha256 hex), keyPair.seedHex
+   ```
+2. **Configure operator tenant root public keys and bootstrap the tenant's first delegate** by supplying a JSON root-key file via `COGNATE_TENANT_ROOTS_PATH` (or `ServerContext.tenantRootsPath` / `ServerContext.tenantRoots`) and signing `POST /identity/agents` with that tenant root key while the tenant has no active `delegate` (or seed the agent with `publicKey` and `kid` in `agents.json` before startup). Test-only fixture keys under `packages/node/tests/fixtures/` are rejected at startup unless `allowTestOnlyRoots: true` is explicitly set.
+3. **Sign requests with `createSignedClient` or `signHttpRequest`**:
+   ```ts
+   const client = createSignedClient({
+     baseUrl: "http://127.0.0.1:4000",
+     agentId: "my-agent-id",
+     seedHex: keyPair.seedHex,
+   });
+   const res = await client.request("/registry/models", {
+     method: "POST",
+     body: { model },
+   });
+   ```
+   `createSignedClient` canonicalizes JSON bodies with RFC 8785 JCS, signs each request, and automatically syncs clock offset from `GET /health`'s `serverTime` and retries once if a skewed clock causes a `401`.
+4. **Optional migration window (`signedRequests: "log"`):** To accept unsigned non-`/identity/*` requests temporarily while callers migrate, set `COGNATE_SIGNED_REQUESTS=log` and `COGNATE_SIGNED_REQUESTS_LOG_UNTIL=<RFC3339 UTC timestamp <= 14 days ahead>`. Events recorded from unsigned requests in `log` mode carry `unsigned: true`.
 
 ---
 
@@ -138,11 +179,11 @@ The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data
 Cognate assumes the following threat model:
 
 1. **Compromised inference endpoint.** An attacker gains access to the model API. Mitigation: all prompts and outputs are logged with encrypted payloads and SHA-256 integrity hashes. Replay is deterministic.
-2. **Rogue agent with stolen credentials.** An agent's keys are exfiltrated. Mitigation: capabilities are time-bound, scope-limited, and revocable. Every grant requires explicit approval. Limit: the HTTP server does not check a key at all. It identifies the caller by an unsigned `X-Agent-Id` header, so an agent's id is enough to act as it.
-3. **Supply-chain model tampering.** Weights or configs are swapped post-evaluation. Mitigation: the model registry hashes weights, config, and manifest at registration. Any deviation invalidates the version.
+2. **Rogue agent or forged caller identity.** Mitigation: every HTTP write and `/events/:eventId` read is authenticated with an Ed25519 signature (`cognate-request-v1`), ±300 s timestamp check, and 600 s nonce replay store; capabilities are time-bound, scope-limited, and revocable (`POST /identity/agents/:id/revoke`, `POST /identity/agents/:id/key`), and every route binds its body actor fields to the verified signer (`403 auth.actor-mismatch`). Limit: the replay store is in-memory per process, and detached multi-party approvals (`cognate-approval-v1`) and offline event-stream signature verification land in PR (b).
+3. **Supply-chain model tampering.** Weights or configs are swapped post-evaluation. Mitigation: the model registry hashes weights, config, and manifest at registration, and `ModelVersion.repo` is stored as `sha256:<hex>`. Any deviation invalidates the version.
 4. **Policy bypass via prompt injection.** An adversarial prompt attempts to circumvent content rules. Mitigation: policy evaluation is deterministic, versioned, and runs before inference. No prompt executes without a passing policy check.
 5. **Insider abuse of audit logs.** A privileged operator tampers with logs. Mitigation: the event store is append-only and backed by Attestia's Merkle-tree proofs. Tampering breaks the chain hash.
-6. **Cross-tenant access on the HTTP server.** An agent of one tenant reaches another tenant's records. Mitigation: every route acts in the authenticated agent's tenant. A record naming another tenant is refused, and another tenant's id is answered as missing. Limit: identity is self-asserted (item 2), so this keeps an agent inside its own tenant but does not stop someone from claiming to be that agent.
+6. **Cross-tenant access on the HTTP server.** An agent of one tenant reaches another tenant's records. Mitigation: every route acts in the authenticated signer's tenant. A record naming another tenant is refused, and another tenant's id is answered as missing.
 
 No telemetry or analytics. A deploy on the HTTP server asks RepoMesh whether the named release passes. Health and the other routes stay on this process.
 
@@ -155,8 +196,8 @@ Building in public. All core packages are implemented, tested, and building. Ins
 | Gate | Status |
 |------|--------|
 | Build | Passing |
-| Tests | 253 passing |
-| Coverage | Over 90% of lines in policy, node, agent-identity and prompt-store, and over 98% in model-registry; model-registry enforces 98% lines and node a 90% floor |
+| Tests | 287 passing |
+| Coverage | Over 92% of lines in node, 97% in policy and agent-identity, 98% in model-registry, and 99% in prompt-store, with vitest coverage floors enforced |
 | Typecheck | Clean |
 | Docker | Image serves the governance API. The volume holds the event log and the three snapshots |
 | Shipcheck | Handbook, landing page, and repo metadata in this release |

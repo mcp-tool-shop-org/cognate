@@ -1,6 +1,9 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { createCognateServer, type ServerState } from "../src/server.js";
 import { parseReleaseFailOn, releaseAccepted, releaseConfigFromEnv, resolveDeployRelease } from "../src/release-gate.js";
+import { generateEd25519KeyPair, type Ed25519KeyPairMaterial } from "../src/middleware/signature.js";
+import { signHttpRequest } from "../src/client.js";
 import {
   createRegistry as createModelRegistry,
   registerModel,
@@ -9,8 +12,21 @@ import {
 } from "@cognate/model-registry";
 import { createRegistry as createIdentityRegistry, registerAgent } from "@cognate/agent-identity";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
+import { TEST_ONLY_TENANT_ROOTS } from "./fixtures/test-only-tenant-roots.js";
 
 const TEST_TIMESTAMP = "2026-09-28T12:00:00Z";
+const REPO_HASH = `sha256:${createHash("sha256").update("acme/weights").digest("hex")}`;
+const OTHER_REPO_HASH = `sha256:${createHash("sha256").update("other/repo").digest("hex")}`;
+const agentKeys = new Map<string, Ed25519KeyPairMaterial>();
+
+function keyFor(agentId: string): Ed25519KeyPairMaterial {
+  let kp = agentKeys.get(agentId);
+  if (!kp) {
+    kp = generateEd25519KeyPair();
+    agentKeys.set(agentId, kp);
+  }
+  return kp;
+}
 
 const model = {
   id: "m1",
@@ -60,14 +76,17 @@ function recordingStore() {
 }
 
 function emptyState(agentId: string): ServerState {
+  const kp = keyFor(agentId);
   let identity = createIdentityRegistry();
   const regResult = registerAgent(identity, {
     id: agentId,
     tenantId: "tenant-1",
     name: "Test Agent",
     owner: "human-1",
+    principal: "human",
     walletAddress: null,
-    publicKey: null,
+    publicKey: kp.publicKey,
+    kid: kp.kid,
     capabilities: [],
     createdAt: TEST_TIMESTAMP,
     status: "active",
@@ -82,7 +101,7 @@ function emptyState(agentId: string): ServerState {
 
 function seed(state: ServerState, to: "registered" | "approved", bound = true) {
   let registry = registerModel(state.registry, model);
-  registry = registerVersion(registry, bound ? { ...version, repo: "acme/weights", release: "1.2.3" } : version);
+  registry = registerVersion(registry, bound ? { ...version, repo: REPO_HASH, release: "1.2.3" } : version);
   if (to === "approved") {
     registry = transitionVersion(registry, "v1", "registered", "evaluated", "admin-1", "eval");
     registry = transitionVersion(registry, "v1", "evaluated", "approved", "admin-1", "approve");
@@ -102,6 +121,8 @@ async function start(opts: {
     port: 0,
     host: "127.0.0.1",
     eventStore: opts.eventStore ?? recorded.eventStore,
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
     ...(opts.verifyRelease ? { verifyRelease: opts.verifyRelease } : {}),
     ...(opts.releaseFailOn ? { releaseFailOn: opts.releaseFailOn } : {}),
   });
@@ -114,21 +135,27 @@ async function start(opts: {
   return { port, stop: () => server.close(), recorded, state };
 }
 
-async function post(port: number, agentId: string, body: unknown) {
+async function post(port: number, agentId: string, body: Record<string, unknown>) {
+  const kp = keyFor(agentId);
+  const payload = body.actorId === "admin-1" ? { ...body, actorId: agentId } : body;
+  const signed = signHttpRequest({
+    method: "POST",
+    path: "/registry/versions/v1",
+    agentId,
+    seedHex: kp.seedHex,
+    kid: kp.kid,
+    body: payload,
+  });
   const res = await fetch(`http://127.0.0.1:${port}/registry/versions/v1`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Agent-Id": agentId,
-      "X-Timestamp": TEST_TIMESTAMP,
-    },
-    body: JSON.stringify(body),
+    headers: signed.headers,
+    body: signed.rawBody,
   });
   return { status: res.status, json: (await res.json()) as Record<string, unknown> };
 }
 
 function deployBody(extra: Record<string, unknown> = {}) {
-  return { from: "approved", to: "deployed", actorId: "admin-1", reason: "Ship", repo: "acme/weights", release: "1.2.3", ...extra };
+  return { from: "approved", to: "deployed", actorId: "admin-1", reason: "Ship", repo: REPO_HASH, release: "1.2.3", ...extra };
 }
 
 describe("release gate decisions", () => {
@@ -167,21 +194,21 @@ describe("release gate decisions", () => {
   });
 
   it("checks the pair stored on the version", () => {
-    expect(resolveDeployRelease({ repo: " acme/weights ", release: "1.2.3" }, {})).toEqual({
+    expect(resolveDeployRelease({ repo: ` ${REPO_HASH} `, release: "1.2.3" }, {})).toEqual({
       ok: true,
-      repo: "acme/weights",
+      repo: REPO_HASH,
       release: "1.2.3",
     });
-    expect(resolveDeployRelease({ repo: "acme/weights", release: "1.2.3" }, { repo: "  ", release: "" })).toEqual({
+    expect(resolveDeployRelease({ repo: REPO_HASH, release: "1.2.3" }, { repo: "  ", release: "" })).toEqual({
       ok: true,
-      repo: "acme/weights",
+      repo: REPO_HASH,
       release: "1.2.3",
     });
-    expect(resolveDeployRelease({}, { repo: "acme/weights", release: "1.2.3" })).toEqual({
+    expect(resolveDeployRelease({}, { repo: REPO_HASH, release: "1.2.3" })).toEqual({
       ok: false,
       code: "repomesh.missing-release",
     });
-    expect(resolveDeployRelease({ repo: "acme/weights", release: "1.2.3" }, { repo: "other/repo" })).toEqual({
+    expect(resolveDeployRelease({ repo: REPO_HASH, release: "1.2.3" }, { repo: OTHER_REPO_HASH })).toEqual({
       ok: false,
       code: "repomesh.release-mismatch",
     });
@@ -224,7 +251,7 @@ describe("HTTP deploy gate", () => {
     });
     try {
       seed(state, "approved");
-      const { status, json } = await post(port, agentId, deployBody({ repo: "other/repo", release: "9.9.9" }));
+      const { status, json } = await post(port, agentId, deployBody({ repo: OTHER_REPO_HASH, release: "9.9.9" }));
       expect(status).toBe(400);
       expect(json.code).toBe("repomesh.release-mismatch");
       expect(calls).toEqual([]);
@@ -254,7 +281,7 @@ describe("HTTP deploy gate", () => {
         reason: "Ship",
       });
       expect(status).toBe(200);
-      expect(calls).toEqual([{ repo: "acme/weights", release: "1.2.3" }]);
+      expect(calls).toEqual([{ repo: REPO_HASH, release: "1.2.3" }]);
       expect(json.releaseStatus).toBe("PASS");
       expect(state.registry.versions.v1?.status).toBe("deployed");
     } finally {
@@ -274,7 +301,7 @@ describe("HTTP deploy gate", () => {
       expect(status).toBe(409);
       expect(json.code).toBe("repomesh.release-denied");
       expect(json.status).toBe("FAIL");
-      expect(json.repo).toBe("acme/weights");
+      expect(json.repo).toBe(REPO_HASH);
       expect(json.release).toBe("1.2.3");
       expect(state.registry.versions.v1?.status).toBe("approved");
       expect(recorded.appended).toHaveLength(1);
@@ -285,7 +312,7 @@ describe("HTTP deploy gate", () => {
       expect(event?.metadata?.eventId).toBe(json.eventId);
       expect(event?.payload).toEqual({
         modelVersionId: "v1",
-        repo: "acme/weights",
+        repo: REPO_HASH,
         release: "1.2.3",
         status: "FAIL",
         accepted: false,
@@ -465,7 +492,7 @@ describe("HTTP deploy gate", () => {
         to: "evaluated",
         actorId: "admin-1",
         reason: "Initial evaluation",
-        repo: "acme/weights",
+        repo: REPO_HASH,
         release: "1.2.3",
       });
       expect(status).toBe(200);
@@ -495,7 +522,7 @@ describe("HTTP deploy gate", () => {
         to: "deployed",
         actorId: "admin-1",
         reason: "Skip",
-        repo: "acme/weights",
+        repo: REPO_HASH,
         release: "1.2.3",
       });
       expect(status).toBe(404);

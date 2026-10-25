@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "testOnly": true,
+  "roots": [
+    {
+      "tenantId": "tenant-a",
+      "kid": "6e676438555d5783c9197c1ad0f7ffd21d30c017f3bc882014c90756d91224e3",
+      "publicKey": "OU0e1p_4rG9FqAHKkPob3VddG3eBEbRs55JR2wL5TIM",
+      "actorId": "sha256:1eb2c7ffd32e6a9291cd4efd2299924762626ee55c1735389964d32cfde7d9e4",
+      "testOnly": true
+    },
+    {
+      "tenantId": "tenant-b",
+      "kid": "e86478cb0dda167def172760eb69c635497dd3cfe3bc9849388f96ffdc6804f7",
+      "publicKey": "Ts-MTztMri3vSZwiT87kz0E0CduYsTBJUxA590z8rf8",
+      "actorId": "sha256:1db260dbecd1661cad913d91cffac9b0e6a599a6473888018f2e7faf6f60cf9e",
+      "testOnly": true
+    },
+    {
+      "tenantId": "tenant-1",
+      "kid": "0da1ca464230a946934b3cb540780cd8e373c09ed91ddbee6b11d61c2db93b82",
+      "publicKey": "XzDwr56hT5N-BEz1XsGDqUY-SMPIrxA0sQRNcdztqZw",
+      "actorId": "sha256:fb8a82c25f25e5586111c11392f74b608a3d7788ae017297400c162f6b37b8ba",
+      "testOnly": true
+    },
+    {
+      "tenantId": "tenant-2",
+      "kid": "e6eefe189d71d2af2de1fe3123f3883a1610c4b5b34ec7ef1ef362f8e7469633",
+      "publicKey": "PHwYzQeINX-FOqVtLbBGHEFQZilra0h9o05jGe9JATY",
+      "actorId": "sha256:d5a7dfe09d6ca55a4ee382cb089b33dc70485b293dcb0f35d2b86834636b5c1d",
+      "testOnly": true
+    },
+    {
+      "tenantId": "tenant-alpha",
+      "kid": "01b22dc4dd2b83d4836864d3d3bdbf3e6114e45f1e8edf02a4eced96a6f14555",
+      "publicKey": "wXHOClpUcO09oocF1mM-GVMiIC9DDstjgJBmv2uaAxo",
+      "actorId": "sha256:c70c67b6cee5e2a167656c35bc615ecb001709480eff4b34da0543c0ec87196f",
+      "testOnly": true
+    },
+    {
+      "tenantId": "tenant-beta",
+      "kid": "afffb6117780b291348a9b7c9a072bb01b471b299cdad962ce026039889d3242",
+      "publicKey": "f3PKS9p8V_0FqPKUmoEtAk1QswiVMTjtOZW-b4uCIyA",
+      "actorId": "sha256:742b8e311ea85dab19409e927073b9478b9deb20775218c1e866ee67477dde83",
+      "testOnly": true
+    },
+    {
+      "tenantId": "default",
+      "kid": "4d5c89eb76af7048bac488dbeb352e183a0d75002eaab7cbdc1dbcb2353494b0",
+      "publicKey": "BwcSEoeZUWKnWTcO4MbJisHEfBBcjqcVApWS3TKvizI",
+      "actorId": "sha256:ee221f2b46886aeccbb6bc461e83023a6107ffa1aa0b997515f16870ad3c9f2b",
+      "testOnly": true
+    }
+  ]
+}

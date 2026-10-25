@@ -1,6 +1,6 @@
 {
   "name": "@cognate/agent-identity",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI agent identity and capability management for Cognate",
   "type": "module",
   "main": "dist/index.js",

@@ -239,5 +239,37 @@ describe("vc-export", () => {
     if (!result.ok) return;
 
     expect(verifyProofStructure(result.value.credential as any)).toBe(false);
+    expect(
+      verifyProofStructure({
+        ...result.value.credential,
+        proof: {
+          type: "OtherProof" as any,
+          cryptosuite: "eddsa-rdfc-2022",
+          proofPurpose: "assertionMethod",
+          verificationMethod: "urn:key:1",
+          proofValue: "aa",
+          created: now,
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("fails to export an incomplete approved grant missing approvedBy or approvedAt", () => {
+    const state = setupApprovedGrant();
+    const badGrants = new Map(state.grants);
+    const existing = badGrants.get("grant-1")!;
+    badGrants.set("grant-1", { ...existing, approvedBy: null });
+    const res1 = exportGrantAsVC({ ...state, grants: badGrants }, "grant-1", {
+      issuerId: "org/example",
+    });
+    expect(res1.ok).toBe(false);
+    if (!res1.ok) expect(res1.error.code).toBe("vc.grant-incomplete");
+
+    badGrants.set("grant-1", { ...existing, approvedAt: null });
+    const res2 = exportGrantAsVC({ ...state, grants: badGrants }, "grant-1", {
+      issuerId: "org/example",
+    });
+    expect(res2.ok).toBe(false);
+    if (!res2.ok) expect(res2.error.code).toBe("vc.grant-incomplete");
   });
 });

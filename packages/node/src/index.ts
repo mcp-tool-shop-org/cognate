@@ -5,6 +5,7 @@
  */
 
 import { verifyRelease } from "@cognate/repomesh-bridge";
+import { signedRequestsConfigFromEnv } from "./middleware/signature.js";
 import { releaseConfigFromEnv } from "./release-gate.js";
 import { citationRuleFromEnv } from "./routes/evaluations.js";
 import { openRuntime } from "./runtime.js";
@@ -14,6 +15,7 @@ const port = Number(process.env.PORT ?? "4000");
 const host = process.env.HOST ?? "127.0.0.1";
 const runtime = openRuntime(process.env, process.cwd());
 const release = releaseConfigFromEnv(process.env);
+const signedRequestsCfg = signedRequestsConfigFromEnv(process.env);
 
 const ctx: ServerContext = {
   state: runtime.state,
@@ -23,6 +25,11 @@ const ctx: ServerContext = {
   snapshots: runtime.snapshots,
   releaseFailOn: release.failOn,
   requireEvaluationCitations: citationRuleFromEnv(process.env),
+  signedRequests: signedRequestsCfg.signedRequests,
+  signedRequestsLogUntil: signedRequestsCfg.signedRequestsLogUntil,
+  ...(process.env.COGNATE_TENANT_ROOTS_PATH?.trim()
+    ? { tenantRootsPath: process.env.COGNATE_TENANT_ROOTS_PATH.trim() }
+    : {}),
   verifyRelease: (repo, version) => verifyRelease(repo, version, release.repomesh),
 };
 
@@ -32,4 +39,4 @@ server.listen(port, host, () => {
   console.log(`Cognate API listening on http://${host}:${port}`);
 });
 
-export { createCognateServer, type ServerContext, type ServerState } from "./server.js";
+export * from "./server.js";

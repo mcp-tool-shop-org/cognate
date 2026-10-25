@@ -9,8 +9,21 @@ import { createRegistry as createModelRegistry } from "@cognate/model-registry";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
 import { proveRecordedEvent } from "../src/event-proof.js";
 import { createCognateServer } from "../src/server.js";
+import { generateEd25519KeyPair, type Ed25519KeyPairMaterial } from "../src/middleware/signature.js";
+import { signHttpRequest } from "../src/client.js";
+import { TEST_ONLY_TENANT_ROOTS } from "./fixtures/test-only-tenant-roots.js";
 
 const TIMESTAMP = "2026-10-01T12:00:00Z";
+const agentKeys = new Map<string, Ed25519KeyPairMaterial>();
+
+function keyFor(agentId: string): Ed25519KeyPairMaterial {
+  let kp = agentKeys.get(agentId);
+  if (!kp) {
+    kp = generateEd25519KeyPair();
+    agentKeys.set(agentId, kp);
+  }
+  return kp;
+}
 
 function stored(fields: {
   eventId: string;
@@ -119,13 +132,16 @@ describe("proveRecordedEvent", () => {
 function stateFor(agents: Array<{ id: string; tenantId: string }>) {
   let identity = createIdentityRegistry();
   for (const agent of agents) {
+    const kp = keyFor(agent.id);
     const registered = registerAgent(identity, {
       id: agent.id,
       tenantId: agent.tenantId,
       name: agent.id,
       owner: "human-1",
+      principal: "human",
       walletAddress: null,
-      publicKey: null,
+      publicKey: kp.publicKey,
+      kid: kp.kid,
       capabilities: [],
       createdAt: TIMESTAMP,
       status: "active",
@@ -139,7 +155,7 @@ function stateFor(agents: Array<{ id: string; tenantId: string }>) {
   };
 }
 
-function policyBody(promptText: string) {
+function policyBody(promptText: string, actorId = "proof-agent-1") {
   return {
     policy: {
       id: "policy-1",
@@ -155,12 +171,12 @@ function policyBody(promptText: string) {
         severity: "block",
       }],
       createdAt: TIMESTAMP,
-      approvedBy: "admin-1",
+      approvedBy: actorId,
       status: "active",
     },
     context: {
       tenantId: "tenant-1",
-      actorId: "actor-1",
+      actorId,
       modelVersionId: "v1",
       agentId: null,
       timestamp: TIMESTAMP,
@@ -174,7 +190,11 @@ function policyBody(promptText: string) {
 }
 
 async function listen(ctx: Parameters<typeof createCognateServer>[0]) {
-  const { server } = createCognateServer(ctx);
+  const { server } = createCognateServer({
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
+    ...ctx,
+  });
   return new Promise<{ port: number; stop: () => void }>((resolve) => {
     server.listen(0, "127.0.0.1", () => {
       const addr = server.address();
@@ -189,16 +209,35 @@ async function fetchJson(
   path: string,
   opts?: { method?: string; body?: unknown; agentId?: string },
 ) {
-  const headers: Record<string, string> = {};
-  if (opts?.body) headers["Content-Type"] = "application/json";
-  if (opts?.agentId) {
-    headers["X-Agent-Id"] = opts.agentId;
-    headers["X-Timestamp"] = TIMESTAMP;
+  const method = (opts?.method ?? "GET") as "GET" | "POST";
+  if (!opts?.agentId) {
+    const headers: Record<string, string> = {};
+    if (opts?.body) headers["Content-Type"] = "application/json";
+    const res = await fetch(`http://127.0.0.1:${port}${path}`, {
+      method,
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
+      body: opts?.body ? JSON.stringify(opts.body) : undefined,
+    });
+    const text = await res.text();
+    try {
+      return { status: res.status, json: JSON.parse(text) as Record<string, unknown>, text };
+    } catch {
+      return { status: res.status, json: {} as Record<string, unknown>, text };
+    }
   }
+  const kp = keyFor(opts.agentId);
+  const signed = signHttpRequest({
+    method,
+    path,
+    agentId: opts.agentId,
+    seedHex: kp.seedHex,
+    kid: kp.kid,
+    ...(opts.body !== undefined ? { body: opts.body } : {}),
+  });
   const res = await fetch(`http://127.0.0.1:${port}${path}`, {
-    method: opts?.method ?? "GET",
-    headers: Object.keys(headers).length > 0 ? headers : undefined,
-    body: opts?.body ? JSON.stringify(opts.body) : undefined,
+    method,
+    headers: signed.headers,
+    ...(method !== "GET" && method !== "HEAD" ? { body: signed.rawBody } : {}),
   });
   const text = await res.text();
   try {
@@ -301,7 +340,7 @@ describe("GET /events/:eventId", () => {
     try {
       const { status, json } = await fetchJson(port, "/events/e-1");
       expect(status).toBe(401);
-      expect(json.error).toBe("auth.missing-credentials");
+      expect(json.error).toBe("auth.unauthenticated");
       expect(json).not.toHaveProperty("proof");
     } finally {
       stop();

@@ -1,6 +1,6 @@
 {
   "name": "@cognate/node",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "HTTP API server for Cognate AI governance",
   "type": "module",
   "main": "dist/index.js",
@@ -42,7 +42,8 @@
     "@cognate/agent-identity": "workspace:*",
     "@cognate/prompt-store": "workspace:*",
     "@cognate/repomesh-bridge": "workspace:*",
-    "@mcptoolshop/attestia": "^2.0.5"
+    "@mcptoolshop/attestia": "^2.0.5",
+    "json-canonicalize": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -1,6 +1,6 @@
 {
   "name": "@cognate/prompt-store",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Encrypted prompt and output logging for Cognate AI governance",
   "type": "module",
   "main": "dist/index.js",

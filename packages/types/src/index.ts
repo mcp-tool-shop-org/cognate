@@ -35,7 +35,7 @@ export interface ModelVersion {
   readonly datasetRefs: readonly DatasetRef[];
   readonly createdAt: Timestamp;
   readonly status: ModelVersionStatus;
-  /** RepoMesh repository this version deploys as. The HTTP server checks this pair. */
+  /** RepoMesh repository this version deploys as, stored as `sha256:<64 lowercase hex>`. The HTTP server checks this pair. */
   readonly repo?: string;
   /** RepoMesh release name recorded with `repo`. */
   readonly release?: string;
@@ -91,6 +91,8 @@ export type PolicyCondition =
 
 export type PolicyAction = "allow" | "deny" | "require-human-review" | "quarantine";
 
+export type PrincipalKind = "human" | "agent";
+
 export interface Agent {
   readonly id: ActorId;
   readonly tenantId: TenantId;
@@ -101,6 +103,12 @@ export interface Agent {
   readonly capabilities: readonly Capability[];
   readonly createdAt: Timestamp;
   readonly status: AgentStatus;
+  /** Principal classification for privilege escalation guards (defaults to `"agent"`). */
+  readonly principal?: PrincipalKind;
+  /** 64-character lowercase hex SHA-256 of the raw 32-byte Ed25519 public key. */
+  readonly kid?: string | null;
+  /** Key identifiers (`kid`) that have been rotated out or revoked and must no longer be accepted. */
+  readonly revokedKids?: readonly string[];
 }
 
 export type AgentStatus = "active" | "suspended" | "revoked";
@@ -474,3 +482,30 @@ export interface RunOutcome extends ForbidPlaintextAccountFields {
   /** Optional human-readable notes (must not contain plaintext account identifiers or balances). */
   readonly notes?: string;
 }
+
+/**
+ * Request signature enforcement mode (`"enforce"` by default; `"log"` requires a future `signedRequestsLogUntil` <= 14 days).
+ */
+export type SignedRequestsMode = "log" | "enforce";
+
+/**
+ * Per-tenant root public key entry from the committed configuration.
+ */
+export interface TenantRootKeyEntry {
+  readonly tenantId: TenantId;
+  /** 64-character lowercase hex SHA-256 of the raw 32-byte Ed25519 public key. */
+  readonly kid: string;
+  /** Base64url-encoded raw 32-byte Ed25519 public key (43 chars). */
+  readonly publicKey: string;
+  /** Hashed actor identifier representing the tenant root authority. */
+  readonly actorId: ActorId;
+}
+
+/**
+ * Committed per-tenant root key configuration file structure.
+ */
+export interface TenantRootsConfig {
+  readonly version: 1;
+  readonly roots: readonly TenantRootKeyEntry[];
+}
+

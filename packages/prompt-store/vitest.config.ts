@@ -13,6 +13,12 @@ export default defineConfig({
         "**/index.ts",
         "**/types.ts",
       ],
+      thresholds: {
+        statements: 99,
+        branches: 93,
+        functions: 95,
+        lines: 99,
+      },
     },
   },
 });

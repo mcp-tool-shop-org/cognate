@@ -5,7 +5,7 @@
  * approvals, and revocations. Zero side effects.
  */
 
-export type { IdentityRegistryState, IdentityError, IdentityResult } from "./types.js";
+export type { IdentityRegistryState, IdentityState, IdentityError, IdentityResult } from "./types.js";
 export type {
   VerifiableCredential,
   DataIntegrityProof,
@@ -15,12 +15,15 @@ export type {
 } from "./vc-types.js";
 export {
   createRegistry,
+  deriveKeyIdFromPublicKey,
   registerAgent,
   getAgent,
   requestGrant,
   approveGrant,
   rejectGrant,
   revokeCapability,
+  rotateAgentKey,
+  revokeAgent,
   getActiveCapabilities,
   isCapabilityActive,
   hasCapability,

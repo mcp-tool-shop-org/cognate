@@ -89,10 +89,25 @@ describe("evaluations on a model version", () => {
   });
 
   it("refuses evaluations on a rejected or retired version", () => {
-    let s = registerVersion(registerVersion(registerModel(createRegistry(), model), version("vR", "rejected")), version("vT", "retired"));
+    let s = registerVersion(registerVersion(registerModel(createRegistry(), model), version("vR")), version("vT"));
+    s = {
+      ...s,
+      versions: {
+        ...s.versions,
+        vR: { ...s.versions["vR"]!, status: "rejected" },
+        vT: { ...s.versions["vT"]!, status: "retired" },
+      },
+    };
     expect(code(() => recordEvaluation(s, evaluation("e1", "vR")))).toBe("EVALUATION_ON_CLOSED_VERSION");
     expect(code(() => recordEvaluation(s, evaluation("e2", "vT")))).toBe("EVALUATION_ON_CLOSED_VERSION");
-    s = registerVersion(s, version("vD", "deployed"));
+    s = registerVersion(s, version("vD"));
+    s = {
+      ...s,
+      versions: {
+        ...s.versions,
+        vD: { ...s.versions["vD"]!, status: "deployed" },
+      },
+    };
     expect(getEvaluations(recordEvaluation(s, evaluation("e3", "vD")), "vD")).toHaveLength(1);
   });
 

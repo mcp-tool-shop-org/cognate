@@ -1,6 +1,6 @@
 {
   "name": "@cognate/types",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared AI governance domain types for Cognate",
   "type": "module",
   "main": "dist/index.js",
@@ -34,6 +34,9 @@
   "license": "MIT",
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "json-canonicalize": "^2.0.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.12",

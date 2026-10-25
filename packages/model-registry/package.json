@@ -1,6 +1,6 @@
 {
   "name": "@cognate/model-registry",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Model lifecycle state machine for the Cognate AI governance monorepo",
   "type": "module",
   "exports": {

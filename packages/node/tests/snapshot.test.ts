@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -14,6 +15,8 @@ import { createStore, logOutput, logPrompt } from "@cognate/prompt-store";
 import { loadSnapshots, saveSnapshots } from "../src/snapshot.js";
 import { resolveRuntimePaths } from "../src/runtime.js";
 import type { Agent, CapabilityGrant, Evaluation, Model, ModelVersion, Output, Prompt } from "@cognate/types";
+
+const REPO_HASH = `sha256:${createHash("sha256").update("acme/weights").digest("hex")}`;
 
 const model = {
   id: "m1",
@@ -38,7 +41,7 @@ const version = {
   datasetRefs: [],
   createdAt: "2026-09-28T12:00:00Z",
   status: "registered",
-  repo: "acme/weights",
+  repo: REPO_HASH,
   release: "1.2.3",
 } as ModelVersion;
 
@@ -131,7 +134,7 @@ describe("snapshots", () => {
     const loaded = loadSnapshots(files);
     expect(loaded.registry.models["m1"]?.name).toBe("Test Model");
     expect(loaded.registry.versions["v1"]?.status).toBe("registered");
-    expect(loaded.registry.versions["v1"]?.repo).toBe("acme/weights");
+    expect(loaded.registry.versions["v1"]?.repo).toBe(REPO_HASH);
     expect(loaded.registry.versions["v1"]?.release).toBe("1.2.3");
     expect(loaded.identity.agents.get("agent-1")?.name).toBe("Test Agent");
     expect(loaded.identity.grants.get("grant-1")?.status).toBe("pending");

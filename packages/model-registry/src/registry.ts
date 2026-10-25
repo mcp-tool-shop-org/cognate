@@ -33,6 +33,7 @@ const VALID_TRANSITIONS: Readonly<
 };
 
 const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
+const SHA256_PREFIXED_HEX_RE = /^sha256:[0-9a-f]{64}$/;
 
 const FORBIDDEN_BALANCE_KEY_RE = /balance/i;
 
@@ -123,6 +124,8 @@ export function createRegistry(): RegistryState {
  * @throws {RegistryError} If a model with the same id already exists.
  */
 export function registerModel(state: RegistryState, model: Model): RegistryState {
+  validateHashedIdentifiers(model.owner, "model.owner");
+  validateHashedIdentifiers(model.name, "model.name");
   if (state.models[model.id] !== undefined) {
     throw new RegistryError({
       code: "MODEL_ALREADY_EXISTS",
@@ -148,6 +151,23 @@ export function registerVersion(
   state: RegistryState,
   modelVersion: ModelVersion,
 ): RegistryState {
+  if (modelVersion.status !== undefined && modelVersion.status !== "registered") {
+    throw new RegistryError({
+      code: "INVALID_INITIAL_VERSION_STATUS",
+      message: `Model version "${modelVersion.id}" must be registered with status "registered", got "${String(modelVersion.status)}".`,
+      hint: 'Register the version with status "registered" and advance it through transitionVersion.',
+    });
+  }
+  if (modelVersion.repo !== undefined) {
+    validateHashedIdentifiers(modelVersion.repo, "version.repo");
+    if (!SHA256_PREFIXED_HEX_RE.test(modelVersion.repo)) {
+      throw new RegistryError({
+        code: "PLAINTEXT_ACCOUNT_IDENTIFIER",
+        message: 'Field "version.repo" must be stored as sha256:<64 lowercase hex>.',
+        hint: "Hash the repository owner/name slug as sha256:<64 lowercase hex> before recording.",
+      });
+    }
+  }
   if (state.versions[modelVersion.id] !== undefined) {
     throw new RegistryError({
       code: "VERSION_ALREADY_EXISTS",
@@ -164,7 +184,7 @@ export function registerVersion(
   }
   return {
     ...state,
-    versions: { ...state.versions, [modelVersion.id]: modelVersion },
+    versions: { ...state.versions, [modelVersion.id]: { ...modelVersion, status: "registered" } },
   };
 }
 
@@ -191,6 +211,7 @@ export function transitionVersion(
   reason: string,
   options: TransitionOptions = {},
 ): RegistryState {
+  validateHashedIdentifiers(actorId, "transition.actorId");
   const version = state.versions[modelVersionId];
   if (version === undefined) {
     throw new RegistryError({

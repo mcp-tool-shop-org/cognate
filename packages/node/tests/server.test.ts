@@ -5,9 +5,14 @@ import { handlePrompts } from "../src/routes/prompts.js";
 import { createRegistry as createModelRegistry } from "@cognate/model-registry";
 import { createRegistry as createIdentityRegistry, registerAgent } from "@cognate/agent-identity";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
+import { generateEd25519KeyPair } from "../src/middleware/signature.js";
+import { signHttpRequest } from "../src/client.js";
+import { TEST_ONLY_TENANT_ROOTS } from "./fixtures/test-only-tenant-roots.js";
 
 const TEST_AGENT_ID = "test-agent-1";
 const TEST_TIMESTAMP = "2026-09-28T12:00:00Z";
+const testAgentKey = generateEd25519KeyPair();
+const subAgentKey = generateEd25519KeyPair();
 
 function emptyState() {
   let identity = createIdentityRegistry();
@@ -15,10 +20,22 @@ function emptyState() {
     id: TEST_AGENT_ID,
     tenantId: "tenant-1",
     name: "Test Agent",
-    owner: "human-1",
+    owner: TEST_AGENT_ID,
+    principal: "human",
     walletAddress: null,
-    publicKey: null,
-    capabilities: [],
+    publicKey: testAgentKey.publicKey,
+    kid: testAgentKey.kid,
+    capabilities: [
+      {
+        id: "cap-del-test",
+        kind: "delegate",
+        scope: { kind: "unlimited" },
+        constraints: [],
+        grantedAt: TEST_TIMESTAMP,
+        grantedBy: "root",
+        expiresAt: null,
+      },
+    ],
     createdAt: TEST_TIMESTAMP,
     status: "active",
   });
@@ -50,6 +67,8 @@ async function startTestServer(eventStore?: ReturnType<typeof recordingStore>["e
     port: 0,
     host: "127.0.0.1",
     eventStore: eventStore ?? recorded.eventStore,
+    tenantRoots: TEST_ONLY_TENANT_ROOTS,
+    allowTestOnlyRoots: true,
   });
 
   return new Promise<{
@@ -66,18 +85,65 @@ async function startTestServer(eventStore?: ReturnType<typeof recordingStore>["e
   });
 }
 
+function bindTestActor(body: unknown): unknown {
+  if (!body || typeof body !== "object") return body;
+  const obj = { ...(body as Record<string, unknown>) };
+  if (obj.actorId === "admin-1") obj.actorId = TEST_AGENT_ID;
+  if (obj.approverId === "admin-1") obj.approverId = TEST_AGENT_ID;
+  if (obj.grant && typeof obj.grant === "object") {
+    const gr = { ...(obj.grant as Record<string, unknown>) };
+    if (gr.requestedBy === "human-1") gr.requestedBy = TEST_AGENT_ID;
+    if (gr.capability && typeof gr.capability === "object") {
+      const cap = { ...(gr.capability as Record<string, unknown>) };
+      if (cap.grantedBy === "human-1") cap.grantedBy = TEST_AGENT_ID;
+      gr.capability = cap;
+    }
+    obj.grant = gr;
+  }
+  if (obj.policy && typeof obj.policy === "object") {
+    const pol = { ...(obj.policy as Record<string, unknown>) };
+    if (pol.approvedBy === "admin-1") pol.approvedBy = TEST_AGENT_ID;
+    obj.policy = pol;
+  }
+  if (obj.context && typeof obj.context === "object") {
+    const ctx = { ...(obj.context as Record<string, unknown>) };
+    if (ctx.actorId === "actor-1") ctx.actorId = TEST_AGENT_ID;
+    obj.context = ctx;
+  }
+  return obj;
+}
+
 async function fetchJson(port: number, path: string, opts?: { method?: string; body?: unknown; auth?: boolean }) {
   const url = `http://127.0.0.1:${port}${path}`;
-  const headers: Record<string, string> = {};
-  if (opts?.body) headers["Content-Type"] = "application/json";
-  if (opts?.auth !== false && (opts?.method === "POST" || opts?.method === "PUT" || opts?.method === "PATCH" || opts?.method === "DELETE")) {
-    headers["X-Agent-Id"] = TEST_AGENT_ID;
-    headers["X-Timestamp"] = TEST_TIMESTAMP;
+  const method = opts?.method ?? "GET";
+  const payload = bindTestActor(opts?.body);
+  if (opts?.auth === false || path === "/health") {
+    const headers: Record<string, string> = {};
+    if (payload !== undefined) headers["Content-Type"] = "application/json";
+    const res = await fetch(url, {
+      method,
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
+      body: payload !== undefined ? JSON.stringify(payload) : undefined,
+    });
+    const text = await res.text();
+    try {
+      return { status: res.status, json: JSON.parse(text) as Record<string, unknown> };
+    } catch {
+      return { status: res.status, json: text as unknown as Record<string, unknown> };
+    }
   }
+  const signed = signHttpRequest({
+    method: method as "GET" | "POST",
+    path,
+    agentId: TEST_AGENT_ID,
+    seedHex: testAgentKey.seedHex,
+    kid: testAgentKey.kid,
+    ...(payload !== undefined ? { body: payload } : {}),
+  });
   const res = await fetch(url, {
-    method: opts?.method ?? "GET",
-    headers: Object.keys(headers).length > 0 ? headers : undefined,
-    body: opts?.body ? JSON.stringify(opts.body) : undefined,
+    method,
+    headers: signed.headers,
+    ...(method !== "GET" && method !== "HEAD" ? { body: signed.rawBody } : {}),
   });
   const text = await res.text();
   try {
@@ -94,7 +160,7 @@ const model = {
   description: "A test model",
   architecture: "transformer",
   createdAt: "2026-09-28T12:00:00Z",
-  owner: "human-1",
+  owner: TEST_AGENT_ID,
   currentVersion: null,
   status: "active",
 };
@@ -116,9 +182,9 @@ const agent = {
   id: "agent-1",
   tenantId: "tenant-1",
   name: "Test Agent",
-  owner: "human-1",
+  owner: TEST_AGENT_ID,
   walletAddress: null,
-  publicKey: null,
+  publicKey: subAgentKey.publicKey,
   capabilities: [],
   createdAt: "2026-09-28T12:00:00Z",
   status: "active",
@@ -512,7 +578,7 @@ describe("Cognate HTTP API", () => {
       });
       const json = await res.json() as { error: string };
       expect(res.status).toBe(401);
-      expect(json.error).toBe("auth.missing-credentials");
+      expect(json.error).toBe("auth.unauthenticated");
     } finally {
       stop();
     }
@@ -533,7 +599,7 @@ describe("Cognate HTTP API", () => {
       });
       const json = await res.json() as { error: string };
       expect(res.status).toBe(401);
-      expect(json.error).toBe("auth.agent-not-found");
+      expect(json.error).toBe("auth.unauthenticated");
     } finally {
       stop();
     }
@@ -559,9 +625,17 @@ describe("Cognate HTTP API", () => {
     const { port, stop } = await startTestServer();
     try {
       const url = `http://127.0.0.1:${port}/registry/models`;
+      const signed = signHttpRequest({
+        method: "POST",
+        path: "/registry/models",
+        agentId: TEST_AGENT_ID,
+        seedHex: testAgentKey.seedHex,
+        kid: testAgentKey.kid,
+        rawBodyOverride: "not-json",
+      });
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Agent-Id": TEST_AGENT_ID, "X-Timestamp": TEST_TIMESTAMP },
+        headers: signed.headers,
         body: "not-json",
       });
       const json = await res.json() as { error: string; message: string };
@@ -604,7 +678,7 @@ describe("Cognate HTTP API", () => {
       expect(json.credential.issuer.id).toBe("org/example");
       expect(json.credential.issuer.name).toBe("Example Org");
       expect(json.credential.credentialSubject.cognateCapabilityGrant.grantId).toBe("grant-vc-1");
-      expect(json.credential.credentialSubject.cognateCapabilityGrant.approvedBy).toBe("admin-1");
+      expect(json.credential.credentialSubject.cognateCapabilityGrant.approvedBy).toBe(TEST_AGENT_ID);
       expect(json.canonicalHash).toHaveLength(64);
       expect(json.canonicalHash).toMatch(/^[0-9a-f]+$/);
     } finally {

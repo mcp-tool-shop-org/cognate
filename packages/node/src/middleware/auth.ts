@@ -46,7 +46,8 @@ export function authenticate(
     return { ok: false, code: "auth.agent-inactive", message: `Agent ${creds.agentId} is ${agent.status}` };
   }
   if (config.requiredCapability) {
-    const hasCap = hasCapability(config.identityState, creds.agentId, config.requiredCapability, creds.timestamp);
+    const serverNowIso = new Date().toISOString() as Timestamp;
+    const hasCap = hasCapability(config.identityState, creds.agentId, config.requiredCapability, serverNowIso);
     if (!hasCap) {
       return {
         ok: false,
