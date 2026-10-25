@@ -3114,4 +3114,177 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       }).ok,
     ).toBe(false);
   });
+
+  it("21. N1: allowTestOnlyRoots is a context option only, refuses derived test roots on the production entrypoint when COGNATE_ALLOW_TEST_ONLY_ROOTS is set, and logs a startup warning when accepted", async () => {
+    const { spawn } = await import("node:child_process");
+    const { mkdtempSync, rmSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join, resolve } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const { loadTenantRootsConfig } = await import("../src/middleware/signature.js");
+    const { TEST_ONLY_TENANT_ROOTS, TEST_ONLY_TENANT_ROOTS_PATH } = await import(
+      "./fixtures/test-only-tenant-roots.js"
+    );
+
+    const tmpDir = mkdtempSync(join(tmpdir(), "cognate-n1-"));
+    const derivedEntry = TEST_ONLY_TENANT_ROOTS.find((r) => r.tenantId === "tenant-b")!;
+    const derivedConfigPath = join(tmpDir, "operator-roots.json");
+    writeFileSync(
+      derivedConfigPath,
+      JSON.stringify({
+        version: 1,
+        roots: [
+          {
+            tenantId: derivedEntry.tenantId,
+            kid: derivedEntry.kid,
+            publicKey: derivedEntry.publicKey,
+            actorId: derivedEntry.actorId,
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const prevEnvFlag = process.env.COGNATE_ALLOW_TEST_ONLY_ROOTS;
+    process.env.COGNATE_ALLOW_TEST_ONLY_ROOTS = "true";
+    try {
+      // (a) Production entrypoint (dist/index.js) with COGNATE_ALLOW_TEST_ONLY_ROOTS=true and a derived test root refuses at startup
+      const testDir = fileURLToPath(new URL(".", import.meta.url));
+      const entrypointPath = resolve(testDir, "../dist/index.js");
+      const dataDir = join(tmpDir, "data");
+      const prodResult = await new Promise<{
+        exitCode: number | null;
+        listening: boolean;
+        output: string;
+      }>((resolvePromise) => {
+        const child = spawn(process.execPath, [entrypointPath], {
+          cwd: resolve(testDir, "../../.."),
+          env: {
+            PATH: process.env.PATH,
+            SystemRoot: process.env.SystemRoot,
+            NODE_ENV: "production",
+            HOST: "127.0.0.1",
+            PORT: "0",
+            COGNATE_DATA_DIR: dataDir,
+            COGNATE_TENANT_ROOTS_PATH: derivedConfigPath,
+            COGNATE_ALLOW_TEST_ONLY_ROOTS: "true",
+          },
+        });
+        let output = "";
+        let settled = false;
+        const finish = (res: { exitCode: number | null; listening: boolean; output: string }) => {
+          if (settled) return;
+          settled = true;
+          try {
+            child.kill();
+          } catch {
+            // ignore
+          }
+          resolvePromise(res);
+        };
+        child.stdout.on("data", (chunk: Buffer) => {
+          output += chunk.toString("utf8");
+          if (output.includes("Cognate API listening")) {
+            finish({ exitCode: null, listening: true, output });
+          }
+        });
+        child.stderr.on("data", (chunk: Buffer) => {
+          output += chunk.toString("utf8");
+        });
+        child.on("exit", (code) => {
+          finish({ exitCode: code, listening: false, output });
+        });
+        setTimeout(() => {
+          finish({ exitCode: null, listening: false, output });
+        }, 6000);
+      });
+
+      expect(prodResult.listening).toBe(false);
+      expect(prodResult.exitCode).not.toBe(0);
+      expect(prodResult.output).toContain("auth.test-only-root-key-forbidden");
+
+      // (b) With COGNATE_ALLOW_TEST_ONLY_ROOTS=true and no option, loadTenantRootsConfig and createCognateServer refuse
+      expect(() =>
+        loadTenantRootsConfig(derivedConfigPath, {
+          env: { COGNATE_ALLOW_TEST_ONLY_ROOTS: "true" },
+        }),
+      ).toThrowError(
+        expect.objectContaining({
+          code: "auth.test-only-root-key-forbidden",
+        }),
+      );
+
+      const { store } = createFakeEventStore();
+      expect(() =>
+        createCognateServer({
+          state: {
+            registry: createModelRegistry(),
+            identity: createIdentityRegistry(),
+            prompts: createPromptStore(),
+          },
+          port: 0,
+          host: "127.0.0.1",
+          eventStore: store as ServerContext["eventStore"],
+          signedRequests: "enforce",
+          tenantRootsPath: derivedConfigPath,
+        }),
+      ).toThrowError(
+        expect.objectContaining({
+          code: "auth.test-only-root-key-forbidden",
+        }),
+      );
+
+      // (c) Explicit allowTestOnlyRoots: false can never be overridden by COGNATE_ALLOW_TEST_ONLY_ROOTS=true
+      expect(() =>
+        loadTenantRootsConfig(TEST_ONLY_TENANT_ROOTS_PATH, {
+          allowTestOnlyRoots: false,
+          env: { COGNATE_ALLOW_TEST_ONLY_ROOTS: "true" },
+        }),
+      ).toThrowError(
+        expect.objectContaining({
+          code: "auth.test-only-root-key-forbidden",
+        }),
+      );
+
+      expect(() =>
+        createCognateServer({
+          state: {
+            registry: createModelRegistry(),
+            identity: createIdentityRegistry(),
+            prompts: createPromptStore(),
+          },
+          port: 0,
+          host: "127.0.0.1",
+          eventStore: store as ServerContext["eventStore"],
+          signedRequests: "enforce",
+          tenantRootsPath: TEST_ONLY_TENANT_ROOTS_PATH,
+          allowTestOnlyRoots: false,
+        }),
+      ).toThrowError(
+        expect.objectContaining({
+          code: "auth.test-only-root-key-forbidden",
+        }),
+      );
+
+      // (d) Whenever test-only roots are accepted via allowTestOnlyRoots: true, a loud startup warning is logged
+      const warnMessages: string[] = [];
+      const origWarn = console.warn;
+      console.warn = (...args: unknown[]) => {
+        warnMessages.push(args.map((a) => String(a)).join(" "));
+      };
+      try {
+        loadTenantRootsConfig(TEST_ONLY_TENANT_ROOTS_PATH, { allowTestOnlyRoots: true });
+      } finally {
+        console.warn = origWarn;
+      }
+      expect(warnMessages.some((msg) => /test-only/i.test(msg) && /warning/i.test(msg))).toBe(true);
+    } finally {
+      if (prevEnvFlag === undefined) {
+        delete process.env.COGNATE_ALLOW_TEST_ONLY_ROOTS;
+      } else {
+        process.env.COGNATE_ALLOW_TEST_ONLY_ROOTS = prevEnvFlag;
+      }
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
 });

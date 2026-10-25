@@ -281,8 +281,7 @@ export function createCognateServer(ctx: ServerContext) {
     ctx.signedRequests ?? "enforce",
     ctx.signedRequestsLogUntil,
   );
-  const allowTestOnlyRoots =
-    ctx.allowTestOnlyRoots === true || process.env.COGNATE_ALLOW_TEST_ONLY_ROOTS === "true";
+  const allowTestOnlyRoots = ctx.allowTestOnlyRoots === true;
   let tenantRoots: readonly TenantRootKeyEntry[];
   if (ctx.tenantRoots !== undefined) {
     tenantRoots = validateTenantRootsList(ctx.tenantRoots, { allowTestOnlyRoots });

@@ -436,6 +436,7 @@ export class TenantRootsConfigError extends Error {
 
 export interface TenantRootValidationOptions {
   readonly allowTestOnlyRoots?: boolean;
+  readonly markedTestOnly?: boolean;
 }
 
 export interface LoadTenantRootsOptions extends TenantRootValidationOptions {
@@ -461,6 +462,7 @@ export function validateTenantRootsList(
   options?: TenantRootValidationOptions,
 ): readonly TenantRootKeyEntry[] {
   const allowTestOnlyRoots = options?.allowTestOnlyRoots === true;
+  let acceptedTestOnlyRoot = false;
   const seenTenants = new Set<string>();
   const seenActorIds = new Set<string>();
   for (const entry of roots) {
@@ -509,13 +511,22 @@ export function validateTenantRootsList(
       });
     }
     seenActorIds.add(entry.actorId);
-    if (!allowTestOnlyRoots && isDerivedTestRootEntry(entry)) {
+    const isTestRoot = isDerivedTestRootEntry(entry);
+    if (isTestRoot) {
+      acceptedTestOnlyRoot = true;
+    }
+    if (!allowTestOnlyRoots && isTestRoot) {
       throw new TenantRootsConfigError({
         code: "auth.test-only-root-key-forbidden",
         message: `Tenant root entry for "${entry.tenantId}" is a test-only root key and is rejected at startup.`,
         hint: "Supply operator-managed production root public keys, or set allowTestOnlyRoots: true in test harnesses.",
       });
     }
+  }
+  if (allowTestOnlyRoots && (acceptedTestOnlyRoot || options?.markedTestOnly === true)) {
+    console.warn(
+      "[cognate/security] WARNING: Test-only tenant root public keys accepted at startup (allowTestOnlyRoots: true). Do not use in production.",
+    );
   }
   return roots;
 }
@@ -529,8 +540,7 @@ export function loadTenantRootsConfig(
 ): readonly TenantRootKeyEntry[] {
   const env = options?.env ?? process.env;
   const resolvedPath = configPath?.trim() || env.COGNATE_TENANT_ROOTS_PATH?.trim();
-  const allowTestOnlyRoots =
-    options?.allowTestOnlyRoots === true || env.COGNATE_ALLOW_TEST_ONLY_ROOTS === "true";
+  const allowTestOnlyRoots = options?.allowTestOnlyRoots === true;
   const requireNonEmpty = options?.requireNonEmpty ?? true;
 
   if (!resolvedPath) {
@@ -565,14 +575,15 @@ export function loadTenantRootsConfig(
       hint: 'Provide { "version": 1, "roots": [...] } with valid tenant root entries.',
     });
   }
-  if (!allowTestOnlyRoots && (parsed.testOnly === true || /test-only/i.test(resolvedPath))) {
+  const markedTestOnly = parsed.testOnly === true || /test-only/i.test(resolvedPath);
+  if (!allowTestOnlyRoots && markedTestOnly) {
     throw new TenantRootsConfigError({
       code: "auth.test-only-root-key-forbidden",
       message: `Tenant roots configuration at "${resolvedPath}" is marked test-only and is rejected at startup.`,
       hint: "Supply operator-managed production root public keys, or set allowTestOnlyRoots: true in test harnesses.",
     });
   }
-  const validated = validateTenantRootsList(parsed.roots, { allowTestOnlyRoots });
+  const validated = validateTenantRootsList(parsed.roots, { allowTestOnlyRoots, markedTestOnly });
   if (requireNonEmpty && validated.length === 0) {
     throw new TenantRootsConfigError({
       code: "auth.missing-tenant-roots",
