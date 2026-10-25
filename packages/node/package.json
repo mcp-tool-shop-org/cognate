@@ -30,7 +30,7 @@
     "rest-api",
     "http-server"
   ],
-  "author": "mcp-tool-shop-org",
+  "author": "mcp-tool-shop",
   "license": "MIT",
   "engines": {
     "node": ">=22"
