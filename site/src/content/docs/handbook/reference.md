@@ -5,7 +5,7 @@ sidebar:
   order: 4
 ---
 
-`@mcptoolshop/cognate` is `0.3.0`. The `@cognate/*` packages stay in this workspace and are inlined into that bundle.
+`@mcptoolshop/cognate` is `1.0.0`. The `@cognate/*` packages stay in this workspace and are inlined into that bundle.
 
 ## @cognate/policy
 

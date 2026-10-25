@@ -9,15 +9,15 @@ export const config: SiteConfig = {
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">mcp-tool-shop</a>',
 
   hero: {
-    badge: 'v0.3.0',
+    badge: 'v1.0.0',
     headline: 'Structural governance',
     headlineAccent: 'for autonomous intelligence.',
     description: 'Every model version, prompt, output, and policy decision — attested, immutable, and human-governed. Built on Attestia.',
     primaryCta: { href: 'https://github.com/mcp-tool-shop-org/cognate', label: 'View on GitHub' },
     secondaryCta: { href: 'handbook/', label: 'Read the Handbook' },
     previews: [
-      { label: 'Install', code: 'pnpm install\npnpm verify' },
-      { label: 'Policy', code: "import { evaluatePolicy } from '@cognate/policy';\n\nconst result = evaluatePolicy(policy, context);" },
+      { label: 'Install', code: 'npm install @mcptoolshop/cognate' },
+      { label: 'Policy', code: "import { evaluatePolicy } from '@mcptoolshop/cognate/policy';\n\nconst result = evaluatePolicy(policy, context);" },
       { label: 'Health', code: 'curl http://localhost:4000/health' },
     ],
   },
@@ -40,7 +40,7 @@ export const config: SiteConfig = {
       kind: 'data-table',
       id: 'packages',
       title: 'Packages',
-      subtitle: 'Six libraries and an HTTP server, bundled into @mcptoolshop/cognate on npm.',
+      subtitle: 'Six libraries, bundled into @mcptoolshop/cognate on npm, and an HTTP server that runs from the repository or the Docker image.',
       columns: ['Package', 'Role'],
       rows: [
         ['@cognate/types', 'Domain types. Zero dependencies.'],
@@ -57,10 +57,10 @@ export const config: SiteConfig = {
       id: 'usage',
       title: 'Usage',
       cards: [
-        { title: 'Workspace', code: "pnpm install\npnpm verify" },
+        { title: 'Run the server', code: "pnpm install && pnpm -r build\nnode scripts/make-tenant-root.mjs my-tenant\nCOGNATE_TENANT_ROOTS_PATH=\"$PWD/tenant-roots.json\" node packages/node/dist/index.js" },
         {
           title: 'Evaluate',
-          code: "import { evaluatePolicy } from '@cognate/policy';\n\nif (evaluatePolicy(policy, context).overall === 'deny') {\n  // block the request\n}",
+          code: "import { evaluatePolicy } from '@mcptoolshop/cognate/policy';\n\nif (evaluatePolicy(policy, context).overall === 'deny') {\n  // block the request\n}",
         },
       ],
     },

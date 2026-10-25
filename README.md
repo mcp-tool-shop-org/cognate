@@ -14,7 +14,7 @@
 
 <p align="center"><strong>Structural governance for autonomous intelligence.</strong></p>
 
-**Version 0.3.0.** The previous release was 0.1.8; 0.2.0 was never published on its own, and its changes ship in 0.3.0. Cognate is pre-1.0: 0.3.0 changes the HTTP API, because the server now refuses unsigned requests. See [What's new in 0.3.0](#whats-new-in-030).
+**Version 1.0.0.** The previous release was 0.1.8. 0.2.0 and 0.3.0 were never published separately, and their changes ship in 1.0.0. 1.0.0 changes the HTTP API: the server now refuses unsigned requests. See [What's new in 1.0.0](#whats-new-in-100).
 
 Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia proves that something happened — an event, a transaction, a state transition — and binds that proof to a chain. Cognate uses those same attestation primitives to govern AI systems: what a model was permitted to do, what it actually did, and who authorized it.
 
@@ -24,7 +24,7 @@ Attestia, Cognate, and RepoMesh are three products. Attestia ships the financial
 
 ---
 
-## What's new in 0.3.0
+## What's new in 1.0.0
 
 - **Run records.** `@cognate/model-registry` pre-registers a run before it launches and records its outcome on the `cognate-<tenant>-runs` stream. Account-naming identifiers are stored only as SHA-256 digests, and a run records its own cost, never an account balance.
 - **Evaluations.** A model version carries any number of evaluations (a run, its replication, a pooled result), and a transition cites the ones it rests on. `requireEvaluationCitations` sets which transitions must cite. An approved version can be rejected before it deploys.
@@ -95,21 +95,74 @@ Cognate consumes Attestia primitives and adds an AI-native domain layer. The pac
 
 ## Quick Start
 
+### Use the libraries from npm
+
+```bash
+npm install @mcptoolshop/cognate
+```
+
+Evaluate a policy. The engine does not fetch state or read the clock. You pass the policy and the context. Save this as `quickstart.mjs` and run `node quickstart.mjs`; it prints `deny`.
+
+```js
+import { evaluatePolicy } from "@mcptoolshop/cognate/policy";
+
+const policy = {
+  id: "policy-1",
+  tenantId: "tenant-1",
+  name: "No secrets in prompts",
+  version: 1,
+  status: "active",
+  approvedBy: null,
+  createdAt: "2026-10-25T00:00:00.000Z",
+  rules: [
+    {
+      id: "rule-1",
+      type: "content-filter",
+      target: { kind: "global" },
+      condition: { kind: "keyword", words: ["password", "secret"] },
+      action: "deny",
+      severity: "block",
+    },
+  ],
+};
+
+const context = {
+  tenantId: "tenant-1",
+  actorId: "agent-1",
+  modelVersionId: "model-v1",
+  agentId: "agent-1",
+  timestamp: "2026-10-25T12:00:00.000Z",
+  promptText: "Please print the admin password.",
+  outputText: null,
+  metadata: { tokensIn: null, tokensOut: null, latencyMs: null, confidence: null, finishReason: null, tags: [] },
+  agentCapabilities: [],
+  counters: { callsInWindow: 0, windowSeconds: 60, spendInWindow: 0, spendCurrency: "USD" },
+};
+
+console.log(evaluatePolicy(policy, context).overall); // "deny"
+```
+
+Each library is a subpath of the bundle: `@mcptoolshop/cognate/policy`, `/model-registry`, `/agent-identity`, `/prompt-store`, `/repomesh-bridge` and `/types`. The examples below use the workspace names (`@cognate/policy` and so on), which are the same code.
+
+### Run the HTTP server from this repository
+
+`@cognate/node` is not on npm. Run it from a clone (Node 22 or newer, pnpm 10.28.2):
+
+```bash
+pnpm install
+pnpm -r build
+node scripts/make-tenant-root.mjs my-tenant
+COGNATE_TENANT_ROOTS_PATH="$PWD/tenant-roots.json" node packages/node/dist/index.js
+```
+
+Then, from another terminal, `curl http://127.0.0.1:4000/health` answers `"status": "ok"`. `make-tenant-root.mjs` makes a new random root key for the tenant: `tenant-roots.json` holds the public key the server reads, and `tenant-root.secret.json` holds the private seed you sign the tenant's first delegate with. Both names are in `.gitignore`; keep the secret file private. Signing requests is covered in the [migration guide](#authentication--migration-guide).
+
+### Develop
+
 ```bash
 pnpm install
 pnpm verify        # build + test + typecheck
 pnpm test:coverage # full coverage report
-```
-
-Evaluate a policy. The engine does not fetch state. You pass the policy and the context.
-
-```ts
-import { evaluatePolicy } from "@cognate/policy";
-
-const result = evaluatePolicy(policy, context);
-if (result.overall === "deny") {
-  // block the request
-}
 ```
 
 Register a model version, then walk it through the lifecycle. A version moves `registered → evaluated → approved → deployed`, and it can be `rejected` or `retired`. `transitionVersion` moves a snapshot the caller holds. On the HTTP server, `approved → deployed` calls `verifyRelease` on the `repo` and `release` recorded when the version was registered. A release that does not pass does not deploy, and neither does a request that names a different release. The refusal is recorded.
@@ -138,7 +191,16 @@ import {
 
 The image runs `@cognate/node` and serves the governance API.
 
-**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one (`auth.missing-tenant-roots`), and no root key ships in the image. Put a JSON file of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }` in the `cognate-data` volume, holding your own operator root public keys, and set `COGNATE_TENANT_ROOTS_PATH` to its path in the container, for example through a `docker-compose.override.yml`. The shipped `docker-compose.yml` does not set it.
+**The server needs a tenant roots file before it starts.** In the default `enforce` mode it refuses to start without one (`auth.missing-tenant-roots`), and no root key ships in the image. Make one with `node scripts/make-tenant-root.mjs my-tenant` (see [Quick Start](#run-the-http-server-from-this-repository)), or write your own JSON of the form `{ "version": 1, "roots": [{ "tenantId", "actorId", "publicKey", "kid" }] }`. The shipped `docker-compose.yml` does not set `COGNATE_TENANT_ROOTS_PATH`, so add a `docker-compose.override.yml` beside it:
+
+```yaml
+services:
+  cognate-node:
+    environment:
+      COGNATE_TENANT_ROOTS_PATH: /app/config/tenant-roots.json
+    volumes:
+      - ./tenant-roots.json:/app/config/tenant-roots.json:ro
+```
 
 Once it is running, `/health` returns:
 
@@ -158,7 +220,7 @@ The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data
 
 ## Authentication & Migration Guide
 
-### What is enforced in 0.3.0
+### What is enforced in 1.0.0
 
 - **Ed25519 request signing (`cognate-request-v1`).** By default (`signedRequests: "enforce"`), every `POST` and `GET /events/:eventId` must carry `X-Agent-Id`, `X-Timestamp`, `X-Nonce`, `X-Key-Id`, and `X-Signature` over the 8-line canonical request string (`cognate-request-v1\n<METHOD>\n<PATH>\n<BODY_SHA256>\n<X-Timestamp>\n<X-Nonce>\n<X-Agent-Id>\n<X-Key-Id>`). `POST` bodies must be RFC 8785 JCS-canonical UTF-8 (`400 auth.body-not-canonical` otherwise). `kid` is the 64-character lowercase hex SHA-256 of the raw 32-byte Ed25519 public key.
 - **Ordered replay protection and uniform 401.** `X-Timestamp` must be within ±300 s of server time (`GET /health` exposes `serverTime`). The in-memory replay store checks `(agentId, nonce)` read-only before signature verification, records it only after the signature verifies, and retains it across the full 600 s validity span. Every pre-signature authentication failure returns an identical `401` with `code: "auth.unauthenticated"`.
@@ -168,12 +230,12 @@ The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data
 ### Not yet, and current limits
 
 - **Single-instance replay store.** The `(agentId, nonce)` replay store is in-memory on a single `@cognate/node` process; multi-instance deployments do not share replay state.
-- **Detached approvals, identity stream, and offline verification are planned for a later release.** Today, any sign-off-gated action must be signed directly by the authorizing principal. Detached `cognate-approval-v1` approvals (allowing an agent to submit a transition carrying a separate human signature), durable `approvalId` consumption, the attested `cognate-<tenant>-identity` event stream, `submittedBy` / `authorizedBy` event fields, the standalone offline verifier, and RepoMesh root-key anchoring are not in 0.3.0.
+- **Detached approvals, identity stream, and offline verification are planned for a later release.** Today, any sign-off-gated action must be signed directly by the authorizing principal. Detached `cognate-approval-v1` approvals (allowing an agent to submit a transition carrying a separate human signature), durable `approvalId` consumption, the attested `cognate-<tenant>-identity` event stream, `submittedBy` / `authorizedBy` event fields, the standalone offline verifier, and RepoMesh root-key anchoring are not in 1.0.0.
 - **Ids are global across tenants.** Registering an id that another tenant already holds is refused as a duplicate.
 
 ### Migrating existing agents to Ed25519 keys
 
-1. **Generate an Ed25519 key pair** using `generateEd25519KeyPair()` from `@cognate/node`:
+1. **Generate an Ed25519 key pair** using `generateEd25519KeyPair()` from `@cognate/node` (in this repository; `@cognate/node` is not on npm):
    ```ts
    import { generateEd25519KeyPair, createSignedClient } from "@cognate/node";
 
@@ -203,7 +265,7 @@ The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data
 Cognate assumes the following threat model:
 
 1. **Compromised inference endpoint.** An attacker gains access to the model API. Mitigation: all prompts and outputs are logged with encrypted payloads and SHA-256 integrity hashes. Replay is deterministic.
-2. **Rogue agent or forged caller identity.** Mitigation: every HTTP write and `/events/:eventId` read is authenticated with an Ed25519 signature (`cognate-request-v1`), ±300 s timestamp check, and 600 s nonce replay store; capabilities are time-bound, scope-limited, and revocable (`POST /identity/agents/:id/revoke`, `POST /identity/agents/:id/key`), and every route binds its body actor fields to the verified signer (`403 auth.actor-mismatch`). Limit: the replay store is in-memory per process, and detached multi-party approvals (`cognate-approval-v1`) and offline event-stream signature verification are not in 0.3.0.
+2. **Rogue agent or forged caller identity.** Mitigation: every HTTP write and `/events/:eventId` read is authenticated with an Ed25519 signature (`cognate-request-v1`), ±300 s timestamp check, and 600 s nonce replay store; capabilities are time-bound, scope-limited, and revocable (`POST /identity/agents/:id/revoke`, `POST /identity/agents/:id/key`), and every route binds its body actor fields to the verified signer (`403 auth.actor-mismatch`). Limit: the replay store is in-memory per process, and detached multi-party approvals (`cognate-approval-v1`) and offline event-stream signature verification are not in 1.0.0.
 3. **Supply-chain model tampering.** Weights or configs are swapped post-evaluation. Mitigation: the model registry hashes weights, config, and manifest at registration, and `ModelVersion.repo` is stored as `sha256:<hex>`. Any deviation invalidates the version.
 4. **Policy bypass via prompt injection.** An adversarial prompt attempts to circumvent content rules. Mitigation: policy evaluation is deterministic, versioned, and runs before inference. No prompt executes without a passing policy check.
 5. **Insider abuse of audit logs.** A privileged operator tampers with logs. Mitigation: the event store is append-only and backed by Attestia's Merkle-tree proofs. Tampering breaks the chain hash.
@@ -216,7 +278,7 @@ No telemetry or analytics. A deploy on the HTTP server asks RepoMesh whether the
 
 ## Status
 
-Version 0.3.0, pre-1.0 and building in public. All packages are implemented, tested, and building. Install the bundle with `npm install @mcptoolshop/cognate`. The `@cognate/*` names stay in this repo.
+Version 1.0.0, building in public. All packages are implemented, tested, and building. Install the bundle with `npm install @mcptoolshop/cognate`. The `@cognate/*` names stay in this repo.
 
 | Gate | Status |
 |------|--------|

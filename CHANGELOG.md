@@ -4,13 +4,15 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-10-25
+## [1.0.0] - 2026-10-25
 
-The first release since 0.1.8. It also carries everything listed under 0.2.0, which was not published separately.
+The first release since 0.1.8. 0.2.0 and 0.3.0 were never published separately; their changes, listed here and under 0.2.0, ship in 1.0.0.
 
 ### Docs
 
-- The README, the handbook and the landing page are brought current for 0.3.0: a "What's new in 0.3.0" section and handbook page, the version and status, all seven packages (with `@cognate/repomesh-bridge` and `@cognate/node`), test counts and measured coverage, and a threat-model entry for the tenant root key. The authentication sections say what 0.3.0 enforces and what is not in it yet, without internal PR labels.
+- The README, the handbook and the landing page are brought current for 1.0.0: a "What's new in 1.0.0" section and handbook page, the version and status, all seven packages (with `@cognate/repomesh-bridge` and `@cognate/node`), test counts and measured coverage, and a threat-model entry for the tenant root key. The authentication sections say what 1.0.0 enforces and what is not in it yet, without internal PR labels.
+- **A quickstart that runs.** The README's npm example (`npm install @mcptoolshop/cognate`, then a policy evaluated from `@mcptoolshop/cognate/policy`) prints `deny` as written. `scripts/make-tenant-root.mjs <tenantId>` makes a new random tenant root key (`tenant-roots.json` and `tenant-root.secret.json`, both gitignored), so the server starts from a clone in three commands, and the Docker section gives the `docker-compose.override.yml` that mounts the roots file. The landing page's install and code cards use the npm names, and the docs say `@cognate/node` runs from the repository or the image, not from npm.
+- SECURITY.md and the handbook: the latest 1.x release receives security fixes; versions before 1.0 do not.
 - The README, SECURITY.md and the handbook say what rotating a human principal's key means: after the tenant root rotates a human delegate's key, the root holds that delegate's authority, including minting new delegates. They also say the root rotates a human or agent principal's key and revokes any principal, and that revoking every active `delegate` leaves the tenant with no active `delegate`, when the root can mint one directly. They say a root derived from a test seed must never be configured in production, and that startup refuses only the repository's own test root keys.
 
 ### Tests
@@ -40,7 +42,7 @@ The first release since 0.1.8. It also carries everything listed under 0.2.0, wh
 - **`ModelVersion.repo` must be a `sha256:<64 lowercase hex>` digest.** Plaintext `owner/repo` strings on `ModelVersion.repo` are rejected with `PLAINTEXT_ACCOUNT_IDENTIFIER`.
 - **`json-canonicalize` is a direct dependency of `@cognate/node` and `@cognate/types`.**
 
-### Security (earlier in 0.3.0 cycle)
+### Security (earlier in this release)
 
 - **`@cognate/node` scopes every route to the authenticated agent's tenant.** Before, a caller authenticated in one
   tenant could act in another: transition its versions, record evaluations on them, register models and versions in
@@ -110,7 +112,7 @@ The first release since 0.1.8. It also carries everything listed under 0.2.0, wh
 
 ## [0.2.0] - 2026-10-24
 
-Not published separately; these changes ship in 0.3.0.
+Not published separately; these changes ship in 1.0.0.
 
 ### Added
 

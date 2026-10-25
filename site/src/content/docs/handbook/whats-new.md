@@ -1,11 +1,11 @@
 ---
 title: What's new
-description: What changed in Cognate 0.3.0.
+description: What changed in Cognate 1.0.0.
 sidebar:
   order: 6
 ---
 
-0.3.0 is the first release since 0.1.8. It also carries the 0.2.0 changes, which were not published separately. The full list is in the repository's [CHANGELOG.md](https://github.com/mcp-tool-shop-org/cognate/blob/main/CHANGELOG.md).
+1.0.0 is the first release since 0.1.8. 0.2.0 and 0.3.0 were never published separately, and their changes ship in 1.0.0. The full list is in the repository's [CHANGELOG.md](https://github.com/mcp-tool-shop-org/cognate/blob/main/CHANGELOG.md).
 
 ## Signed requests (breaking)
 
