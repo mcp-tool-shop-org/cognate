@@ -878,6 +878,16 @@ export function createCognateServer(ctx: ServerContext) {
           if (checkHashedValue(res, agent.owner, "agent.owner")) return;
           if (checkHashedValue(res, agent.name, "agent.name")) return;
 
+          if (tenantRoots.some((r) => r.actorId === agent.id)) {
+            sendJson(res, 403, {
+              error: "auth.reserved-root-actor-id",
+              code: "auth.reserved-root-actor-id",
+              message: "Agent id cannot match a configured tenant root actorId.",
+              hint: "Choose a distinct agent id that does not collide with any configured tenant root actorId.",
+            });
+            return;
+          }
+
           if (!agent.publicKey || !isValidPublicKeyBase64Url(agent.publicKey)) {
             sendJson(res, 400, {
               error: "identity.invalid-public-key",

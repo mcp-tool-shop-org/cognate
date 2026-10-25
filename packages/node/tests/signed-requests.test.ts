@@ -1,6 +1,6 @@
 import { createHash, createPrivateKey, createPublicKey, randomBytes, sign } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
-import type { Agent, CapabilityGrant, Model, ModelVersion } from "@cognate/types";
+import type { ActorId, Agent, CapabilityGrant, Model, ModelVersion } from "@cognate/types";
 import {
   createRegistry as createIdentityRegistry,
   registerAgent,
@@ -9,6 +9,11 @@ import {
 import { createRegistry as createModelRegistry } from "@cognate/model-registry";
 import { createStore as createPromptStore } from "@cognate/prompt-store";
 import { createCognateServer, type ServerContext } from "../src/server.js";
+import {
+  createReplayStore,
+  validateTenantRootsList,
+  verifySignedRequest,
+} from "../src/middleware/signature.js";
 import { TEST_ONLY_TENANT_ROOTS, TEST_ONLY_TENANT_ROOTS_PATH } from "./fixtures/test-only-tenant-roots.js";
 
 const ED25519_PKCS8_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
@@ -2218,5 +2223,104 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
     expect(rootApproveRes.status).toBe(403);
     const rootApproveBody = (await rootApproveRes.json()) as { code?: string };
     expect(rootApproveBody.code).toBe("auth.bootstrap-already-completed");
+  });
+
+  it("16. F5: agent registration refuses configured root actorIds, root resolution checks (actorId, kid) first, and duplicate root actorIds are refused", async () => {
+    const humanDelKey = makeDeterministicKeyPair("f5-human-del");
+    const colliderKey = makeDeterministicKeyPair("f5-collider");
+
+    let identity = createIdentityRegistry();
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("f5-human-del", humanDelKey, {
+        principal: "human",
+        capabilities: [
+          {
+            id: "cap-f5-del",
+            kind: "delegate",
+            scope: "*",
+            grantedBy: ROOT_ACTOR_ID,
+            grantedAt: "2026-01-01T00:00:00Z",
+            expiresAt: null,
+          },
+        ],
+      }),
+    );
+    srv = await startServer(identity);
+
+    // (a) Registering an agent whose id equals a configured root actorId is refused with 403
+    const regRootIdReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/identity/agents",
+      agentId: "f5-human-del",
+      keyPair: humanDelKey,
+      body: {
+        agent: seedAgentRecord(ROOT_ACTOR_ID, colliderKey, {
+          owner: "f5-human-del",
+          principal: "agent",
+          capabilities: [],
+        }),
+      },
+    });
+    const regRootIdRes = await fetch(`${srv.baseUrl}${regRootIdReq.path}`, regRootIdReq.init);
+    expect(regRootIdRes.status).toBe(403);
+    const regRootIdBody = (await regRootIdRes.json()) as { code?: string };
+    expect(regRootIdBody.code).toBe("auth.reserved-root-actor-id");
+
+    // (b) Even if a pre-existing snapshot had a colliding agent id, verifySignedRequest resolves root's (actorId, kid) as isTenantRoot: true
+    let snapshotIdentity = createIdentityRegistry();
+    snapshotIdentity = addAgentToState(
+      snapshotIdentity,
+      seedAgentRecord(ROOT_ACTOR_ID, colliderKey, {
+        principal: "agent",
+        capabilities: [],
+      }),
+    );
+    const tsIso = new Date().toISOString();
+    const nonce = randomBytes(16).toString("base64url");
+    const rawBody = jcsStringify({});
+    const canonical = buildCanonicalRequest({
+      method: "POST",
+      path: "/identity/agents",
+      bodyBytes: Buffer.from(rawBody, "utf8"),
+      timestamp: tsIso,
+      nonce,
+      agentId: ROOT_ACTOR_ID,
+      kid: ROOT_KEY.kid,
+    });
+    const sig = signCanonicalString(canonical, ROOT_KEY.seedHex);
+    const verified = verifySignedRequest({
+      method: "POST",
+      rawUrl: "/identity/agents",
+      headers: {
+        "x-agent-id": ROOT_ACTOR_ID,
+        "x-timestamp": tsIso,
+        "x-nonce": nonce,
+        "x-key-id": ROOT_KEY.kid,
+        "x-signature": sig,
+      },
+      rawBody: Buffer.from(rawBody, "utf8"),
+      identity: snapshotIdentity,
+      tenantRoots: TEST_ONLY_TENANT_ROOTS,
+      replayStore: createReplayStore(),
+      mode: "enforce",
+      logUntilMs: null,
+    });
+    expect(verified.ok).toBe(true);
+    if (verified.ok) {
+      expect(verified.principal.isTenantRoot).toBe(true);
+      expect(verified.principal.tenantId).toBe(TENANT);
+    }
+
+    // (c) Duplicate actorId in tenantRoots config is refused
+    const k1 = makeDeterministicKeyPair("f5-dup-1");
+    const k2 = makeDeterministicKeyPair("f5-dup-2");
+    const sharedActorId = `sha256:${sha256Hex("f5-shared-root-actor")}` as ActorId;
+    expect(() =>
+      validateTenantRootsList([
+        { tenantId: "t-1", actorId: sharedActorId, publicKey: k1.publicKey, kid: k1.kid },
+        { tenantId: "t-2", actorId: sharedActorId, publicKey: k2.publicKey, kid: k2.kid },
+      ]),
+    ).toThrow(/duplicate actorId/i);
   });
 });

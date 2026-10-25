@@ -459,6 +459,7 @@ export function validateTenantRootsList(
 ): readonly TenantRootKeyEntry[] {
   const allowTestOnlyRoots = options?.allowTestOnlyRoots === true;
   const seenTenants = new Set<string>();
+  const seenActorIds = new Set<string>();
   for (const entry of roots) {
     if (!entry || typeof entry.tenantId !== "string" || entry.tenantId.trim().length === 0) {
       throw new TenantRootsConfigError({
@@ -497,6 +498,14 @@ export function validateTenantRootsList(
         hint: "Set actorId to a valid SHA-256 actor identifier.",
       });
     }
+    if (seenActorIds.has(entry.actorId)) {
+      throw new TenantRootsConfigError({
+        code: "auth.invalid-tenant-roots",
+        message: `Invalid tenant root config: duplicate actorId "${entry.actorId}".`,
+        hint: "Each tenant root entry must have a distinct actorId.",
+      });
+    }
+    seenActorIds.add(entry.actorId);
     if (!allowTestOnlyRoots && isDerivedTestRootEntry(entry)) {
       throw new TenantRootsConfigError({
         code: "auth.test-only-root-key-forbidden",
@@ -752,12 +761,29 @@ export function verifySignedRequest(params: {
     return { ok: false, reason: "malformed-signature-headers" };
   }
 
-  // Step 2 & 3: Principal lookup and active key (`kid`) verification
+  // Step 2 & 3: Principal lookup (tenantRoots checked first) and active key (`kid`) verification
   let publicKeyBase64Url: string | null = null;
   let resolvedPrincipal: Omit<VerifiedPrincipal, "unsigned"> | null = null;
 
-  const agent = getAgent(identity, agentIdHeader as ActorId);
-  if (agent) {
+  const rootEntry = tenantRoots.find((r) => r.actorId === agentIdHeader);
+  if (rootEntry) {
+    if (rootEntry.kid !== keyIdHeader) {
+      return { ok: false, reason: "root-kid-mismatch" };
+    }
+    publicKeyBase64Url = rootEntry.publicKey;
+    resolvedPrincipal = {
+      agentId: rootEntry.actorId,
+      actorId: rootEntry.actorId,
+      tenantId: rootEntry.tenantId,
+      kid: rootEntry.kid,
+      principal: "human",
+      isTenantRoot: true,
+    };
+  } else {
+    const agent = getAgent(identity, agentIdHeader as ActorId);
+    if (!agent) {
+      return { ok: false, reason: "unknown-principal" };
+    }
     if (agent.status !== "active") {
       return { ok: false, reason: "inactive-agent" };
     }
@@ -780,23 +806,6 @@ export function verifySignedRequest(params: {
       principal: agent.principal ?? "agent",
       isTenantRoot: false,
       agent,
-    };
-  } else {
-    const rootEntry = tenantRoots.find((r) => r.actorId === agentIdHeader);
-    if (!rootEntry) {
-      return { ok: false, reason: "unknown-principal" };
-    }
-    if (rootEntry.kid !== keyIdHeader) {
-      return { ok: false, reason: "root-kid-mismatch" };
-    }
-    publicKeyBase64Url = rootEntry.publicKey;
-    resolvedPrincipal = {
-      agentId: rootEntry.actorId,
-      actorId: rootEntry.actorId,
-      tenantId: rootEntry.tenantId,
-      kid: rootEntry.kid,
-      principal: "human",
-      isTenantRoot: true,
     };
   }
 
