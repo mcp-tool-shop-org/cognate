@@ -52,7 +52,7 @@ function recording(fail = false) {
     appended,
     eventStore: {
       append(streamId: string, events: Appended["events"]) {
-        if (fail) throw new Error("store down");
+        if (fail && streamId.endsWith("-evaluations")) throw new Error("store down");
         appended.push({ streamId, events });
         return { streamId, fromVersion: 1, toVersion: events.length, count: events.length };
       },

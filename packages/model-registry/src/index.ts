@@ -35,6 +35,7 @@ export type {
 } from "./attestation.js";
 export {
   attestEvaluation,
+  attestRegisterVersion,
   attestTransitionVersion,
   attestRunPreRegistered,
   attestRunCompleted,

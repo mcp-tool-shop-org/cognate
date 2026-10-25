@@ -2576,4 +2576,75 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       }
     }
   });
+
+  it("19. F8: version registration enforces status registered with 400 and attests registration with the signer as actor", async () => {
+    const agentKey = makeDeterministicKeyPair("f8-agent");
+    let identity = createIdentityRegistry();
+    identity = addAgentToState(identity, seedAgentRecord("f8-agent", agentKey));
+    srv = await startServer(identity);
+
+    const modelReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/registry/models",
+      agentId: "f8-agent",
+      keyPair: agentKey,
+      body: { model: makeModelRecord("m-f8", "f8-agent") },
+    });
+    expect((await fetch(`${srv.baseUrl}${modelReq.path}`, modelReq.init)).status).toBe(200);
+
+    const eventsBefore = srv.events.length;
+
+    // (a) Registering a version with status: "approved" is refused with 400 and nothing is appended
+    for (const badStatus of ["evaluated", "approved", "deployed", "rejected", "retired"] as const) {
+      const badVerReq = makeSignedRequestInit({
+        method: "POST",
+        path: `/registry/versions/v-f8-${badStatus}`,
+        agentId: "f8-agent",
+        keyPair: agentKey,
+        body: {
+          version: {
+            ...makeVersionRecord(`v-f8-${badStatus}`, "m-f8"),
+            status: badStatus,
+          },
+        },
+      });
+      const badVerRes = await fetch(`${srv.baseUrl}${badVerReq.path}`, badVerReq.init);
+      expect(badVerRes.status).toBe(400);
+      const badVerBody = (await badVerRes.json()) as { code?: string };
+      expect(badVerBody.code).toBe("INVALID_INITIAL_VERSION_STATUS");
+    }
+    expect(srv.events.length).toBe(eventsBefore);
+
+    // (b) Registering a version with status: "registered" succeeds and appends an attested event with the signer as actor
+    const validVerReq = makeSignedRequestInit({
+      method: "POST",
+      path: "/registry/versions/v-f8-ok",
+      agentId: "f8-agent",
+      keyPair: agentKey,
+      body: {
+        version: makeVersionRecord("v-f8-ok", "m-f8"),
+      },
+    });
+    const validVerRes = await fetch(`${srv.baseUrl}${validVerReq.path}`, validVerReq.init);
+    expect(validVerRes.status).toBe(200);
+    const validVerBody = (await validVerRes.json()) as { id?: string; eventId?: string };
+    expect(validVerBody.id).toBe("v-f8-ok");
+    expect(typeof validVerBody.eventId).toBe("string");
+
+    const lastEvent = srv.events.at(-1) as {
+      streamId?: string;
+      type?: string;
+      metadata?: { actor?: string; eventId?: string };
+      payload?: { modelVersionId?: string; actorId?: string; status?: string };
+    };
+    expect(lastEvent.streamId).toBe(`cognate-${TENANT}-transitions`);
+    expect(lastEvent.type).toBe("cognate.model.version.registered");
+    expect(lastEvent.metadata?.actor).toBe("f8-agent");
+    expect(lastEvent.metadata?.eventId).toBe(validVerBody.eventId);
+    expect(lastEvent.payload).toMatchObject({
+      modelVersionId: "v-f8-ok",
+      actorId: "f8-agent",
+      status: "registered",
+    });
+  });
 });

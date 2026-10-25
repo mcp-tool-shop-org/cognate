@@ -22,6 +22,7 @@ import { getActiveCapabilities, getAgent, hasCapability } from "@cognate/agent-i
 import {
   RegistryError,
   attestEvaluation,
+  attestRegisterVersion,
   attestTransitionVersion,
   validateHashedIdentifiers,
   type RequireEvaluationCitations,
@@ -840,18 +841,36 @@ export function createCognateServer(ctx: ServerContext) {
           return;
         }
         const registering = (body as { version?: { id?: unknown; tenantId?: unknown; modelId?: unknown } }).version;
-        if (
-          registering &&
-          parts.length === 4 &&
-          refused(
-            res,
-            registering.id === versionId
-              ? null
-              : idMismatch("registry.version-id-mismatch", "The version's id is not the id in the path."),
-            refuseForeignRecord("registry", "version", registering, tenantId),
-            refuseHiddenModel(mutableState, String(registering.modelId), tenantId),
-          )
-        ) {
+        if (registering && parts.length === 4) {
+          if (
+            refused(
+              res,
+              registering.id === versionId
+                ? null
+                : idMismatch("registry.version-id-mismatch", "The version's id is not the id in the path."),
+              refuseForeignRecord("registry", "version", registering, tenantId),
+              refuseHiddenModel(mutableState, String(registering.modelId), tenantId),
+            )
+          ) {
+            return;
+          }
+          const watched = watchAppends(ctx.eventStore, caller.unsigned);
+          try {
+            const next = await attestRegisterVersion(
+              mutableState.registry,
+              { eventStore: watched.eventStore, tenantId },
+              registering as import("@cognate/types").ModelVersion,
+              actorId,
+            );
+            keep({ ...mutableState, registry: next });
+            sendJson(res, 200, { id: String(registering.id), eventId: watched.eventId() });
+          } catch (err) {
+            if (err instanceof RegistryError) {
+              sendJson(res, statusFor(err.code), { code: err.code, message: err.message, hint: err.hint });
+              return;
+            }
+            throw err;
+          }
           return;
         }
         const result = handleRegistry(mutableState, pathname, method, body);

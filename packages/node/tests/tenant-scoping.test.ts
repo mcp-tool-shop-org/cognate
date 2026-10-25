@@ -128,7 +128,18 @@ function seeded(a: string, b: string): ServerState {
   if (!g.ok) throw new Error(g.error.message);
   identity = g.state;
   let registry = registerModel(registerModel(createModelRegistry(), model("m1", "tenant-1")), model("m2", "tenant-2"));
-  for (const s of STATUSES) registry = registerVersion(registry, version(`v-${s}`, "tenant-1", s));
+  for (const s of STATUSES) {
+    registry = registerVersion(registry, version(`v-${s}`, "tenant-1", "registered"));
+    if (s !== "registered") {
+      registry = {
+        ...registry,
+        versions: {
+          ...registry.versions,
+          [`v-${s}`]: { ...registry.versions[`v-${s}`]!, status: s },
+        },
+      };
+    }
+  }
   registry = recordEvaluation(registry, evaluation("e1", "v-evaluated", "tenant-1"));
   const p = logPrompt(createPromptStore(), prompt("p1", "tenant-1"));
   if (!p.ok) throw new Error(p.error.message);

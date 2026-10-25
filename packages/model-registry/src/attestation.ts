@@ -6,7 +6,7 @@
  */
 
 import { createHash, randomUUID } from "node:crypto";
-import type { Evaluation, ModelVersionStatus, RunOutcome, RunPreRegistration } from "@cognate/types";
+import type { Evaluation, ModelVersion, ModelVersionStatus, RunOutcome, RunPreRegistration } from "@cognate/types";
 import type { DomainEvent, EventStore } from "@mcptoolshop/attestia/event-store";
 import { MerkleTree } from "@mcptoolshop/attestia/proof";
 import type { RegistryState, TransitionEvent, TransitionOptions } from "./types.js";
@@ -16,7 +16,9 @@ import {
   preRegisterRun,
   recordEvaluation,
   recordRunOutcome,
+  registerVersion,
   transitionVersion,
+  validateHashedIdentifiers,
   validateRunOutcome,
   validateRunPreRegistration,
 } from "./registry.js";
@@ -129,6 +131,36 @@ function isRegistryState(value: unknown): value is RegistryState {
     "versions" in value &&
     !("eventStore" in value)
   );
+}
+
+/**
+ * Register a new model version (enforcing initial `status: "registered"`) and append
+ * `cognate.model.version.registered` to the tenant's transitions stream with the signer as actor.
+ */
+export async function attestRegisterVersion(
+  state: RegistryState,
+  config: AttestTransitionConfig,
+  modelVersion: ModelVersion,
+  actorId: string,
+): Promise<RegistryState> {
+  validateHashedIdentifiers(actorId, "version.actorId");
+  const newState = registerVersion(state, modelVersion);
+  const timestamp = new Date().toISOString();
+  await appendOrThrow(
+    config,
+    makeStreamId(config),
+    cognateEvent("cognate.model.version.registered", actorId, timestamp, modelVersion.id, {
+      modelVersionId: modelVersion.id,
+      modelId: modelVersion.modelId,
+      tenantId: modelVersion.tenantId,
+      versionNumber: modelVersion.versionNumber,
+      status: "registered",
+      actorId,
+      timestamp,
+    }),
+    "version registration",
+  );
+  return newState;
 }
 
 /**

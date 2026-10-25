@@ -151,6 +151,13 @@ export function registerVersion(
   state: RegistryState,
   modelVersion: ModelVersion,
 ): RegistryState {
+  if (modelVersion.status !== undefined && modelVersion.status !== "registered") {
+    throw new RegistryError({
+      code: "INVALID_INITIAL_VERSION_STATUS",
+      message: `Model version "${modelVersion.id}" must be registered with status "registered", got "${String(modelVersion.status)}".`,
+      hint: 'Register the version with status "registered" and advance it through transitionVersion.',
+    });
+  }
   if (modelVersion.repo !== undefined) {
     validateHashedIdentifiers(modelVersion.repo, "version.repo");
     if (!SHA256_PREFIXED_HEX_RE.test(modelVersion.repo)) {
@@ -177,7 +184,7 @@ export function registerVersion(
   }
   return {
     ...state,
-    versions: { ...state.versions, [modelVersion.id]: modelVersion },
+    versions: { ...state.versions, [modelVersion.id]: { ...modelVersion, status: "registered" } },
   };
 }
 
