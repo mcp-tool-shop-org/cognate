@@ -1,4 +1,7 @@
 import { createHash, createPrivateKey, createPublicKey, randomBytes, sign } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ActorId, Agent, CapabilityGrant, Model, ModelVersion } from "@cognate/types";
 import {
@@ -2646,5 +2649,469 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       actorId: "f8-agent",
       status: "registered",
     });
+  });
+
+  it("20. F9: @cognate/node vitest functions coverage threshold is ratcheted to at least 94", async () => {
+    const vitestConfigPath = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "vitest.config.ts",
+    );
+    const vitestConfigText = readFileSync(vitestConfigPath, "utf8");
+    const fnMatch = /functions:\s*(\d+)/.exec(vitestConfigText);
+    expect(fnMatch).not.toBeNull();
+    const fnFloor = Number(fnMatch?.[1] ?? 0);
+    expect(fnFloor).toBeGreaterThanOrEqual(94);
+
+    // Exercise route and middleware helpers directly to keep statement/line/branch/function coverage above ratcheted floors
+    const { handleRegistry } = await import("../src/routes/registry.js");
+    const { handlePrompts } = await import("../src/routes/prompts.js");
+    const { authenticate } = await import("../src/middleware/auth.js");
+    const { normalizeRequestPathname, loadTenantRootsConfig } = await import(
+      "../src/middleware/signature.js"
+    );
+
+    const k = makeDeterministicKeyPair("f9-helper");
+    let idState = createIdentityRegistry();
+    idState = addAgentToState(
+      idState,
+      seedAgentRecord("f9-inactive", k, { status: "revoked" }),
+    );
+    idState = addAgentToState(
+      idState,
+      seedAgentRecord("f9-active", k, {
+        capabilities: [
+          {
+            id: "cap-f9-inf",
+            kind: "inference",
+            scope: "*",
+            grantedBy: ROOT_ACTOR_ID,
+            grantedAt: "2026-01-01T00:00:00Z",
+            expiresAt: null,
+          },
+        ],
+      }),
+    );
+
+    const inactiveAuth = authenticate(
+      { headers: { "x-agent-id": "f9-inactive", "x-timestamp": "2026-10-24T12:00:00Z" } } as never,
+      { identityState: idState },
+    );
+    expect(inactiveAuth.ok).toBe(false);
+
+    const missingCapAuth = authenticate(
+      { headers: { "x-agent-id": "f9-active", "x-timestamp": "2026-10-24T12:00:00Z" } } as never,
+      { identityState: idState, requiredCapability: "delegate" },
+    );
+    expect(missingCapAuth.ok).toBe(false);
+
+    const validCapAuth = authenticate(
+      { headers: { "x-agent-id": "f9-active", "x-timestamp": "2026-10-24T12:00:00Z" } } as never,
+      { identityState: idState, requiredCapability: "inference" },
+    );
+    expect(validCapAuth.ok).toBe(true);
+
+    let srvState = {
+      registry: createModelRegistry(),
+      identity: idState,
+      prompts: createPromptStore(),
+    };
+    const mRes = handleRegistry(srvState, "/registry/models", "POST", {
+      model: makeModelRecord("m-f9", "f9-active"),
+    });
+    expect(mRes.ok).toBe(true);
+    srvState = { ...srvState, registry: mRes.state! };
+
+    const vRes = handleRegistry(srvState, "/registry/versions/v-f9", "POST", {
+      version: makeVersionRecord("v-f9", "m-f9"),
+    });
+    expect(vRes.ok).toBe(true);
+    srvState = { ...srvState, registry: vRes.state! };
+
+    const vDupRes = handleRegistry(srvState, "/registry/versions/v-f9", "POST", {
+      version: makeVersionRecord("v-f9", "m-f9"),
+    });
+    expect(vDupRes.ok).toBe(false);
+
+    const tRes = handleRegistry(srvState, "/registry/versions/v-f9", "POST", {
+      from: "registered",
+      to: "evaluated",
+      actorId: "f9-active",
+      reason: "eval ok",
+    });
+    expect(tRes.ok).toBe(true);
+
+    const tBadRes = handleRegistry(srvState, "/registry/versions/v-f9", "POST", {
+      from: "registered",
+      to: "deployed",
+      actorId: "f9-active",
+      reason: "bad transition",
+    });
+    expect(tBadRes.ok).toBe(false);
+
+    const pRes = handlePrompts(srvState, "/prompts", "POST", {
+      prompt: {
+        id: "p-f9",
+        tenantId: TENANT,
+        sessionId: "s-1",
+        modelVersionId: "v-f9",
+        policyVersion: 1,
+        agentId: "f9-active",
+        plaintextHash: "a".repeat(64),
+        ciphertext: "enc",
+        metadata: { tokensIn: 5, systemPromptHash: null, temperature: 0.5, topP: null, tags: [] },
+        submittedAt: "2026-10-24T12:00:00Z",
+      },
+    });
+    expect(pRes.ok).toBe(true);
+    srvState = { ...srvState, prompts: pRes.state! };
+
+    const pDupRes = handlePrompts(srvState, "/prompts", "POST", {
+      prompt: {
+        id: "p-f9",
+        tenantId: TENANT,
+        sessionId: "s-1",
+        modelVersionId: "v-f9",
+        policyVersion: 1,
+        agentId: "f9-active",
+        plaintextHash: "a".repeat(64),
+        ciphertext: "enc",
+        metadata: { tokensIn: 5, systemPromptHash: null, temperature: 0.5, topP: null, tags: [] },
+        submittedAt: "2026-10-24T12:00:00Z",
+      },
+    });
+    expect(pDupRes.ok).toBe(false);
+
+    const oRes = handlePrompts(srvState, "/prompts/p-f9/outputs", "POST", {
+      output: {
+        id: "o-f9",
+        tenantId: TENANT,
+        promptId: "p-f9",
+        modelVersionId: "v-f9",
+        plaintextHash: "b".repeat(64),
+        ciphertext: "enc-out",
+        metadata: { tokensOut: 10, latencyMs: 50, finishReason: "stop", confidence: null },
+        generatedAt: "2026-10-24T12:01:00Z",
+      },
+    });
+    expect(oRes.ok).toBe(true);
+
+    const oBadRes = handlePrompts(srvState, "/prompts/p-missing/outputs", "POST", {
+      output: {
+        id: "o-f9-bad",
+        tenantId: TENANT,
+        promptId: "p-missing",
+        modelVersionId: "v-f9",
+        plaintextHash: "b".repeat(64),
+        ciphertext: "enc-out",
+        metadata: { tokensOut: 10, latencyMs: 50, finishReason: "stop", confidence: null },
+        generatedAt: "2026-10-24T12:01:00Z",
+      },
+    });
+    expect(oBadRes.ok).toBe(false);
+
+    expect(normalizeRequestPathname("").ok).toBe(false);
+    expect(normalizeRequestPathname("no-leading-slash").ok).toBe(false);
+    expect(normalizeRequestPathname("/registry/models?x=1#frag").ok).toBe(true);
+    expect(() => loadTenantRootsConfig("/nonexistent/path/tenant-roots.json")).toThrow();
+
+    const {
+      deriveKid,
+      isValidRequestPath,
+      signedRequestsConfigFromEnv,
+      verifyCanonicalRequestSignature,
+    } = await import("../src/middleware/signature.js");
+    const { handleIdentity } = await import("../src/routes/identity.js");
+
+    expect(() => deriveKid("invalid-key")).toThrow();
+    expect(isValidRequestPath("")).toBe(false);
+    expect(isValidRequestPath("/path?query=1")).toBe(false);
+    expect(isValidRequestPath("/path//double")).toBe(false);
+    expect(isValidRequestPath("/path/with space")).toBe(false);
+    expect(isValidRequestPath("/path/%00null")).toBe(false);
+    expect(verifyCanonicalRequestSignature("bad", "bad", "bad")).toBe(false);
+    expect(signedRequestsConfigFromEnv({}).signedRequests).toBe("enforce");
+
+    // Agent with null publicKey in identity state
+    let nullKeyIdentity = createIdentityRegistry();
+    nullKeyIdentity = registerAgent(nullKeyIdentity, {
+      id: "f9-null-key",
+      tenantId: TENANT,
+      name: `sha256:${sha256Hex("f9-null-key")}`,
+      owner: `sha256:${sha256Hex("f9-owner")}`,
+      walletAddress: null,
+      publicKey: null,
+      capabilities: [],
+      createdAt: "2026-10-24T12:00:00Z",
+      status: "active",
+    }).state;
+
+    const nowIso = new Date().toISOString();
+    const validNonce = randomBytes(16).toString("base64url");
+    const dummySig = signCanonicalString("cognate-request-v1", k.seedHex);
+    expect(
+      verifySignedRequest({
+        method: "DELETE",
+        rawUrl: "/registry/models",
+        headers: {},
+        rawBody: Buffer.alloc(0),
+        identity: nullKeyIdentity,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "enforce",
+        logUntilMs: null,
+      }).reason,
+    ).toBe("invalid-method");
+
+    expect(
+      verifySignedRequest({
+        method: "GET",
+        rawUrl: "/events/e1",
+        headers: {},
+        rawBody: Buffer.from("body", "utf8"),
+        identity: nullKeyIdentity,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "enforce",
+        logUntilMs: null,
+      }).reason,
+    ).toBe("get-with-body");
+
+    expect(
+      verifySignedRequest({
+        method: "POST",
+        rawUrl: "/registry/models",
+        headers: {
+          "x-agent-id": "f9-null-key",
+          "x-timestamp": nowIso,
+          "x-nonce": "short",
+          "x-key-id": k.kid,
+          "x-signature": dummySig,
+        },
+        rawBody: Buffer.from("{}", "utf8"),
+        identity: nullKeyIdentity,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "enforce",
+        logUntilMs: null,
+      }).reason,
+    ).toBe("malformed-signature-headers");
+
+    expect(
+      verifySignedRequest({
+        method: "POST",
+        rawUrl: "/registry/models",
+        headers: {
+          "x-agent-id": "f9-null-key",
+          "x-timestamp": nowIso,
+          "x-nonce": validNonce,
+          "x-key-id": k.kid,
+          "x-signature": dummySig,
+        },
+        rawBody: Buffer.from("{}", "utf8"),
+        identity: nullKeyIdentity,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "enforce",
+        logUntilMs: null,
+      }).reason,
+    ).toBe("missing-or-invalid-agent-public-key");
+
+    expect(
+      handleIdentity(srvState, "/identity/grants/g-missing/approve", "POST", {
+        approverId: "f9-active",
+        timestamp: "2026-10-24T12:00:00Z",
+      }).ok,
+    ).toBe(false);
+    expect(
+      handleIdentity(srvState, "/identity/agents/missing-agent/key", "POST", {
+        publicKey: k.publicKey,
+      }).ok,
+    ).toBe(false);
+    expect(
+      handleIdentity(srvState, "/identity/agents/missing-agent/revoke", "POST", {}).ok,
+    ).toBe(false);
+    expect(
+      handleIdentity(srvState, "/identity/grants", "POST", {
+        grant: {
+          id: "g-missing-agent",
+          tenantId: TENANT,
+          agentId: "missing-agent",
+          capability: {
+            id: "c1",
+            kind: "inference",
+            scope: "*",
+            grantedBy: "f9-active",
+            grantedAt: "2026-10-24T12:00:00Z",
+            expiresAt: null,
+          },
+          requestedBy: "f9-active",
+          requestedAt: "2026-10-24T12:00:00Z",
+          status: "pending",
+          approvedBy: null,
+          approvedAt: null,
+        },
+      }).ok,
+    ).toBe(false);
+
+    // Unsigned log-mode branches in verifySignedRequest (708, 725, 729, 732)
+    const futureLogUntilMs = Date.now() + 60_000;
+    expect(
+      verifySignedRequest({
+        method: "POST",
+        rawUrl: "/registry/models",
+        headers: { "x-agent-id": "f9-active" },
+        rawBody: Buffer.from("{}", "utf8"),
+        identity: idState,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "log",
+        logUntilMs: futureLogUntilMs,
+      }).reason,
+    ).toBe("missing-or-invalid-timestamp");
+
+    expect(
+      verifySignedRequest({
+        method: "POST",
+        rawUrl: "/registry/models",
+        headers: {
+          "x-agent-id": "f9-active",
+          "x-timestamp": "2020-01-01T00:00:00Z",
+        },
+        rawBody: Buffer.from("{}", "utf8"),
+        identity: idState,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "log",
+        logUntilMs: futureLogUntilMs,
+      }).reason,
+    ).toBe("stale-timestamp");
+
+    expect(
+      verifySignedRequest({
+        method: "POST",
+        rawUrl: "/registry/models",
+        headers: {
+          "x-agent-id": "f9-unknown",
+          "x-timestamp": nowIso,
+        },
+        rawBody: Buffer.from("{}", "utf8"),
+        identity: idState,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "log",
+        logUntilMs: futureLogUntilMs,
+      }).reason,
+    ).toBe("unknown-agent");
+
+    expect(
+      verifySignedRequest({
+        method: "POST",
+        rawUrl: "/registry/models",
+        headers: {
+          "x-agent-id": "f9-inactive",
+          "x-timestamp": nowIso,
+        },
+        rawBody: Buffer.from("{}", "utf8"),
+        identity: idState,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "log",
+        logUntilMs: futureLogUntilMs,
+      }).reason,
+    ).toBe("inactive-agent");
+
+    const { openRuntime } = await import("../src/runtime.js");
+    const { validateSignedRequestsConfig } = await import("../src/middleware/signature.js");
+    const { mkdtempSync, rmSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const tmpDir = mkdtempSync(resolve(tmpdir(), "cognate-f9-"));
+    try {
+      const rt = openRuntime({}, tmpDir);
+      expect(rt.eventsFile).toContain("events.jsonl");
+
+      const badJsonPath = resolve(tmpDir, "bad.json");
+      writeFileSync(badJsonPath, "{not-json", "utf8");
+      expect(() => loadTenantRootsConfig(badJsonPath)).toThrow(/Failed to parse/);
+
+      const badVerPath = resolve(tmpDir, "bad-ver.json");
+      writeFileSync(badVerPath, JSON.stringify({ version: 2, roots: [] }), "utf8");
+      expect(() => loadTenantRootsConfig(badVerPath)).toThrow(/Invalid tenant roots config/);
+
+      const emptyRootsPath = resolve(tmpDir, "empty.json");
+      writeFileSync(emptyRootsPath, JSON.stringify({ version: 1, roots: [] }), "utf8");
+      expect(() => loadTenantRootsConfig(emptyRootsPath, { requireNonEmpty: true })).toThrow(
+        /contains no root keys/,
+      );
+      expect(loadTenantRootsConfig(emptyRootsPath, { requireNonEmpty: false })).toEqual([]);
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+
+    expect(() =>
+      validateTenantRootsList([
+        { tenantId: "", actorId: ROOT_ACTOR_ID, publicKey: k.publicKey, kid: k.kid },
+      ]),
+    ).toThrow(/tenantId must be a non-empty string/);
+    expect(() =>
+      validateTenantRootsList([
+        { tenantId: "t-1", actorId: ROOT_ACTOR_ID, publicKey: k.publicKey, kid: k.kid },
+        { tenantId: "t-1", actorId: ROOT_ACTOR_ID, publicKey: k.publicKey, kid: k.kid },
+      ]),
+    ).toThrow(/duplicate tenantId/);
+    expect(() =>
+      validateTenantRootsList([
+        { tenantId: "t-1", actorId: ROOT_ACTOR_ID, publicKey: "bad-key", kid: k.kid },
+      ]),
+    ).toThrow(/malformed Ed25519 publicKey/);
+    expect(() =>
+      validateTenantRootsList([
+        { tenantId: "t-1", actorId: ROOT_ACTOR_ID, publicKey: k.publicKey, kid: "0".repeat(64) },
+      ]),
+    ).toThrow(/does not match/);
+    expect(() =>
+      validateTenantRootsList([
+        { tenantId: "t-1", actorId: "bad actor id" as ActorId, publicKey: k.publicKey, kid: k.kid },
+      ]),
+    ).toThrow(/invalid actorId/);
+    expect(() => validateSignedRequestsConfig("log", "2020-01-01T00:00:00Z")).toThrow(
+      /must be in the future/,
+    );
+    expect(
+      verifySignedRequest({
+        method: "POST",
+        rawUrl: "",
+        headers: {},
+        rawBody: Buffer.alloc(0),
+        identity: idState,
+        tenantRoots: TEST_ONLY_TENANT_ROOTS,
+        replayStore: createReplayStore(),
+        mode: "enforce",
+        logUntilMs: null,
+      }).reason,
+    ).toBe("invalid-path");
+    expect(authenticate({ headers: {} } as never, { identityState: idState }).ok).toBe(false);
+    expect(
+      authenticate(
+        { headers: { "x-agent-id": "f9-unknown", "x-timestamp": "2026-10-24T12:00:00Z" } } as never,
+        { identityState: idState },
+      ).ok,
+    ).toBe(false);
+    expect(
+      handleIdentity(srvState, "/identity/agents", "POST", {
+        agent: {
+          ...seedAgentRecord("f9-norm", k),
+          capabilities: undefined as unknown as readonly [],
+        },
+      }).ok,
+    ).toBe(true);
+    expect(
+      handleIdentity(srvState, "/identity/grants/g-missing/vc", "POST", {
+        issuerId: "urn:cognate:issuer:test",
+        issuerName: "Test Issuer",
+        credentialId: "urn:uuid:1",
+        verificationMethod: "urn:cognate:issuer:test#key-1",
+      }).ok,
+    ).toBe(false);
   });
 });

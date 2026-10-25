@@ -166,5 +166,26 @@ describe("attestia prompt log", () => {
     }, baseOutput);
     expect(outFail.ok).toBe(false);
     expect(outFail.error?.code).toBe("attestia.append-failed");
+
+    // Non-Error throws and agentId fallback branches
+    const promptStrFail = await attestLogPrompt(createStore(), {
+      tenantId: "tenant-1",
+      eventStore: {
+        async append() {
+          throw "string failure";
+        },
+      },
+    }, { ...basePrompt, agentId: "agent-from-prompt" });
+    expect(promptStrFail.ok).toBe(false);
+
+    const outStrFail = await attestLogOutput(state, {
+      tenantId: "tenant-1",
+      eventStore: {
+        async append() {
+          throw "string failure";
+        },
+      },
+    }, baseOutput);
+    expect(outStrFail.ok).toBe(false);
   });
 });

@@ -388,4 +388,53 @@ describe('agent-identity', () => {
     const rotateAfterRevoke = rotateAgentKey(state, 'agent-1', key1);
     expect(rotateAfterRevoke.ok).toBe(false);
     if (!rotateAfterRevoke.ok) expect(rotateAfterRevoke.error.code).toBe('identity.agent-not-active');
+
+    // Non-canonical base64url 43-char string (non-zero trailing bit) returns null
+    expect(deriveKeyIdFromPublicKey('OU0e1p_4rG9FqAHKkPob3VddG3eBEbRs55JR2wL5TIN')).toBeNull();
+
+    // getActiveCapabilities on unknown agent returns empty array
+    expect(getActiveCapabilities(state, 'missing-agent', now)).toEqual([]);
+
+    // approveGrant when agent was removed from state map after grant request
+    let orphanState = createRegistry();
+    orphanState = registerAgent(orphanState, baseAgent).state;
+    orphanState = requestGrant(orphanState, {
+      id: 'grant-orphan',
+      tenantId: 'tenant-1',
+      agentId: 'agent-1',
+      capability: baseCapability,
+      requestedBy: 'human-1',
+      requestedAt: now,
+      status: 'pending',
+      approvedBy: null,
+      approvedAt: null,
+    }).state;
+    const emptyAgents = new Map(orphanState.agents);
+    emptyAgents.delete('agent-1');
+    const orphanApproved = approveGrant({ ...orphanState, agents: emptyAgents }, 'grant-orphan', 'admin-1', later);
+    expect(orphanApproved.ok).toBe(true);
+
+    // rotateAgentKey and revokeAgent when agent has publicKey: null or kid omitted
+    let noKeyState = registerAgent(createRegistry(), baseAgent).state;
+    const rotatedFromNull = rotateAgentKey(noKeyState, 'agent-1', key1);
+    expect(rotatedFromNull.ok).toBe(true);
+    expect(getAgent(rotatedFromNull.state, 'agent-1')?.revokedKids).toEqual([]);
+
+    const revokedFromNull = revokeAgent(noKeyState, 'agent-1');
+    expect(revokedFromNull.ok).toBe(true);
+    expect(getAgent(revokedFromNull.state, 'agent-1')?.revokedKids).toEqual([]);
+
+    // Agent with publicKey set but kid omitted in stored record, and currentKid already in revokedKids
+    const customAgents = new Map(noKeyState.agents);
+    customAgents.set('agent-1', { ...baseAgent, publicKey: key1, revokedKids: [kid1] });
+    const customState = { ...noKeyState, agents: customAgents };
+    const rotDerived = rotateAgentKey(
+      { ...noKeyState, agents: new Map([['agent-1', { ...baseAgent, publicKey: key1 }]]) },
+      'agent-1',
+      key2,
+    );
+    expect(rotDerived.ok).toBe(true);
+    const revAlreadyListed = revokeAgent(customState, 'agent-1');
+    expect(revAlreadyListed.ok).toBe(true);
+    expect(getAgent(revAlreadyListed.state, 'agent-1')?.revokedKids).toEqual([kid1]);
   });

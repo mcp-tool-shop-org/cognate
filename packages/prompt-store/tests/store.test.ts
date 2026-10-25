@@ -101,6 +101,8 @@ describe('prompt-store', () => {
     let state = createStore();
     state = logPrompt(state, basePrompt).state;
     state = logOutput(state, baseOutput).state;
+    expect(getOutput(state, 'output-1')).toEqual(baseOutput);
+    expect(getOutput(state, 'missing-output')).toBeUndefined();
     const outputs = getOutputsForPrompt(state, 'prompt-1');
     expect(outputs).toHaveLength(1);
     expect(outputs[0].id).toBe('output-1');
@@ -109,15 +111,19 @@ describe('prompt-store', () => {
   it('gets session prompts', () => {
     let state = createStore();
     state = logPrompt(state, basePrompt).state;
+    state = logPrompt(state, { ...basePrompt, id: 'prompt-1b' }).state;
     const prompts = getSessionPrompts(state, 'session-1');
-    expect(prompts).toHaveLength(1);
+    expect(prompts).toHaveLength(2);
+    expect(getSessionPrompts(state, 'missing-session')).toEqual([]);
   });
 
   it('gets model version prompts', () => {
     let state = createStore();
     state = logPrompt(state, basePrompt).state;
+    state = logPrompt(state, { ...basePrompt, id: 'prompt-1b' }).state;
     const prompts = getModelVersionPrompts(state, 'model-v1');
-    expect(prompts).toHaveLength(1);
+    expect(prompts).toHaveLength(2);
+    expect(getModelVersionPrompts(state, 'missing-model')).toEqual([]);
   });
 
   it('gets prompts by agent', () => {
