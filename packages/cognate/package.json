@@ -57,6 +57,7 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
+    "test:coverage": "vitest run",
     "lint": "tsc --noEmit"
   },
   "devDependencies": {
