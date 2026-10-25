@@ -36,4 +36,4 @@ The health body is:
 
 `mode` is `api` because the image runs `@cognate/node`. `serverTime` is what signed clients sync their clock to. Every write and every `GET /events/:eventId` must be signed; the [README's migration guide](https://github.com/mcp-tool-shop-org/cognate#authentication--migration-guide) shows how. The `cognate-data` volume is mounted at `/app/data`. The process writes the event log at `/app/data/events.jsonl` and three snapshots under `/app/data/cognate/`: `registry.json`, `agents.json`, and `prompts.json`. A restart reads those snapshots back. Attestia uses the same event-log variable on its own volume. RepoMesh's image does not mount this log.
 
-The same Dockerfile is what GitHub pushes to `ghcr.io/mcp-tool-shop-org/cognate` when a release is published.
+The same Dockerfile builds the published image. The image is built by the release workflow from a `v*` tag, after the npm package publishes, and pushed to `ghcr.io/mcp-tool-shop-org/cognate` as `X.Y.Z`, `X.Y` and `sha-*`. `latest` moves only on a `v*` tag.
