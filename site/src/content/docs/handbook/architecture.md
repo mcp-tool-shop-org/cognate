@@ -30,8 +30,10 @@ policy  ── evaluate before inference
 | `@cognate/model-registry` | Whether this version may be deployed | Storing weight files |
 | `@cognate/agent-identity` | Whether this agent holds a live capability | Issuing keys |
 | `@cognate/prompt-store` | The append-only encrypted log | Choosing a database |
+| `@cognate/repomesh-bridge` | Whether a named release passes on the RepoMesh ledger | Running the ledger |
+| `@cognate/node` | The HTTP API: signed requests, tenant scoping, and the appends to Attestia's log | A second policy engine or registry |
 
-The Docker image builds all five and then starts a health process. That process is not a sixth package. When a service layer arrives, it should call these functions rather than grow a second policy engine beside them.
+The Docker image builds every package and runs `@cognate/node` on port 4000. The server calls the library functions. It does not grow a second policy engine beside them.
 
 ## Regulatory map
 

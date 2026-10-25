@@ -13,6 +13,10 @@ export default defineConfig({
         "**/index.ts",
         "**/types.ts",
       ],
+      // The org's 90% line bar, adopted here because this package measures 93.4% of lines.
+      thresholds: {
+        lines: 90,
+      },
     },
   },
 });

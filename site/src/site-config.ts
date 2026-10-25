@@ -6,10 +6,10 @@ export const config: SiteConfig = {
   logoBadge: 'C',
   brandName: 'Cognate',
   repoUrl: 'https://github.com/mcp-tool-shop-org/cognate',
-  footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
+  footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">mcp-tool-shop</a>',
 
   hero: {
-    badge: 'v0.1.8',
+    badge: 'v0.3.0',
     headline: 'Structural governance',
     headlineAccent: 'for autonomous intelligence.',
     description: 'Every model version, prompt, output, and policy decision — attested, immutable, and human-governed. Built on Attestia.',
@@ -33,6 +33,7 @@ export const config: SiteConfig = {
         { title: 'Human approval', desc: 'Models do not deploy themselves. Agents do not grant themselves capabilities. Approval is a separate act.' },
         { title: 'Append-only', desc: 'Prompts and outputs are logged, encrypted with a tenant key, and hashed. Nothing in the store updates or deletes.' },
         { title: 'Hashed models', desc: 'A version records weights, config, and manifest hashes. A swapped file is a different version.' },
+        { title: 'Signed requests', desc: "Every write to the HTTP server is signed with the caller's Ed25519 key, and every route acts in the signer's own tenant." },
       ],
     },
     {

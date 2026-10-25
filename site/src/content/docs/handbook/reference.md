@@ -1,6 +1,6 @@
 ---
 title: Reference
-description: Exported functions for the five Cognate packages.
+description: Exported functions for the Cognate packages.
 sidebar:
   order: 4
 ---
