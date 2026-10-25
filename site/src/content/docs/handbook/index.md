@@ -15,7 +15,7 @@ Attestia, Cognate, and RepoMesh are three products. Attestia ships the financial
 
 The npm package `@mcptoolshop/cognate` is those libraries in one bundle. They are pure functions. You pass in the clock, the tenant key, and the store. `@cognate/node` is a separate HTTP layer over the same functions. Its `/health` returns `"mode": "api"`. `@cognate/repomesh-bridge` checks a release on the RepoMesh ledger.
 
-This handbook describes version 1.0.0.
+This handbook describes version 1.0.0. From 1.0, versions follow semantic versioning: a change that breaks the HTTP API, the signed-request format or the event and attestation format comes with a new major version.
 
 ## In this handbook
 

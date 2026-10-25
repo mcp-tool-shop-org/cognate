@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-1.0.0 is the first release since 0.1.8. 0.2.0 and 0.3.0 were never published separately, and their changes ship in 1.0.0. The full list is in the repository's [CHANGELOG.md](https://github.com/mcp-tool-shop-org/cognate/blob/main/CHANGELOG.md).
+1.0.0 is the first release since 0.1.8. 0.2.0 and 0.3.0 were never published separately, and their changes ship in 1.0.0. From 1.0, versions follow semantic versioning: a change that breaks the HTTP API, the signed-request format or the event and attestation format comes with a new major version. The full list is in the repository's [CHANGELOG.md](https://github.com/mcp-tool-shop-org/cognate/blob/main/CHANGELOG.md).
 
 ## Signed requests (breaking)
 

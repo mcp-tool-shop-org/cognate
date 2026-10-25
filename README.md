@@ -14,7 +14,7 @@
 
 <p align="center"><strong>Structural governance for autonomous intelligence.</strong></p>
 
-**Version 1.0.0.** The previous release was 0.1.8. 0.2.0 and 0.3.0 were never published separately, and their changes ship in 1.0.0. 1.0.0 changes the HTTP API: the server now refuses unsigned requests. See [What's new in 1.0.0](#whats-new-in-100).
+**Version 1.0.0.** The previous release was 0.1.8. 0.2.0 and 0.3.0 were never published separately, and their changes ship in 1.0.0. 1.0.0 changes the HTTP API: the server now refuses unsigned requests. From 1.0, versions follow semantic versioning: a change that breaks the HTTP API, the signed-request format or the event and attestation format comes with a new major version. See [What's new in 1.0.0](#whats-new-in-100).
 
 Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia proves that something happened — an event, a transaction, a state transition — and binds that proof to a chain. Cognate uses those same attestation primitives to govern AI systems: what a model was permitted to do, what it actually did, and who authorized it.
 
@@ -155,7 +155,7 @@ node scripts/make-tenant-root.mjs my-tenant
 COGNATE_TENANT_ROOTS_PATH="$PWD/tenant-roots.json" node packages/node/dist/index.js
 ```
 
-Then, from another terminal, `curl http://127.0.0.1:4000/health` answers `"status": "ok"`. `make-tenant-root.mjs` makes a new random root key for the tenant: `tenant-roots.json` holds the public key the server reads, and `tenant-root.secret.json` holds the private seed you sign the tenant's first delegate with. Both names are in `.gitignore`; keep the secret file private. Signing requests is covered in the [migration guide](#authentication--migration-guide).
+Then, from another terminal, `curl http://127.0.0.1:4000/health` answers `"status": "ok"`. `make-tenant-root.mjs` makes a new random root key for the tenant: `tenant-roots.json` holds the public key the server reads, and `tenant-root.secret.json` holds the private seed you sign the tenant's first delegate with. Both names are in `.gitignore`. Keep `tenant-root.secret.json` out of the repository and out of any image: the server needs only `tenant-roots.json`. The script makes the secret file readable by its owner only where the platform supports that (on Windows, keep it in a folder only you can read). Signing requests is covered in the [migration guide](#authentication--migration-guide).
 
 ### Develop
 
