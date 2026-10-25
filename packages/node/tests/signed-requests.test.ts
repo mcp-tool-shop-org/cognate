@@ -3585,27 +3585,34 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
     expect(fnFloor).toBeGreaterThanOrEqual(96);
   });
 
-  it("25. D: SECURITY.md and the handbook security page document the tenant root's standing recovery powers after bootstrap", () => {
+  it("25. D: README, SECURITY.md, HANDBOOK.md and the handbook security page document the tenant root's standing powers and the test-seed refusal", () => {
     const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-    const securityMd = readFileSync(resolve(repoRoot, "SECURITY.md"), "utf8");
-    const handbookSecurityMd = readFileSync(
-      resolve(repoRoot, "site/src/content/docs/handbook/security.md"),
-      "utf8",
-    );
-
-    for (const [docName, text] of [
-      ["SECURITY.md", securityMd],
-      ["site/src/content/docs/handbook/security.md", handbookSecurityMd],
+    for (const relPath of [
+      "README.md",
+      "SECURITY.md",
+      "HANDBOOK.md",
+      "site/src/content/docs/handbook/security.md",
     ] as const) {
-      expect(
-        text,
-        `${docName} must state the tenant root keeps its recovery powers after bootstrap`,
-      ).toMatch(/keeps its recovery powers after bootstrap/i);
-      expect(
-        text,
-        `${docName} must state the root rotates a human principal's key and approves non-delegate grants`,
-      ).toMatch(/rotates a human principal's key and approves non-delegate grants/i);
-      expect(text, `${docName} must not claim the root has no power after bootstrap`).not.toMatch(
+      const text = readFileSync(resolve(repoRoot, relPath), "utf8");
+      expect(text, `${relPath} must state the tenant root keeps its recovery powers after bootstrap`).toMatch(
+        /keeps its recovery powers after bootstrap/i,
+      );
+      expect(text, `${relPath} must list the root's rotate, revoke and approve powers`).toMatch(
+        /rotates a human or agent principal's key, revokes any principal, and approves non-delegate grants/i,
+      );
+      expect(text, `${relPath} must state what rotating a human delegate's key means`).toMatch(
+        /after the root rotates a human delegate's key, the root holds that delegate's authority, including minting new delegates/i,
+      );
+      expect(text, `${relPath} must state that revoking every delegate reopens direct minting`).toMatch(
+        /if the root revokes every active `delegate`, the tenant again has no active `delegate`, so the root can again mint one directly/i,
+      );
+      expect(text, `${relPath} must forbid test-seed roots in production`).toMatch(
+        /A root derived from a test seed must never be configured in production\./,
+      );
+      expect(text, `${relPath} must state the limit of the startup refusal`).toMatch(
+        /refuses the repository's own test root keys at startup \(`auth\.test-only-root-key-forbidden`\) unless a test harness sets `allowTestOnlyRoots: true`, but it cannot recognise a root derived from any other seed/i,
+      );
+      expect(text, `${relPath} must not claim the root has no power after bootstrap`).not.toMatch(
         /no power after bootstrap/i,
       );
     }
