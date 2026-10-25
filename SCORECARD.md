@@ -21,7 +21,7 @@
 - docker-compose.yml: Created with cognate-data persistent volume
 - Dockerfile: Multi-stage build, explicit package ordering
 - Status: Builds and runs. Health endpoint returns mode: api
-- GHCR publish workflow added (.github/workflows/docker-publish.yml)
+- GHCR publish workflow added (.github/workflows/docker.yml, called by release.yml after the npm publish)
 
 ## Attestia Integration
 
