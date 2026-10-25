@@ -444,8 +444,28 @@ export interface LoadTenantRootsOptions extends TenantRootValidationOptions {
   readonly requireNonEmpty?: boolean;
 }
 
+const FIXTURE_TENANT_IDS = [
+  "tenant-a",
+  "tenant-b",
+  "tenant-1",
+  "tenant-2",
+  "tenant-alpha",
+  "tenant-beta",
+  "default",
+] as const;
+
+const KNOWN_TEST_ROOT_PUBLIC_KEYS = new Set<string>(
+  FIXTURE_TENANT_IDS.map(
+    (tenantId) =>
+      generateEd25519KeyPair(sha256HexBytes(`cognate-test-root-seed:${tenantId}`)).publicKey,
+  ),
+);
+
 function isDerivedTestRootEntry(entry: TenantRootKeyEntry): boolean {
   if ((entry as { readonly testOnly?: boolean }).testOnly === true) {
+    return true;
+  }
+  if (KNOWN_TEST_ROOT_PUBLIC_KEYS.has(entry.publicKey)) {
     return true;
   }
   const derivedSeedHex = sha256HexBytes(`cognate-test-root-seed:${entry.tenantId}`);

@@ -3287,4 +3287,77 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+
+  it("22. N1b: a fixture root public key placed under another tenant id is refused at startup", async () => {
+    const { mkdtempSync, rmSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { loadTenantRootsConfig, validateTenantRootsList } = await import(
+      "../src/middleware/signature.js"
+    );
+    const { TEST_ONLY_TENANT_ROOTS } = await import("./fixtures/test-only-tenant-roots.js");
+
+    const customActorId = `sha256:${sha256Hex("custom-prod-root-actor")}` as ActorId;
+    const tmpDir = mkdtempSync(join(tmpdir(), "cognate-n1b-"));
+    try {
+      // Every fixture root key placed under a non-fixture tenant id with a custom actorId and no testOnly flag is refused
+      for (const fixtureEntry of TEST_ONLY_TENANT_ROOTS) {
+        const relabelledEntry = {
+          tenantId: `prod-relabelled-${fixtureEntry.tenantId}`,
+          kid: fixtureEntry.kid,
+          publicKey: fixtureEntry.publicKey,
+          actorId: customActorId,
+        };
+
+        expect(
+          () => validateTenantRootsList([relabelledEntry]),
+          `relabelled fixture key from ${fixtureEntry.tenantId} must be refused`,
+        ).toThrowError(
+          expect.objectContaining({
+            code: "auth.test-only-root-key-forbidden",
+          }),
+        );
+
+        const relabelPath = join(tmpDir, `relabel-${fixtureEntry.tenantId}.json`);
+        writeFileSync(
+          relabelPath,
+          JSON.stringify({ version: 1, roots: [relabelledEntry] }),
+          "utf8",
+        );
+
+        expect(
+          () => loadTenantRootsConfig(relabelPath),
+          `loadTenantRootsConfig on relabelled ${fixtureEntry.tenantId}`,
+        ).toThrowError(
+          expect.objectContaining({
+            code: "auth.test-only-root-key-forbidden",
+          }),
+        );
+
+        const { store } = createFakeEventStore();
+        expect(
+          () =>
+            createCognateServer({
+              state: {
+                registry: createModelRegistry(),
+                identity: createIdentityRegistry(),
+                prompts: createPromptStore(),
+              },
+              port: 0,
+              host: "127.0.0.1",
+              eventStore: store as ServerContext["eventStore"],
+              signedRequests: "enforce",
+              tenantRootsPath: relabelPath,
+            }),
+          `createCognateServer on relabelled ${fixtureEntry.tenantId}`,
+        ).toThrowError(
+          expect.objectContaining({
+            code: "auth.test-only-root-key-forbidden",
+          }),
+        );
+      }
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
 });
