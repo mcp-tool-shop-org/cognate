@@ -3610,4 +3610,258 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       );
     }
   });
+
+  it(
+    "26. ek: recordVerified pruning work per request is bounded and independent of unexpired store size (100 vs 100,000 entries)",
+    () => {
+      const activeKey = makeDeterministicKeyPair("ek-active");
+      let identity = createIdentityRegistry();
+      identity = addAgentToState(identity, seedAgentRecord("ek-active", activeKey));
+
+      const baseNowMs = Date.parse("2026-10-24T12:00:00.000Z");
+      const rawBody = Buffer.from(
+        jcsStringify({ model: makeModelRecord("m-ek", "ek-active") }),
+        "utf8",
+      );
+
+      function measureSuccessfulRequestWork(unexpiredCount: number) {
+        const replayStore = createReplayStore();
+        for (let i = 0; i < unexpiredCount; i++) {
+          const offsetMs = (i % 5) * 50_000;
+          replayStore.recordVerified(
+            "ek-active",
+            `seed-nonce-${i}-xxxxxxxxxxxxxxxx`,
+            baseNowMs + offsetMs,
+            baseNowMs,
+          );
+        }
+        expect(replayStore.size()).toBe(unexpiredCount);
+
+        const origGet = Map.prototype.get;
+        const origSet = Map.prototype.set;
+        const origDelete = Map.prototype.delete;
+        const origIterator = Map.prototype[Symbol.iterator];
+
+        let mapGetCalls = 0;
+        let mapSetCalls = 0;
+        let mapDeleteCalls = 0;
+        let mapEntriesIterated = 0;
+
+        Map.prototype.get = function (this: Map<unknown, unknown>, key: unknown) {
+          if (typeof key === "string" && key.includes(":")) {
+            mapGetCalls += 1;
+          }
+          return origGet.call(this, key);
+        };
+        Map.prototype.set = function (this: Map<unknown, unknown>, key: unknown, value: unknown) {
+          if (typeof key === "string" && key.includes(":")) {
+            mapSetCalls += 1;
+          }
+          return origSet.call(this, key, value);
+        };
+        Map.prototype.delete = function (this: Map<unknown, unknown>, key: unknown) {
+          if (typeof key === "string" && key.includes(":")) {
+            mapDeleteCalls += 1;
+          }
+          return origDelete.call(this, key);
+        };
+        Map.prototype[Symbol.iterator] = function (this: Map<unknown, unknown>) {
+          const iter = origIterator.call(this);
+          return {
+            next() {
+              const step = iter.next();
+              if (!step.done) {
+                mapEntriesIterated += 1;
+              }
+              return step;
+            },
+            [Symbol.iterator]() {
+              return this;
+            },
+          };
+        } as typeof origIterator;
+
+        try {
+          replayStore.recordVerified(
+            "ek-active",
+            "measured-direct-nonce-xxxxxxxxxxxx",
+            baseNowMs,
+            baseNowMs + 1_000,
+          );
+        } finally {
+          Map.prototype.get = origGet;
+          Map.prototype.set = origSet;
+          Map.prototype.delete = origDelete;
+          Map.prototype[Symbol.iterator] = origIterator;
+        }
+
+        const directRecordOps = {
+          mapGetCalls,
+          mapSetCalls,
+          mapDeleteCalls,
+          mapEntriesIterated,
+        };
+
+        // Also measure a full verified request via verifySignedRequest
+        mapGetCalls = 0;
+        mapSetCalls = 0;
+        mapDeleteCalls = 0;
+        mapEntriesIterated = 0;
+
+        const reqTsMs = baseNowMs + 2_000;
+        const reqTsIso = new Date(reqTsMs).toISOString();
+        const reqNonce = "measured-signed-nonce-xxxxxxxxxxxx";
+        const canonical = buildCanonicalRequest({
+          method: "POST",
+          path: "/registry/models",
+          bodyBytes: rawBody,
+          timestamp: reqTsIso,
+          nonce: reqNonce,
+          agentId: "ek-active",
+          kid: activeKey.kid,
+        });
+        const sig = signCanonicalString(canonical, activeKey.seedHex);
+
+        Map.prototype.get = function (this: Map<unknown, unknown>, key: unknown) {
+          if (typeof key === "string" && key.includes(":")) {
+            mapGetCalls += 1;
+          }
+          return origGet.call(this, key);
+        };
+        Map.prototype.set = function (this: Map<unknown, unknown>, key: unknown, value: unknown) {
+          if (typeof key === "string" && key.includes(":")) {
+            mapSetCalls += 1;
+          }
+          return origSet.call(this, key, value);
+        };
+        Map.prototype.delete = function (this: Map<unknown, unknown>, key: unknown) {
+          if (typeof key === "string" && key.includes(":")) {
+            mapDeleteCalls += 1;
+          }
+          return origDelete.call(this, key);
+        };
+        Map.prototype[Symbol.iterator] = function (this: Map<unknown, unknown>) {
+          const iter = origIterator.call(this);
+          return {
+            next() {
+              const step = iter.next();
+              if (!step.done) {
+                mapEntriesIterated += 1;
+              }
+              return step;
+            },
+            [Symbol.iterator]() {
+              return this;
+            },
+          };
+        } as typeof origIterator;
+
+        try {
+          const verified = verifySignedRequest({
+            method: "POST",
+            rawUrl: "/registry/models",
+            headers: {
+              "x-agent-id": "ek-active",
+              "x-timestamp": reqTsIso,
+              "x-nonce": reqNonce,
+              "x-key-id": activeKey.kid,
+              "x-signature": sig,
+            },
+            rawBody,
+            identity,
+            tenantRoots: TEST_ONLY_TENANT_ROOTS,
+            replayStore,
+            mode: "enforce",
+            logUntilMs: null,
+            nowMs: reqTsMs,
+          });
+          expect(verified.ok).toBe(true);
+        } finally {
+          Map.prototype.get = origGet;
+          Map.prototype.set = origSet;
+          Map.prototype.delete = origDelete;
+          Map.prototype[Symbol.iterator] = origIterator;
+        }
+
+        const verifiedRequestOps = {
+          mapGetCalls,
+          mapSetCalls,
+          mapDeleteCalls,
+          mapEntriesIterated,
+        };
+
+        return { replayStore, directRecordOps, verifiedRequestOps };
+      }
+
+      const small = measureSuccessfulRequestWork(100);
+      const large = measureSuccessfulRequestWork(100_000);
+
+      expect(large.directRecordOps).toEqual({
+        mapGetCalls: 0,
+        mapSetCalls: 1,
+        mapDeleteCalls: 0,
+        mapEntriesIterated: 0,
+      });
+      expect(large.directRecordOps).toEqual(small.directRecordOps);
+
+      expect(large.verifiedRequestOps).toEqual({
+        mapGetCalls: 1,
+        mapSetCalls: 1,
+        mapDeleteCalls: 0,
+        mapEntriesIterated: 0,
+      });
+      expect(large.verifiedRequestOps).toEqual(small.verifiedRequestOps);
+
+      // Out-of-order expiry and partial pruning: only expired entries are dropped, oldest first
+      const mixedStore = createReplayStore();
+      // Inserted first with future timestamp (+299 s -> expires at +599.000 s)
+      mixedStore.recordVerified("ek-active", "nonce-future-299s-xxxxxxxx", baseNowMs + 299_000, baseNowMs);
+      // Inserted second with current timestamp (+0 s -> expires at +300.000 s)
+      mixedStore.recordVerified("ek-active", "nonce-now-300s-xxxxxxxxxxx", baseNowMs, baseNowMs);
+      // Inserted third with +100 s timestamp (-> expires at +400.000 s)
+      mixedStore.recordVerified("ek-active", "nonce-mid-400s-xxxxxxxxxxx", baseNowMs + 100_000, baseNowMs);
+      // Re-record an entry with a later expiry to verify stale heap entries do not evict fresh ones
+      mixedStore.recordVerified("ek-active", "nonce-rerecorded-xxxxxxxxx", baseNowMs, baseNowMs);
+      mixedStore.recordVerified(
+        "ek-active",
+        "nonce-rerecorded-xxxxxxxxx",
+        baseNowMs + 200_000,
+        baseNowMs,
+      );
+      expect(mixedStore.size()).toBe(4);
+
+      // At exact +300.000 s, none of the 4 entries has expired (inclusive boundary)
+      mixedStore.recordVerified(
+        "ek-active",
+        "nonce-at-300s-exact-xxxxxx",
+        baseNowMs + 300_000,
+        baseNowMs + 300_000,
+      );
+      expect(mixedStore.size()).toBe(5);
+      expect(mixedStore.hasSeen("ek-active", "nonce-now-300s-xxxxxxxxxxx", baseNowMs + 300_000)).toBe(
+        true,
+      );
+
+      // At +300.001 s, only nonce-now-300s-xxxxxxxxxxx has expired; the re-recorded key and future keys remain
+      mixedStore.recordVerified(
+        "ek-active",
+        "nonce-at-300s-plus-1ms-xxx",
+        baseNowMs + 300_001,
+        baseNowMs + 300_001,
+      );
+      expect(mixedStore.hasSeen("ek-active", "nonce-now-300s-xxxxxxxxxxx", baseNowMs + 300_001)).toBe(
+        false,
+      );
+      expect(mixedStore.hasSeen("ek-active", "nonce-rerecorded-xxxxxxxxx", baseNowMs + 300_001)).toBe(
+        true,
+      );
+      expect(mixedStore.hasSeen("ek-active", "nonce-mid-400s-xxxxxxxxxxx", baseNowMs + 300_001)).toBe(
+        true,
+      );
+      expect(
+        mixedStore.hasSeen("ek-active", "nonce-future-299s-xxxxxxxx", baseNowMs + 599_000),
+      ).toBe(true);
+    },
+    120_000,
+  );
 });

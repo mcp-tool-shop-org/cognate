@@ -392,13 +392,59 @@ export interface ReplayStore {
   size(): number;
 }
 
+interface ReplayExpiryEntry {
+  readonly key: string;
+  readonly expiryMs: number;
+}
+
 export function createReplayStore(windowMs: number = TIMESTAMP_WINDOW_MS): ReplayStore {
   const entries = new Map<string, number>();
+  const expiryHeap: ReplayExpiryEntry[] = [];
+
+  function pushExpiry(item: ReplayExpiryEntry): void {
+    expiryHeap.push(item);
+    let idx = expiryHeap.length - 1;
+    while (idx > 0) {
+      const parentIdx = (idx - 1) >> 1;
+      const parent = expiryHeap[parentIdx]!;
+      if (parent.expiryMs <= item.expiryMs) {
+        break;
+      }
+      expiryHeap[idx] = parent;
+      idx = parentIdx;
+    }
+    expiryHeap[idx] = item;
+  }
+
+  function popOldestExpiry(): ReplayExpiryEntry {
+    const oldest = expiryHeap[0]!;
+    const last = expiryHeap.pop()!;
+    if (expiryHeap.length > 0) {
+      let idx = 0;
+      const len = expiryHeap.length;
+      while ((idx << 1) + 1 < len) {
+        const leftIdx = (idx << 1) + 1;
+        const rightIdx = leftIdx + 1;
+        const smallerIdx =
+          rightIdx < len && expiryHeap[rightIdx]!.expiryMs < expiryHeap[leftIdx]!.expiryMs
+            ? rightIdx
+            : leftIdx;
+        if (last.expiryMs <= expiryHeap[smallerIdx]!.expiryMs) {
+          break;
+        }
+        expiryHeap[idx] = expiryHeap[smallerIdx]!;
+        idx = smallerIdx;
+      }
+      expiryHeap[idx] = last;
+    }
+    return oldest;
+  }
 
   function prune(nowMs: number): void {
-    for (const [key, expiryMs] of entries) {
-      if (expiryMs < nowMs) {
-        entries.delete(key);
+    while (expiryHeap.length > 0 && expiryHeap[0]!.expiryMs < nowMs) {
+      const oldest = popOldestExpiry();
+      if (entries.get(oldest.key) === oldest.expiryMs) {
+        entries.delete(oldest.key);
       }
     }
   }
@@ -414,6 +460,7 @@ export function createReplayStore(windowMs: number = TIMESTAMP_WINDOW_MS): Repla
       const key = `${agentId}:${nonce}`;
       const expiryMs = Math.max(nowMs, timestampMs) + windowMs;
       entries.set(key, expiryMs);
+      pushExpiry({ key, expiryMs });
     },
     size(): number {
       return entries.size;
