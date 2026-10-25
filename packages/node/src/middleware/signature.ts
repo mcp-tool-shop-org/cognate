@@ -48,6 +48,9 @@ export const MAX_LOG_MODE_SUNSET_MS = 14 * 24 * 60 * 60 * 1000;
 export const EMPTY_BODY_SHA256 =
   "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
+/** Fixed dummy Ed25519 public key used to equalize verification work on early post-grammar refusals. */
+const DUMMY_VERIFY_PUBLIC_KEY_B64URL = "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik";
+
 const RAW_PUBLIC_KEY_B64URL_RE = /^[A-Za-z0-9_-]{43}$/;
 const SIGNATURE_B64URL_RE = /^[A-Za-z0-9_-]{86}$/;
 const KID_HEX_RE = /^[0-9a-f]{64}$/;
@@ -761,6 +764,22 @@ export function verifySignedRequest(params: {
     return { ok: false, reason: "malformed-signature-headers" };
   }
 
+  const bodySha256 = rawBody.length === 0 ? EMPTY_BODY_SHA256 : sha256HexBytes(rawBody);
+  const canonical = buildCanonicalRequestString({
+    method,
+    path: rawUrl,
+    bodySha256,
+    timestamp: timestampHeader,
+    nonce: nonceHeader,
+    agentId: agentIdHeader,
+    keyId: keyIdHeader,
+  });
+
+  function refuseAfterDummyVerify(reason: string): SignatureAuthResult {
+    verifyCanonicalRequestSignature(canonical, signatureHeader as string, DUMMY_VERIFY_PUBLIC_KEY_B64URL);
+    return { ok: false, reason };
+  }
+
   // Step 2 & 3: Principal lookup (tenantRoots checked first) and active key (`kid`) verification
   let publicKeyBase64Url: string | null = null;
   let resolvedPrincipal: Omit<VerifiedPrincipal, "unsigned"> | null = null;
@@ -768,7 +787,7 @@ export function verifySignedRequest(params: {
   const rootEntry = tenantRoots.find((r) => r.actorId === agentIdHeader);
   if (rootEntry) {
     if (rootEntry.kid !== keyIdHeader) {
-      return { ok: false, reason: "root-kid-mismatch" };
+      return refuseAfterDummyVerify("root-kid-mismatch");
     }
     publicKeyBase64Url = rootEntry.publicKey;
     resolvedPrincipal = {
@@ -782,20 +801,20 @@ export function verifySignedRequest(params: {
   } else {
     const agent = getAgent(identity, agentIdHeader as ActorId);
     if (!agent) {
-      return { ok: false, reason: "unknown-principal" };
+      return refuseAfterDummyVerify("unknown-principal");
     }
     if (agent.status !== "active") {
-      return { ok: false, reason: "inactive-agent" };
+      return refuseAfterDummyVerify("inactive-agent");
     }
     if (agent.publicKey === null || !isValidPublicKeyBase64Url(agent.publicKey)) {
-      return { ok: false, reason: "missing-or-invalid-agent-public-key" };
+      return refuseAfterDummyVerify("missing-or-invalid-agent-public-key");
     }
     if (agent.revokedKids?.includes(keyIdHeader)) {
-      return { ok: false, reason: "revoked-kid" };
+      return refuseAfterDummyVerify("revoked-kid");
     }
     const expectedKid = agent.kid ?? tryDeriveKid(agent.publicKey);
     if (expectedKid === null || expectedKid !== keyIdHeader) {
-      return { ok: false, reason: "kid-mismatch" };
+      return refuseAfterDummyVerify("kid-mismatch");
     }
     publicKeyBase64Url = agent.publicKey;
     resolvedPrincipal = {
@@ -811,26 +830,15 @@ export function verifySignedRequest(params: {
 
   // Step 4: Timestamp within ±300 s of server time
   if (Math.abs(nowMs - timestampMs) > TIMESTAMP_WINDOW_MS) {
-    return { ok: false, reason: "stale-timestamp" };
+    return refuseAfterDummyVerify("stale-timestamp");
   }
 
   // Step 5: Read-only nonce check in replay store before signature verification (Ruling 4)
   if (replayStore.hasSeen(agentIdHeader, nonceHeader, nowMs)) {
-    return { ok: false, reason: "replay-detected" };
+    return refuseAfterDummyVerify("replay-detected");
   }
 
   // Step 6: Ed25519 signature verification over 8-line `cognate-request-v1` canonical string
-  const bodySha256 = rawBody.length === 0 ? EMPTY_BODY_SHA256 : sha256HexBytes(rawBody);
-  const canonical = buildCanonicalRequestString({
-    method,
-    path: rawUrl,
-    bodySha256,
-    timestamp: timestampHeader,
-    nonce: nonceHeader,
-    agentId: agentIdHeader,
-    keyId: keyIdHeader,
-  });
-
   if (!verifyCanonicalRequestSignature(canonical, signatureHeader, publicKeyBase64Url)) {
     return { ok: false, reason: "invalid-signature" };
   }

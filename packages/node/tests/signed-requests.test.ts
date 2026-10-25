@@ -2437,4 +2437,143 @@ describe("PR (a) — Cognate signed requests, replay protection, actor binding, 
       expect(replayAt599s.reason).toBe("replay-detected");
     }
   });
+
+  it("18. F7: early authentication refusals after grammar validation execute dummy signature verification", () => {
+    const activeKey = makeDeterministicKeyPair("f7-active");
+    const inactiveKey = makeDeterministicKeyPair("f7-inactive");
+    const oldKey = makeDeterministicKeyPair("f7-old");
+    const otherKey = makeDeterministicKeyPair("f7-other");
+
+    let identity = createIdentityRegistry();
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("f7-active", activeKey, { revokedKids: [oldKey.kid] }),
+    );
+    identity = addAgentToState(
+      identity,
+      seedAgentRecord("f7-inactive", inactiveKey, { status: "revoked" }),
+    );
+    const replayStore = createReplayStore();
+    const nowMs = Date.parse("2026-10-24T12:00:00.000Z");
+    const nowIso = new Date(nowMs).toISOString();
+    const rawBody = Buffer.from(jcsStringify({ model: makeModelRecord("m-f7", "f7-active") }), "utf8");
+
+    const usedNonce = randomBytes(16).toString("base64url");
+    replayStore.recordVerified("f7-active", usedNonce, nowMs, nowMs);
+
+    function makeHeaders(overrides: {
+      agentId: string;
+      timestamp?: string;
+      nonce?: string;
+      kid?: string;
+      keyPair?: TestKeyPair;
+    }) {
+      const ts = overrides.timestamp ?? nowIso;
+      const nonce = overrides.nonce ?? randomBytes(16).toString("base64url");
+      const kp = overrides.keyPair ?? activeKey;
+      const kid = overrides.kid ?? kp.kid;
+      const canonical = buildCanonicalRequest({
+        method: "POST",
+        path: "/registry/models",
+        bodyBytes: rawBody,
+        timestamp: ts,
+        nonce,
+        agentId: overrides.agentId,
+        kid,
+      });
+      const sig = signCanonicalString(canonical, kp.seedHex);
+      return {
+        "x-agent-id": overrides.agentId,
+        "x-timestamp": ts,
+        "x-nonce": nonce,
+        "x-key-id": kid,
+        "x-signature": sig,
+      };
+    }
+
+    const cases: Array<{ name: string; expectedReason: string; headers: Record<string, string> }> = [
+      {
+        name: "unknown-principal",
+        expectedReason: "unknown-principal",
+        headers: makeHeaders({ agentId: "f7-unknown-agent" }),
+      },
+      {
+        name: "inactive-agent",
+        expectedReason: "inactive-agent",
+        headers: makeHeaders({ agentId: "f7-inactive", keyPair: inactiveKey }),
+      },
+      {
+        name: "revoked-kid",
+        expectedReason: "revoked-kid",
+        headers: makeHeaders({ agentId: "f7-active", keyPair: oldKey }),
+      },
+      {
+        name: "kid-mismatch",
+        expectedReason: "kid-mismatch",
+        headers: makeHeaders({ agentId: "f7-active", kid: otherKey.kid, keyPair: otherKey }),
+      },
+      {
+        name: "root-kid-mismatch",
+        expectedReason: "root-kid-mismatch",
+        headers: makeHeaders({ agentId: ROOT_ACTOR_ID, kid: otherKey.kid, keyPair: otherKey }),
+      },
+      {
+        name: "stale-timestamp",
+        expectedReason: "stale-timestamp",
+        headers: makeHeaders({
+          agentId: "f7-active",
+          timestamp: new Date(nowMs - 360_000).toISOString(),
+        }),
+      },
+      {
+        name: "replay-detected",
+        expectedReason: "replay-detected",
+        headers: makeHeaders({ agentId: "f7-active", nonce: usedNonce }),
+      },
+    ];
+
+    const origBufferFrom = Buffer.from;
+    for (const tc of cases) {
+      let canonicalVerifyBufferCount = 0;
+      Buffer.from = ((value: unknown, encodingOrOffset?: unknown, length?: unknown) => {
+        if (
+          typeof value === "string" &&
+          value.startsWith("cognate-request-v1\n") &&
+          encodingOrOffset === "utf8"
+        ) {
+          canonicalVerifyBufferCount += 1;
+        }
+        return (origBufferFrom as (...args: unknown[]) => Buffer)(
+          value,
+          encodingOrOffset,
+          length,
+        );
+      }) as typeof Buffer.from;
+
+      try {
+        const res = verifySignedRequest({
+          method: "POST",
+          rawUrl: "/registry/models",
+          headers: tc.headers,
+          rawBody,
+          identity,
+          tenantRoots: TEST_ONLY_TENANT_ROOTS,
+          replayStore,
+          mode: "enforce",
+          logUntilMs: null,
+          nowMs,
+        });
+        expect(res.ok, tc.name).toBe(false);
+        if (!res.ok) {
+          expect(res.reason, tc.name).toBe(tc.expectedReason);
+        }
+        expect(
+          canonicalVerifyBufferCount,
+          `${tc.name} must run exactly one verifyCanonicalRequestSignature`,
+        ).toBe(1);
+      } finally {
+        Buffer.from = origBufferFrom;
+      }
+    }
+  });
 });
