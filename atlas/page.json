@@ -98,59 +98,79 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 2,
-      "changed": 34,
+      "added": 43,
+      "changed": 0,
       "moved": 0,
-      "parts": 11,
+      "parts": 2,
       "removed": 0
     },
     "items": [
       {
         "kind": "door",
-        "sentence": "CI's pull request trigger no longer names `**/*.ts`, `.github/workflows/**`, `atlas/**`, `package.json`, `pnpm-lock.yaml` and `tsconfig*.json`.",
-        "subjects": [
-          ".github/workflows/ci.yml"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "CI's push trigger now also names `**/package.json`, `Dockerfile`, `docker-compose*.yml` and `scripts/**` and no longer names `package.json`.",
-        "subjects": [
-          ".github/workflows/ci.yml"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "CI now also runs packages/cognate/tests/, packages/node/tests/make-tenant-root.test.ts and packages/repomesh-bridge/tests/.",
+        "sentence": "CI now also runs packages/civility-kernel/tests/ and packages/node/tests/civility-kernel-proof.test.ts.",
         "subjects": [
           ".github/workflows/ci.yml",
-          "packages/cognate/tests/",
-          "packages/node/tests/make-tenant-root.test.ts",
-          "packages/repomesh-bridge/tests/"
+          "packages/civility-kernel/tests/",
+          "packages/node/tests/civility-kernel-proof.test.ts"
         ]
       },
       {
         "kind": "door",
-        "sentence": "And 1 more change to a door.",
+        "sentence": "CI now also builds packages/civility-kernel/src/ and packages/cognate/src/civility-kernel.ts.",
+        "subjects": [
+          ".github/workflows/ci.yml",
+          "packages/civility-kernel/src/",
+          "packages/cognate/src/civility-kernel.ts"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "Publish to GHCR now also builds packages/civility-kernel/src/.",
+        "subjects": [
+          ".github/workflows/docker.yml",
+          "packages/civility-kernel/src/"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "And 4 more changes to doors.",
         "subjects": []
       },
       {
-        "kind": "landing",
-        "sentence": "scripts/make-tenant-root.mjs is now read by packages/node/tests/make-tenant-root.test.ts.",
+        "kind": "unassigned",
+        "sentence": "packages/civility-kernel/CHANGELOG.md is new and belongs to no part, so atlas check fails on it against the previous map.",
         "subjects": [
-          "scripts/make-tenant-root.mjs",
-          "packages/node/tests/make-tenant-root.test.ts"
+          "packages/civility-kernel/CHANGELOG.md"
         ]
       },
       {
+        "kind": "unassigned",
+        "sentence": "packages/civility-kernel/LICENSE is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "subjects": [
+          "packages/civility-kernel/LICENSE"
+        ]
+      },
+      {
+        "kind": "unassigned",
+        "sentence": "packages/civility-kernel/package.json is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "subjects": [
+          "packages/civility-kernel/package.json"
+        ]
+      },
+      {
+        "kind": "unassigned",
+        "sentence": "And 38 more new files that belong to no part.",
+        "subjects": []
+      },
+      {
         "kind": "counts",
-        "sentence": "2 files added and 34 changed content, across 11 parts.",
+        "sentence": "43 files added, across 2 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "b9b7ba232eb85c7f87c0e8fcf9989dc8dedbc145",
-      "generatedAt": "2026-10-25T06:19:00.265Z"
+      "commit": "9aef44d05d6767be1738f65226a2b1b306f22800",
+      "generatedAt": "2026-10-28T01:38:02.215Z"
     },
     "unchanged": false
   },
@@ -159,13 +179,14 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 0 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "9aef44d05d6767be1738f65226a2b1b306f22800",
+  "commit": "e7ac6bbe182c3383e6034392052dfa4595f22e9e",
   "defaultBranch": "main",
-  "derived": "14 parts, mostly TypeScript (79 files), JavaScript (3), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
+  "derived": "14 parts, mostly TypeScript (118 files), JavaScript (3), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
   "doors": [
     {
       "builds": [
         "packages/cognate/src/agent-identity.ts",
+        "packages/cognate/src/civility-kernel.ts",
         "packages/cognate/src/index.ts",
         "packages/cognate/src/model-registry.ts",
         "packages/cognate/src/policy.ts",
@@ -173,6 +194,7 @@
         "packages/cognate/src/repomesh-bridge.ts",
         "packages/cognate/src/types.ts",
         "packages/agent-identity/src/",
+        "packages/civility-kernel/src/",
         "packages/model-registry/src/",
         "packages/node/src/",
         "packages/policy/src/",
@@ -197,7 +219,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 8
+          "files": 9
         },
         {
           "boundary": "model-registry",
@@ -207,7 +229,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 29
+          "files": 30
         },
         {
           "boundary": "policy",
@@ -238,8 +260,10 @@
       "runs": [
         "scripts/make-tenant-root.mjs",
         "packages/agent-identity/tests/",
+        "packages/civility-kernel/tests/",
         "packages/cognate/tests/",
         "packages/model-registry/tests/",
+        "packages/node/tests/civility-kernel-proof.test.ts",
         "packages/node/tests/deploy-gate.test.ts",
         "packages/node/tests/evaluations.test.ts",
         "packages/node/tests/event-proof.test.ts",
@@ -254,8 +278,8 @@
         "packages/prompt-store/tests/",
         "packages/repomesh-bridge/tests/"
       ],
-      "runsCount": 17,
-      "runsMore": 19,
+      "runsCount": 19,
+      "runsMore": 21,
       "sends": [],
       "stages": [],
       "triggers": [
@@ -267,6 +291,7 @@
     {
       "builds": [
         "packages/agent-identity/src/",
+        "packages/civility-kernel/src/",
         "packages/model-registry/src/",
         "packages/node/src/",
         "packages/policy/src/",
@@ -285,6 +310,7 @@
         "package.json",
         "packages/",
         "packages/agent-identity/package.json",
+        "packages/civility-kernel/package.json",
         "packages/cognate/package.json",
         "packages/model-registry/package.json",
         "packages/node/package.json",
@@ -306,7 +332,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 11
+          "files": 12
         },
         {
           "boundary": "model-registry",
@@ -316,7 +342,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 31
+          "files": 32
         },
         {
           "boundary": "policy",
@@ -362,6 +388,7 @@
     {
       "builds": [
         "packages/cognate/src/agent-identity.ts",
+        "packages/cognate/src/civility-kernel.ts",
         "packages/cognate/src/index.ts",
         "packages/cognate/src/model-registry.ts",
         "packages/cognate/src/policy.ts",
@@ -369,6 +396,7 @@
         "packages/cognate/src/repomesh-bridge.ts",
         "packages/cognate/src/types.ts",
         "packages/agent-identity/src/",
+        "packages/civility-kernel/src/",
         "packages/model-registry/src/",
         "packages/node/src/",
         "packages/policy/src/",
@@ -387,6 +415,7 @@
         "package.json",
         "packages/",
         "packages/agent-identity/package.json",
+        "packages/civility-kernel/package.json",
         "packages/cognate/package.json",
         "packages/model-registry/package.json",
         "packages/node/package.json",
@@ -408,7 +437,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 11
+          "files": 12
         },
         {
           "boundary": "model-registry",
@@ -418,7 +447,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 31
+          "files": 32
         },
         {
           "boundary": "policy",
@@ -449,8 +478,10 @@
       "runs": [
         "packages/node/src/index.ts",
         "packages/agent-identity/tests/",
+        "packages/civility-kernel/tests/",
         "packages/cognate/tests/",
         "packages/model-registry/tests/",
+        "packages/node/tests/civility-kernel-proof.test.ts",
         "packages/node/tests/deploy-gate.test.ts",
         "packages/node/tests/evaluations.test.ts",
         "packages/node/tests/event-proof.test.ts",
@@ -465,8 +496,8 @@
         "packages/prompt-store/tests/",
         "packages/repomesh-bridge/tests/"
       ],
-      "runsCount": 17,
-      "runsMore": 19,
+      "runsCount": 19,
+      "runsMore": 21,
       "sends": [
         "publishes @mcptoolshop/cognate to npm and a container image",
         "creates a GitHub release"
@@ -614,12 +645,12 @@
   ],
   "engine": "1.24.0",
   "generated": [],
-  "generatedAt": "2026-10-28T01:38:02.215Z",
+  "generatedAt": "2026-10-28T01:40:18.743Z",
   "limits": [
-    "2 imports could not be resolved: `packages/cognate/src/index.ts` imports `@cognate/civility-kernel`, which no workspace member provides; `packages/cognate/tests/smoke.test.ts` imports `../src/civility-kernel.js`, which is not in this repository.",
     "2 reads use paths built at run time and are not named here.",
     "5 writes and 22 reads go to a path their caller passes, not to this repository.",
     "3 reads go to the directory the command is run in, not to this repository.",
+    "41 files belong to no part: packages/civility-kernel/CHANGELOG.md, packages/civility-kernel/LICENSE, packages/civility-kernel/package.json and 38 more.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
   "mainDoor": ".github/workflows/ci.yml",
@@ -652,17 +683,17 @@
   ],
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 24,
+  "testFiles": 44,
   "testedBy": {
     "agent-identity": 11,
     "cognate": 1,
-    "model-registry": 13,
-    "node": 13,
+    "model-registry": 14,
+    "node": 14,
     "policy": 8,
-    "prompt-store": 12,
+    "prompt-store": 13,
     "repomesh-bridge": 4,
     "scripts": 1,
-    "types": 19
+    "types": 20
   },
   "unnamedWrites": 0,
   "unread": [],

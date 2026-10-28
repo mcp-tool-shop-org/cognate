@@ -1,31 +1,34 @@
 # cognate: how it works
 
-Mapped at 2026-10-28 from commit 9aef44d by Atlas 1.24.0.
+Mapped at 2026-10-28 from commit e7ac6bb by Atlas 1.24.0.
 
 ## What this is
 
-14 parts, mostly TypeScript (79 files), JavaScript (3), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.
+14 parts, mostly TypeScript (118 files), JavaScript (3), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.
 
-## What changed since 2026-10-25 (b9b7ba2)
+## What changed since 2026-10-28 (9aef44d)
 
-- CI's pull request trigger no longer names `**/*.ts`, `.github/workflows/**`, `atlas/**`, `package.json`, `pnpm-lock.yaml` and `tsconfig*.json`.
-- CI's push trigger now also names `**/package.json`, `Dockerfile`, `docker-compose*.yml` and `scripts/**` and no longer names `package.json`.
-- CI now also runs packages/cognate/tests/, packages/node/tests/make-tenant-root.test.ts and packages/repomesh-bridge/tests/.
-- And 1 more change to a door.
-- scripts/make-tenant-root.mjs is now read by packages/node/tests/make-tenant-root.test.ts.
-- 2 files added and 34 changed content, across 11 parts.
+- CI now also runs packages/civility-kernel/tests/ and packages/node/tests/civility-kernel-proof.test.ts.
+- CI now also builds packages/civility-kernel/src/ and packages/cognate/src/civility-kernel.ts.
+- Publish to GHCR now also builds packages/civility-kernel/src/.
+- And 4 more changes to doors.
+- packages/civility-kernel/CHANGELOG.md is new and belongs to no part, so atlas check fails on it against the previous map.
+- packages/civility-kernel/LICENSE is new and belongs to no part, so atlas check fails on it against the previous map.
+- packages/civility-kernel/package.json is new and belongs to no part, so atlas check fails on it against the previous map.
+- And 38 more new files that belong to no part.
+- 43 files added, across 2 parts.
 
 ## What comes in
 
-1. **CI.** On a pull request to main; on a push to main touching 9 paths; or by hand. Runs scripts/make-tenant-root.mjs, packages/agent-identity/tests/, packages/cognate/tests/ and 19 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/index.ts, packages/cognate/src/model-registry.ts and 43 more.
-2. **Publish to GHCR.** When a release is published; on a `workflow_call` event; or by hand. Runs packages/node/src/index.ts; builds packages/agent-identity/src/, packages/model-registry/src/, packages/node/src/ and 12 more; packs package.json, packages/, packages/agent-identity/package.json and 10 more into an image.
-3. **Release.** When a tag matching `v*` is pushed. Runs packages/node/src/index.ts, packages/agent-identity/tests/, packages/cognate/tests/ and 19 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/index.ts, packages/cognate/src/model-registry.ts and 43 more; packs package.json, packages/, packages/agent-identity/package.json and 10 more into an image.
+1. **CI.** On a pull request to main; on a push to main touching 9 paths; or by hand. Runs scripts/make-tenant-root.mjs, packages/agent-identity/tests/, packages/civility-kernel/tests/ and 21 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more.
+2. **Publish to GHCR.** When a release is published; on a `workflow_call` event; or by hand. Runs packages/node/src/index.ts; builds packages/agent-identity/src/, packages/civility-kernel/src/, packages/model-registry/src/ and 30 more; packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image.
+3. **Release.** When a tag matching `v*` is pushed. Runs packages/node/src/index.ts, packages/agent-identity/tests/, packages/civility-kernel/tests/ and 21 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more; packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image.
 4. **Deploy site to GitHub Pages.** On a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
 5. **@mcptoolshop/cognate** (the package people import). Loads packages/cognate/dist/index.d.ts, built from a source this map cannot place.
 
 ## What happens through CI
 
-1. The workflow runs scripts/make-tenant-root.mjs in scripts, packages/agent-identity/tests/ in agent-identity, packages/cognate/tests/ in cognate, packages/model-registry/tests/ in model-registry, 10 files in node, and 5 files in 3 more parts; it builds 7 files in cognate, packages/agent-identity/src/ in agent-identity, packages/model-registry/src/ in model-registry, packages/node/src/ in node, packages/policy/src/ in policy, and 9 files in 3 more parts.
+1. The workflow runs scripts/make-tenant-root.mjs in scripts, packages/agent-identity/tests/ in agent-identity, packages/cognate/tests/ in cognate, packages/model-registry/tests/ in model-registry, 11 files in node, and 24 files in 4 more places; it builds 8 files in cognate, packages/agent-identity/src/ in agent-identity, packages/model-registry/src/ in model-registry, packages/node/src/ in node, packages/policy/src/ in policy, and 26 files in 4 more places.
 
 ## Who reads the results
 
@@ -33,9 +36,9 @@ CI writes nothing this map can see.
 
 ## The other doors
 
-**Publish to GHCR** runs packages/node/src/index.ts, builds packages/agent-identity/src/, packages/model-registry/src/, packages/node/src/ and 12 more, packs package.json, packages/, packages/agent-identity/package.json and 10 more into an image, and publishes a container image on a tag push.
+**Publish to GHCR** runs packages/node/src/index.ts, builds packages/agent-identity/src/, packages/civility-kernel/src/, packages/model-registry/src/ and 30 more, packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image, and publishes a container image on a tag push.
 
-**Release** runs packages/node/src/index.ts, packages/agent-identity/tests/, packages/cognate/tests/ and 19 more, builds packages/cognate/src/agent-identity.ts, packages/cognate/src/index.ts, packages/cognate/src/model-registry.ts and 43 more, packs package.json, packages/, packages/agent-identity/package.json and 10 more into an image, publishes @mcptoolshop/cognate to npm and a container image, and creates a GitHub release.
+**Release** runs packages/node/src/index.ts, packages/agent-identity/tests/, packages/civility-kernel/tests/ and 21 more, builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more, packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image, publishes @mcptoolshop/cognate to npm and a container image, and creates a GitHub release.
 
 **Deploy site to GitHub Pages** runs site/astro.config.mjs and site/src/, and deploys the site.
 
@@ -86,10 +89,10 @@ Read those in order to follow one pull request end to end.
 
 ## What this map cannot see
 
-- 2 imports could not be resolved: `packages/cognate/src/index.ts` imports `@cognate/civility-kernel`, which no workspace member provides; `packages/cognate/tests/smoke.test.ts` imports `../src/civility-kernel.js`, which is not in this repository.
 - 2 reads use paths built at run time and are not named here.
 - 5 writes and 22 reads go to a path their caller passes, not to this repository.
 - 3 reads go to the directory the command is run in, not to this repository.
+- 41 files belong to no part: packages/civility-kernel/CHANGELOG.md, packages/civility-kernel/LICENSE, packages/civility-kernel/package.json and 38 more.
 - Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
 Regenerate with `npx --yes @dogfood-lab/atlas map`.

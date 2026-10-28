@@ -52,7 +52,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "cognate",
-      "qualifyingSourceCommits": 3,
+      "qualifyingSourceCommits": 4,
       "rebaseline": null
     },
     {
@@ -87,7 +87,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "model-registry",
-      "qualifyingSourceCommits": 8,
+      "qualifyingSourceCommits": 9,
       "rebaseline": null
     },
     {
@@ -105,7 +105,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "node",
-      "qualifyingSourceCommits": 14,
+      "qualifyingSourceCommits": 15,
       "rebaseline": null
     },
     {
@@ -143,7 +143,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "prompt-store",
-      "qualifyingSourceCommits": 5,
+      "qualifyingSourceCommits": 6,
       "rebaseline": null
     },
     {
@@ -292,8 +292,8 @@
         "path": ".gitignore"
       },
       {
-        "commits": 19,
-        "lines": 186,
+        "commits": 20,
+        "lines": 199,
         "path": "CHANGELOG.md"
       },
       {
@@ -302,8 +302,8 @@
         "path": "Caddyfile"
       },
       {
-        "commits": 6,
-        "lines": 205,
+        "commits": 7,
+        "lines": 209,
         "path": "Dockerfile"
       },
       {
@@ -342,8 +342,8 @@
         "path": "README.ja.md"
       },
       {
-        "commits": 17,
-        "lines": 498,
+        "commits": 18,
+        "lines": 548,
         "path": "README.md"
       },
       {
@@ -372,8 +372,8 @@
         "path": "SHIP_GATE.md"
       },
       {
-        "commits": 7,
-        "lines": 332,
+        "commits": 8,
+        "lines": 367,
         "path": "atlas/README.md"
       },
       {
@@ -382,18 +382,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 7,
-        "lines": 1918,
+        "commits": 8,
+        "lines": 2047,
         "path": "atlas/page.json"
       },
       {
-        "commits": 7,
-        "lines": 3216,
+        "commits": 8,
+        "lines": 3580,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 7,
-        "lines": 9779,
+        "commits": 8,
+        "lines": 9989,
         "path": "atlas/structure.json"
       },
       {
@@ -482,6 +482,211 @@
         "path": "packages/agent-identity/vitest.config.ts"
       },
       {
+        "commits": 1,
+        "lines": 99,
+        "path": "packages/civility-kernel/CHANGELOG.md"
+      },
+      {
+        "commits": 1,
+        "lines": 21,
+        "path": "packages/civility-kernel/LICENSE"
+      },
+      {
+        "commits": 1,
+        "lines": 59,
+        "path": "packages/civility-kernel/package.json"
+      },
+      {
+        "commits": 1,
+        "lines": 151,
+        "path": "packages/civility-kernel/src/attestation.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 16,
+        "path": "packages/civility-kernel/src/index.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 58,
+        "path": "packages/civility-kernel/src/policy/builder.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 54,
+        "path": "packages/civility-kernel/src/policy/canonicalize.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 169,
+        "path": "packages/civility-kernel/src/policy/constraints.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 159,
+        "path": "packages/civility-kernel/src/policy/context.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 306,
+        "path": "packages/civility-kernel/src/policy/decision.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 136,
+        "path": "packages/civility-kernel/src/policy/diff.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 134,
+        "path": "packages/civility-kernel/src/policy/explain.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 23,
+        "path": "packages/civility-kernel/src/policy/features.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 83,
+        "path": "packages/civility-kernel/src/policy/kernel.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 105,
+        "path": "packages/civility-kernel/src/policy/learning.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 204,
+        "path": "packages/civility-kernel/src/policy/lint.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 43,
+        "path": "packages/civility-kernel/src/policy/mcp-adapter.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 73,
+        "path": "packages/civility-kernel/src/policy/persistence.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 43,
+        "path": "packages/civility-kernel/src/policy/scoring.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 91,
+        "path": "packages/civility-kernel/src/policy/types.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 110,
+        "path": "packages/civility-kernel/tests/async-decision.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 195,
+        "path": "packages/civility-kernel/tests/attestation.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 69,
+        "path": "packages/civility-kernel/tests/builder.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 108,
+        "path": "packages/civility-kernel/tests/canonicalize.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 138,
+        "path": "packages/civility-kernel/tests/cognate-fixes.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 82,
+        "path": "packages/civility-kernel/tests/constraint-param-validation.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 154,
+        "path": "packages/civility-kernel/tests/context.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 399,
+        "path": "packages/civility-kernel/tests/decision.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 110,
+        "path": "packages/civility-kernel/tests/diff.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 137,
+        "path": "packages/civility-kernel/tests/explain.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 128,
+        "path": "packages/civility-kernel/tests/features.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 90,
+        "path": "packages/civility-kernel/tests/hooks.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 98,
+        "path": "packages/civility-kernel/tests/kernel.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 244,
+        "path": "packages/civility-kernel/tests/learning.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 280,
+        "path": "packages/civility-kernel/tests/lint.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 50,
+        "path": "packages/civility-kernel/tests/mcp-adapter.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 177,
+        "path": "packages/civility-kernel/tests/parameterized-constraints.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 113,
+        "path": "packages/civility-kernel/tests/persistence.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 44,
+        "path": "packages/civility-kernel/tests/public-api.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 9,
+        "path": "packages/civility-kernel/tsconfig.json"
+      },
+      {
+        "commits": 1,
+        "lines": 22,
+        "path": "packages/civility-kernel/vitest.config.ts"
+      },
+      {
         "commits": 2,
         "lines": 23,
         "path": "packages/cognate/LICENSE"
@@ -527,8 +732,8 @@
         "path": "packages/cognate/README.zh.md"
       },
       {
-        "commits": 14,
-        "lines": 125,
+        "commits": 15,
+        "lines": 133,
         "path": "packages/cognate/package.json"
       },
       {
@@ -537,8 +742,13 @@
         "path": "packages/cognate/src/agent-identity.ts"
       },
       {
-        "commits": 2,
-        "lines": 17,
+        "commits": 1,
+        "lines": 1,
+        "path": "packages/cognate/src/civility-kernel.ts"
+      },
+      {
+        "commits": 3,
+        "lines": 19,
         "path": "packages/cognate/src/index.ts"
       },
       {
@@ -567,8 +777,8 @@
         "path": "packages/cognate/src/types.ts"
       },
       {
-        "commits": 2,
-        "lines": 25,
+        "commits": 3,
+        "lines": 30,
         "path": "packages/cognate/tests/smoke.test.ts"
       },
       {
@@ -577,8 +787,8 @@
         "path": "packages/cognate/tsconfig.json"
       },
       {
-        "commits": 2,
-        "lines": 27,
+        "commits": 3,
+        "lines": 28,
         "path": "packages/cognate/tsup.config.ts"
       },
       {
@@ -647,8 +857,8 @@
         "path": "packages/node/config/tenant-roots.json"
       },
       {
-        "commits": 7,
-        "lines": 70,
+        "commits": 8,
+        "lines": 71,
         "path": "packages/node/package.json"
       },
       {
@@ -740,6 +950,11 @@
         "commits": 1,
         "lines": 101,
         "path": "packages/node/src/tenant.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 30,
+        "path": "packages/node/tests/civility-kernel-proof.test.ts"
       },
       {
         "commits": 4,
@@ -952,8 +1167,8 @@
         "path": "packages/types/tsconfig.json"
       },
       {
-        "commits": 12,
-        "lines": 5894,
+        "commits": 13,
+        "lines": 5966,
         "path": "pnpm-lock.yaml"
       },
       {
@@ -1077,177 +1292,177 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-10-28T01:38:02.215Z",
+  "generatedAt": "2026-10-28T01:40:18.743Z",
   "generatedFrom": {
-    "commit": "9aef44d05d6767be1738f65226a2b1b306f22800"
+    "commit": "e7ac6bbe182c3383e6034392052dfa4595f22e9e"
   },
   "pairs": [
     {
       "a": "CHANGELOG.md",
       "b": "HANDBOOK.md",
-      "either": 20,
+      "either": 21,
       "shared": 11,
-      "strength": 0.55
+      "strength": 0.52381
     },
     {
       "a": "CHANGELOG.md",
       "b": "README.md",
-      "either": 19,
-      "shared": 13,
-      "strength": 0.684211
+      "either": 20,
+      "shared": 14,
+      "strength": 0.7
     },
     {
       "a": "HANDBOOK.md",
       "b": "README.md",
-      "either": 18,
+      "either": 19,
       "shared": 11,
-      "strength": 0.611111
+      "strength": 0.578947
     },
     {
       "a": "README.es.md",
       "b": "README.fr.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.es.md",
       "b": "README.hi.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.es.md",
       "b": "README.it.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.es.md",
       "b": "README.ja.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.es.md",
       "b": "README.pt-BR.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.es.md",
       "b": "README.zh.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.fr.md",
       "b": "README.hi.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.fr.md",
       "b": "README.it.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.fr.md",
       "b": "README.ja.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.fr.md",
       "b": "README.pt-BR.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.fr.md",
       "b": "README.zh.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.hi.md",
       "b": "README.it.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.hi.md",
       "b": "README.ja.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.hi.md",
       "b": "README.pt-BR.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.hi.md",
       "b": "README.zh.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.it.md",
       "b": "README.ja.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.it.md",
       "b": "README.pt-BR.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.it.md",
       "b": "README.zh.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.ja.md",
       "b": "README.pt-BR.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.ja.md",
       "b": "README.zh.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
       "a": "README.pt-BR.md",
       "b": "README.zh.md",
-      "either": 6,
-      "shared": 6,
+      "either": 7,
+      "shared": 7,
       "strength": 1
     },
     {
@@ -1295,16 +1510,16 @@
     {
       "a": "package.json",
       "b": "packages/cognate/package.json",
-      "either": 18,
-      "shared": 11,
-      "strength": 0.611111
+      "either": 19,
+      "shared": 12,
+      "strength": 0.631579
     },
     {
       "a": "packages/agent-identity/package.json",
       "b": "packages/prompt-store/package.json",
-      "either": 7,
+      "either": 8,
       "shared": 5,
-      "strength": 0.714286
+      "strength": 0.625
     },
     {
       "a": "packages/agent-identity/package.json",
@@ -1316,20 +1531,13 @@
     {
       "a": "packages/model-registry/package.json",
       "b": "packages/prompt-store/package.json",
-      "either": 9,
-      "shared": 6,
-      "strength": 0.666667
-    },
-    {
-      "a": "packages/model-registry/package.json",
-      "b": "packages/types/package.json",
       "either": 10,
-      "shared": 5,
-      "strength": 0.5
+      "shared": 7,
+      "strength": 0.7
     }
   ],
   "parameters": {
-    "appliedChangesetLimit": 40.5,
+    "appliedChangesetLimit": 50,
     "changeset": 50,
     "changesetFraction": 0.25,
     "cohesionDrop": 0.2,
@@ -1338,16 +1546,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-10-25T05:24:47-04:00",
-    "inScopeFiles": 162,
+    "headDate": "2026-10-27T21:38:43-04:00",
+    "inScopeFiles": 205,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 49,
+    "qualifyingCommits": 50,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-28T09:24:47.000Z",
+    "since": "2026-05-01T01:38:43.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",
