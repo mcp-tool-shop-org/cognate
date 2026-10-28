@@ -2,7 +2,7 @@
 
 All notable changes to Cognate are documented in this file.
 
-## [1.1.0] - release date to be set on the release day
+## [1.1.0] - 2026-10-28
 
 1.1.0 adds plan selection before an agent acts, alongside the existing gate on each event, and fixes the bundle's type declarations for npm consumers. Nothing in the HTTP API, the signed-request format or the event and attestation format changes, so a 1.0.0 caller keeps working.
 
