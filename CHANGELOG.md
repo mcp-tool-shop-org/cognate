@@ -13,9 +13,14 @@ All notable changes to Cognate are documented in this file.
 - **`attestDecision` and `computeDecisionDigests`.** `computeDecisionDigests(trace, chosenPlan?)` returns `decisionSha256`, `policySha256` and `planSha256` (SHA-256 over RFC 8785 JSON, 64 lowercase hex characters), the form `preRegisterRun` accepts for `planSha256` and `decisionSha256`. It refuses a plan the trace didn't choose, and any non-finite number. `attestDecision(config, trace, chosenPlan?)` appends `cognate.policy.decided` to `cognate-<tenantId>-policy` with the digests and the decision's outline (outcome, chosen plan id, context rules that fired, constraint ids each failed plan broke), never plan steps or constraint reasons, and returns nothing unless the append succeeds. The event is on a stream `GET /events/:eventId` already proves, and a test proves one with `proveRecordedEvent`.
 - `zod` is a runtime dependency of `@mcptoolshop/cognate`, for the kernel's policy and constraint validation.
 
+### Fixed
+
+- **`@mcptoolshop/cognate`'s type declarations resolve for npm consumers.** The bundle inlines the `@cognate/*` workspace packages and attestia into its JS, but its `.d.ts` files still imported them by name, and none of them installs with the bundle: a TypeScript consumer got unresolved types on every subpath. The published 1.0.0 has the same defect. The build now copies each imported package's own compiled declarations into `dist/_types/` and points the imports there (`packages/cognate/scripts/vendor-types.mjs`); the JS output is unchanged. The only modules the declarations still import are the bundle's runtime dependencies (`zod`; `@mcptoolshop/repomesh` is declared but not imported by any declaration).
+
 ### Tests
 
 - `@cognate/civility-kernel`: 164 tests (143 ported, 21 new), coverage 91.9% of lines, floor 90. `@cognate/node`: an inclusion-proof test for an attested decision. The bundle smoke test checks the new subpath and namespace.
+- `scripts/check-bundle-types.mjs`, a CI step: it packs the bundle as `release.yml` publishes it, installs it into an empty project with only `typescript` and `@types/node`, and runs strict `tsc --noEmit` under `moduleResolution` `bundler` and `node16` on a file importing a type and a value from the root entry and every subpath. It also fails if an entry declaration mentions `@cognate/`, or any declaration imports a module that is neither relative nor a runtime dependency. On the build before this fix it fails (54 type errors across the two settings); after it, it passes.
 
 ## [1.0.0] - 2026-10-25
 

@@ -59,6 +59,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Packs @mcptoolshop/cognate as release.yml publishes it, installs it into an empty project and type-checks
+      # an import from every entry, so a declaration that points at an unpublished @cognate/* package fails here.
+      - name: Bundle types resolve for an npm consumer
+        run: node scripts/check-bundle-types.mjs
+
       - name: Test with coverage
         run: pnpm test:coverage
 
