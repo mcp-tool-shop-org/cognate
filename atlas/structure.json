@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "623ee16b6650133a57b37721e3d5e38aabd9805206a21400c1825a7b3779958d",
+          "hash": "cfa81b465a24ca273b1c4d0064f3d71e6f54414baf5c2a755aa903b396bd8eea",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -220,8 +220,27 @@
           "path": "packages/cognate/README.zh.md"
         },
         {
-          "hash": "b16fdedcfeb3a7908ec09977d3487e3203e859259be552c701ab950c628ba598",
+          "hash": "904d7b648d7225b9f74814a3179ce8f0f4e9c3c52f14a85ef21d7c9b2186007a",
           "path": "packages/cognate/package.json"
+        },
+        {
+          "entry": "rewrite",
+          "entryRule": 1,
+          "failurePaths": [
+            {
+              "in": "installedPackage",
+              "kind": "throw",
+              "line": 35
+            },
+            {
+              "in": "vendored",
+              "kind": "throw",
+              "line": 50
+            }
+          ],
+          "hash": "21762289d35bb568fb44faf3d36945e59d284c0c6c346420bf9dcc0c36249d26",
+          "path": "packages/cognate/scripts/vendor-types.mjs",
+          "sequences": []
         },
         {
           "hash": "4b78eb53aeccbbd04005bfbebbc12840a2215e60c10d88d2f0d25f94f531ed94",
@@ -363,6 +382,17 @@
       "importConfidence": "full",
       "name": "cognate",
       "origin": "authored",
+      "outsidePlaces": [
+        {
+          "reads": 2,
+          "where": [
+            "caller"
+          ],
+          "writes": 1
+        }
+      ],
+      "outsideReads": 2,
+      "outsideWrites": 1,
       "role": "code",
       "testRunners": [
         "vitest"
@@ -2571,7 +2601,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "fbe5f9a97615244356de96903160c3e8866b4136e52081736c8db73287169bf0",
+          "hash": "2fbd64d42c5df09bb54a6b24fa48aa4a44245a7bb35ed1cadccd30886c9da0e7",
           "path": "CHANGELOG.md"
         },
         {
@@ -2674,13 +2704,42 @@
       "unresolvedSites": 0
     },
     {
-      "dynamicReads": 0,
-      "dynamicSpawns": 0,
+      "dynamicReads": 1,
+      "dynamicSpawns": 4,
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
       "entryPoints": [],
       "externals": 0,
       "files": [
+        {
+          "hash": "cd1b0c27332c2bae1a03bd05ccf51beb2bfe153b7c2700d417546268306720be",
+          "path": "scripts/bundle-types-fixture/consumer.ts"
+        },
+        {
+          "hash": "6ba6a833b740ce2ad1e5da0b72743a9b5bddd5b4918e613ba5a10f313d1ec69d",
+          "path": "scripts/bundle-types-fixture/package.json"
+        },
+        {
+          "hash": "7f6f0337fce04eb2d93449f0627a9dad670b0e82bc9057d78cebb1357d23fc68",
+          "path": "scripts/bundle-types-fixture/tsconfig.bundler.json"
+        },
+        {
+          "hash": "2c1e834b9eba7bfe694928ecfc4ffeb6ab6fbdf403f1ed74bb77df137d9091cb",
+          "path": "scripts/bundle-types-fixture/tsconfig.node16.json"
+        },
+        {
+          "entry": "run",
+          "entryRule": 1,
+          "failurePaths": [
+            {
+              "kind": "catch",
+              "line": 84
+            }
+          ],
+          "hash": "911794213b93fbba7484f428d8769912baa499b2a7016131a817df53965aab48",
+          "path": "scripts/check-bundle-types.mjs",
+          "sequences": []
+        },
         {
           "hash": "270c1277ae1cc75b8b042ac74c650e9e47f346c9545a1cc5592e20b5c9edc98f",
           "path": "scripts/health-server.mjs"
@@ -2715,7 +2774,24 @@
         "vitest"
       ],
       "testedBy": 1,
-      "unresolvedSites": 0
+      "unresolvedNamed": [
+        {
+          "path": "scripts/bundle-types-fixture/consumer.ts",
+          "specifier": "@mcptoolshop/cognate",
+          "why": "generated"
+        },
+        {
+          "path": "scripts/bundle-types-fixture/consumer.ts",
+          "specifier": "@mcptoolshop/cognate/types",
+          "why": "generated"
+        },
+        {
+          "path": "scripts/bundle-types-fixture/consumer.ts",
+          "specifier": "@mcptoolshop/cognate/policy",
+          "why": "generated"
+        }
+      ],
+      "unresolvedSites": 8
     },
     {
       "dynamicReads": 0,
@@ -2918,6 +2994,14 @@
           "dir": "",
           "job": "build-and-test",
           "programs": [
+            "node"
+          ],
+          "step": "Bundle types resolve for an npm consumer"
+        },
+        {
+          "dir": "",
+          "job": "build-and-test",
+          "programs": [
             "pnpm"
           ],
           "step": "Test with coverage"
@@ -3031,7 +3115,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 9
+          "files": 10
         },
         {
           "boundary": "model-registry",
@@ -3061,7 +3145,7 @@
         {
           "boundary": "scripts",
           "depth": 0,
-          "files": 1
+          "files": 2
         },
         {
           "boundary": "types",
@@ -3104,6 +3188,11 @@
           "path": "packages/civility-kernel/tests/",
           "runKind": "executes",
           "via": "vitest packages/civility-kernel/vitest.config.ts"
+        },
+        {
+          "job": "build-and-test",
+          "path": "packages/cognate/scripts/vendor-types.mjs",
+          "runKind": "executes"
         },
         {
           "built": true,
@@ -3326,11 +3415,16 @@
         },
         {
           "job": "build-and-test",
+          "path": "scripts/check-bundle-types.mjs",
+          "runKind": "executes"
+        },
+        {
+          "job": "build-and-test",
           "path": "scripts/make-tenant-root.mjs",
           "runKind": "executes"
         }
       ],
-      "runsCount": 35,
+      "runsCount": 37,
       "secrets": [],
       "sends": {
         "deploysPages": false,
@@ -3488,6 +3582,9 @@
           "event": "workflow_dispatch"
         }
       ],
+      "untrackedLandings": [
+        "packages/cognate/dist/"
+      ],
       "uses": [
         "actions/checkout",
         "actions/setup-node",
@@ -3551,7 +3648,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 12
+          "files": 13
         },
         {
           "boundary": "model-registry",
@@ -4116,7 +4213,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 12
+          "files": 13
         },
         {
           "boundary": "model-registry",
@@ -4243,6 +4340,11 @@
           "path": "packages/cognate/package.json",
           "runKind": "checks",
           "via": "docker build Dockerfile"
+        },
+        {
+          "job": "release",
+          "path": "packages/cognate/scripts/vendor-types.mjs",
+          "runKind": "executes"
         },
         {
           "built": true,
@@ -4587,7 +4689,7 @@
           "via": "docker build Dockerfile"
         }
       ],
-      "runsCount": 49,
+      "runsCount": 50,
       "secrets": [
         "GITHUB_TOKEN"
       ],
@@ -4729,6 +4831,9 @@
           ]
         }
       ],
+      "untrackedLandings": [
+        "packages/cognate/dist/"
+      ],
       "uses": [
         "actions/checkout",
         "actions/setup-node",
@@ -4860,8 +4965,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "e7ac6bbe182c3383e6034392052dfa4595f22e9e",
-    "tracked": 200
+    "commit": "a7f3f0dd3469be6ecc53c9adaf4b2b632f586495",
+    "tracked": 206
   },
   "landings": [
     {
@@ -4939,8 +5044,99 @@
     {
       "readers": [
         {
+          "by": "packages/cognate/scripts/vendor-types.mjs",
+          "call": "readFileSync",
+          "confidence": "ast"
+        }
+      ],
+      "target": "packages",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "packages/cognate/scripts/vendor-types.mjs",
+          "call": "readFileSync",
+          "confidence": "ast"
+        },
+        {
+          "by": "packages/cognate/scripts/vendor-types.mjs",
+          "call": "readdirSync",
+          "confidence": "ast"
+        }
+      ],
+      "target": "packages/*",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "packages/cognate/scripts/vendor-types.mjs",
+          "call": "existsSync",
+          "confidence": "ast"
+        },
+        {
+          "by": "packages/cognate/scripts/vendor-types.mjs",
+          "call": "readdirSync",
+          "confidence": "ast"
+        },
+        {
+          "by": "scripts/check-bundle-types.mjs",
+          "call": "readFileSync",
+          "confidence": "ast"
+        },
+        {
+          "by": "scripts/check-bundle-types.mjs",
+          "call": "readdirSync",
+          "confidence": "ast"
+        }
+      ],
+      "target": "packages/cognate",
+      "writers": []
+    },
+    {
+      "readers": [],
+      "target": "packages/cognate/dist",
+      "tracked": false,
+      "writers": [
+        {
+          "by": "packages/cognate/scripts/vendor-types.mjs",
+          "confidence": "ast"
+        }
+      ]
+    },
+    {
+      "readers": [],
+      "target": "packages/cognate/dist/_types/attestia/index.d.ts/*",
+      "tracked": false,
+      "writers": [
+        {
+          "by": "packages/cognate/scripts/vendor-types.mjs",
+          "confidence": "ast"
+        }
+      ]
+    },
+    {
+      "readers": [],
+      "target": "packages/cognate/dist/_types/cognate/*",
+      "tracked": false,
+      "writers": [
+        {
+          "by": "packages/cognate/scripts/vendor-types.mjs",
+          "confidence": "ast"
+        }
+      ]
+    },
+    {
+      "readers": [
+        {
           "by": ".github/workflows/release.yml",
           "confidence": "config"
+        },
+        {
+          "by": "scripts/check-bundle-types.mjs",
+          "call": "readFileSync",
+          "confidence": "ast"
         }
       ],
       "target": "packages/cognate/package.json",
@@ -5032,6 +5228,17 @@
         }
       ],
       "target": "packages/repomesh-bridge",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "scripts/check-bundle-types.mjs",
+          "call": "literal",
+          "confidence": "ast"
+        }
+      ],
+      "target": "scripts/bundle-types-fixture",
       "writers": []
     },
     {

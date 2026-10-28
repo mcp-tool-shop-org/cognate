@@ -1,44 +1,43 @@
 # cognate: how it works
 
-Mapped at 2026-10-28 from commit e7ac6bb by Atlas 1.24.0.
+Mapped at 2026-10-28 from commit a7f3f0d by Atlas 1.24.0.
 
 ## What this is
 
-14 parts, mostly TypeScript (118 files), JavaScript (3), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.
+14 parts, mostly TypeScript (119 files), JavaScript (5), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.
 
-## What changed since 2026-10-28 (9aef44d)
+## What changed since 2026-10-28 (e7ac6bb)
 
-- CI now also runs packages/civility-kernel/tests/ and packages/node/tests/civility-kernel-proof.test.ts.
-- CI now also builds packages/civility-kernel/src/ and packages/cognate/src/civility-kernel.ts.
-- Publish to GHCR now also builds packages/civility-kernel/src/.
-- And 4 more changes to doors.
-- packages/civility-kernel/CHANGELOG.md is new and belongs to no part, so atlas check fails on it against the previous map.
-- packages/civility-kernel/LICENSE is new and belongs to no part, so atlas check fails on it against the previous map.
-- packages/civility-kernel/package.json is new and belongs to no part, so atlas check fails on it against the previous map.
-- And 38 more new files that belong to no part.
-- 43 files added, across 2 parts.
+- CI now also runs packages/cognate/scripts/vendor-types.mjs and scripts/check-bundle-types.mjs.
+- Release now also runs packages/cognate/scripts/vendor-types.mjs.
+- packages/cognate/dist is now written by packages/cognate/scripts/vendor-types.mjs.
+- packages/cognate/dist/_types/attestia/index.d.ts/* is now written by packages/cognate/scripts/vendor-types.mjs.
+- packages/cognate/dist/_types/cognate/* is now written by packages/cognate/scripts/vendor-types.mjs.
+- And 5 more new writers and readers of places.
+- 6 files added and 3 changed content, across 4 parts.
 
 ## What comes in
 
-1. **CI.** On a pull request to main; on a push to main touching 9 paths; or by hand. Runs scripts/make-tenant-root.mjs, packages/agent-identity/tests/, packages/civility-kernel/tests/ and 21 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more.
+1. **CI.** On a pull request to main; on a push to main touching 9 paths; or by hand. Runs packages/cognate/scripts/vendor-types.mjs, scripts/check-bundle-types.mjs, scripts/make-tenant-root.mjs and 42 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more.
 2. **Publish to GHCR.** When a release is published; on a `workflow_call` event; or by hand. Runs packages/node/src/index.ts; builds packages/agent-identity/src/, packages/civility-kernel/src/, packages/model-registry/src/ and 30 more; packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image.
-3. **Release.** When a tag matching `v*` is pushed. Runs packages/node/src/index.ts, packages/agent-identity/tests/, packages/civility-kernel/tests/ and 21 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more; packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image.
+3. **Release.** When a tag matching `v*` is pushed. Runs packages/cognate/scripts/vendor-types.mjs, packages/node/src/index.ts, packages/agent-identity/tests/ and 40 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more; packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image.
 4. **Deploy site to GitHub Pages.** On a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
 5. **@mcptoolshop/cognate** (the package people import). Loads packages/cognate/dist/index.d.ts, built from a source this map cannot place.
 
 ## What happens through CI
 
-1. The workflow runs scripts/make-tenant-root.mjs in scripts, packages/agent-identity/tests/ in agent-identity, packages/cognate/tests/ in cognate, packages/model-registry/tests/ in model-registry, 11 files in node, and 24 files in 4 more places; it builds 8 files in cognate, packages/agent-identity/src/ in agent-identity, packages/model-registry/src/ in model-registry, packages/node/src/ in node, packages/policy/src/ in policy, and 26 files in 4 more places.
+1. The workflow runs packages/cognate/scripts/vendor-types.mjs and packages/cognate/tests/ in cognate, scripts/check-bundle-types.mjs and scripts/make-tenant-root.mjs in scripts, packages/agent-identity/tests/ in agent-identity, packages/model-registry/tests/ in model-registry, 11 files in node, and 24 files in 4 more places; it builds 8 files in cognate, packages/agent-identity/src/ in agent-identity, packages/model-registry/src/ in model-registry, packages/node/src/ in node, packages/policy/src/ in policy, and 26 files in 4 more places.
+2. It writes to packages/cognate/dist/, which is not tracked.
 
 ## Who reads the results
 
-CI writes nothing this map can see.
+CI writes only to packages/cognate/dist/, which is not tracked.
 
 ## The other doors
 
 **Publish to GHCR** runs packages/node/src/index.ts, builds packages/agent-identity/src/, packages/civility-kernel/src/, packages/model-registry/src/ and 30 more, packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image, and publishes a container image on a tag push.
 
-**Release** runs packages/node/src/index.ts, packages/agent-identity/tests/, packages/civility-kernel/tests/ and 21 more, builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more, packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image, publishes @mcptoolshop/cognate to npm and a container image, and creates a GitHub release.
+**Release** runs packages/cognate/scripts/vendor-types.mjs, packages/node/src/index.ts, packages/agent-identity/tests/ and 40 more, builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more, packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image, writes to packages/cognate/dist/, which is not tracked, publishes @mcptoolshop/cognate to npm and a container image, and creates a GitHub release.
 
 **Deploy site to GitHub Pages** runs site/astro.config.mjs and site/src/, and deploys the site.
 
@@ -89,9 +88,12 @@ Read those in order to follow one pull request end to end.
 
 ## What this map cannot see
 
-- 2 reads use paths built at run time and are not named here.
-- 5 writes and 22 reads go to a path their caller passes, not to this repository.
+- 8 imports could not be resolved: `scripts/bundle-types-fixture/consumer.ts` imports `@mcptoolshop/cognate`, which a build generates; `scripts/bundle-types-fixture/consumer.ts` imports `@mcptoolshop/cognate/policy`, which a build generates; `scripts/bundle-types-fixture/consumer.ts` imports `@mcptoolshop/cognate/types`, which a build generates; and 5 more.
+- 3 reads use paths built at run time and are not named here.
+- 3 writes go to places this repository does not track, so they are not listed as generated.
+- 6 writes and 24 reads go to a path their caller passes, not to this repository.
 - 3 reads go to the directory the command is run in, not to this repository.
+- 4 commands are built at run time and not followed.
 - 41 files belong to no part: packages/civility-kernel/CHANGELOG.md, packages/civility-kernel/LICENSE, packages/civility-kernel/package.json and 38 more.
 - Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window.
 

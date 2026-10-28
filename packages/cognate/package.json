@@ -59,7 +59,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/vendor-types.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run",
     "lint": "tsc --noEmit"
