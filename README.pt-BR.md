@@ -62,7 +62,7 @@ Cognate é a camada ausente: registro de modelo, aplicação de política, ident
 
 ## Arquitetura
 
-Cognate consome os elementos básicos de Attestia e adiciona uma camada de domínio nativa de IA. Os pacotes são funções puras. Os chamadores fornecem o estado. Nada aqui abre um socket, grava um arquivo ou lê um relógio, a menos que você forneça o valor.
+Cognate consome os elementos básicos de Attestia e adiciona uma camada de domínio nativa de IA. As bibliotecas recebem o estado que você passa para elas. Algumas chamadas vão além: `transitionVersion` e `feedbackFromMcpResult` registram a hora atual, o `decide` e o `decideAsync` do kernel leem o relógio e geram um ID aleatório, a menos que você passe tanto `decisionId` quanto `timestamp`, e o `verifyRelease` lê o relógio e o livro-razão do RepoMesh, pela rede ou de um diretório local. Nada mais abre um socket, grava um arquivo ou lê o relógio.
 
 | Pacote | Objetivo | Status |
 |---------|---------|--------|

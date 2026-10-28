@@ -34,13 +34,15 @@ if (result.overall === "deny") {
 
 | Importazione | Cos’è |
 |--------|------------|
-| `@mcptoolshop/cognate` | Spazi dei nomi: `types`, `policy`, `modelRegistry`, `agentIdentity`, `promptStore` |
+| `@mcptoolshop/cognate` | Spazi dei nomi: `types`, `policy`, `civilityKernel`, `modelRegistry`, `agentIdentity`, `promptStore`, `repomeshBridge` |
 | `@mcptoolshop/cognate/policy` | `evaluatePolicy` |
+| `@mcptoolshop/cognate/civility-kernel` | Selezione del piano, prima che un agente agisca |
 | `@mcptoolshop/cognate/model-registry` | Versioni del modello e il controllo di approvazione prima del deployment |
 | `@mcptoolshop/cognate/agent-identity` | Concessione di capacità, approvazioni, revoche |
 | `@mcptoolshop/cognate/prompt-store` | Registro di prompt e output crittografato in sola aggiunta |
+| `@mcptoolshop/cognate/repomesh-bridge` | La verifica della versione di RepoMesh, `verifyRelease` |
 | `@mcptoolshop/cognate/types` | I sostantivi condivisi |
 
-Queste sono funzioni pure. Si passano l’orologio, la chiave del tenant e l’archivio. Questo pacchetto non apre una socket.
+Queste funzioni utilizzano lo stato che viene loro passato: la chiave dell’inquilino e l’archivio. Alcune chiamate vanno oltre questo stato: `transitionVersion` e `feedbackFromMcpResult` registrano l’ora corrente, `decide` e `decideAsync` del kernel leggono l’orologio e generano un ID casuale, a meno che non vengano passati sia `decisionId` che `timestamp`, e `verifyRelease` legge l’orologio e il registro RepoMesh, tramite la rete o da una directory locale.
 
 Manuale: <https://mcp-tool-shop-org.github.io/cognate/handbook/>

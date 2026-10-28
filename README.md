@@ -62,7 +62,7 @@ Cognate is the missing layer: model registry, policy enforcement, agent identity
 
 ## Architecture
 
-Cognate consumes Attestia primitives and adds an AI-native domain layer. The packages are pure functions. Callers supply state. Nothing here opens a socket, writes a file, or reads a clock unless you hand it the value.
+Cognate consumes Attestia primitives and adds an AI-native domain layer. The libraries take the state you pass them. A few calls reach outside it: `transitionVersion` and `feedbackFromMcpResult` stamp the current time, the kernel's `decide` and `decideAsync` read the clock and make a random id unless you pass both `decisionId` and `timestamp`, and `verifyRelease` reads the clock and the RepoMesh ledger, over the network or from a local directory. Nothing else opens a socket, writes a file or reads the clock.
 
 | Package | Purpose | Status |
 |---------|---------|--------|
@@ -91,7 +91,7 @@ Cognate governs an agent at two points.
 
 A decision can be recorded and hashed. `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream,
 carrying digests and the decision's outline, never the plan steps. `computeDecisionDigests` gives the `planSha256` and
-`decisionSha256` that a run pre-registration (`preRegisterRun`) asks for. Pass `decisionId` and `timestamp` and the same
+`decisionSha256` that a run pre-registration (`preRegisterRun`) asks for. Given a `decisionId` and a `timestamp`, the same
 inputs give a byte-identical trace.
 
 ```js

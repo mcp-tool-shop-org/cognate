@@ -62,7 +62,7 @@ Cognate es la capa que falta: registro de modelos, aplicación de políticas, id
 
 ## Arquitectura
 
-Cognate consume primitivas de Attestia y añade una capa de dominio nativa de IA. Los paquetes son funciones puras. Los llamantes proporcionan el estado. Nada aquí abre un socket, escribe un archivo o lee un reloj a menos que se le proporcione el valor.
+Cognate consume primitivas de Attestia y añade una capa de dominio nativa de IA. Las bibliotecas toman el estado que se les pasa. Algunas llamadas van más allá de ese estado: `transitionVersion` y `feedbackFromMcpResult` registran la hora actual, `decide` y `decideAsync` del núcleo leen el reloj y generan un identificador aleatorio, a menos que se pasen tanto `decisionId` como `timestamp`, y `verifyRelease` lee el reloj y el libro de contabilidad de RepoMesh, a través de la red o desde un directorio local. Ninguna otra función abre un socket, escribe un archivo o lee el reloj.
 
 | Paquete | Propósito | Estado |
 |---------|---------|--------|
@@ -86,7 +86,7 @@ Cognate gobierna a un agente en dos puntos.
 
 Se puede registrar y generar un hash de una decisión. `attestDecision` añade `cognate.policy.decided` al flujo de políticas del inquilino,
 llevando resúmenes y el esquema de la decisión, nunca los pasos del plan. `computeDecisionDigests` proporciona el `planSha256` y
-`decisionSha256` que una preinscripción de ejecución (`preRegisterRun`) solicita. Pasar `decisionId` y `timestamp` y los mismos
+`decisionSha256` que una preinscripción de ejecución (`preRegisterRun`) solicita. Con un `decisionId` y un `timestamp`, las mismas
 entradas producen un registro idéntico.
 
 ```js

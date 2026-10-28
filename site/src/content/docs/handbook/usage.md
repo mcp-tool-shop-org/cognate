@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-Every call takes the state you already have. None of these functions read the filesystem or the network, and only the kernel's `decide` reads the clock, when you don't pass it a time.
+Every call takes the state you already have, with these exceptions: `transitionVersion` and `feedbackFromMcpResult` stamp the current time, the kernel's `decide` and `decideAsync` read the clock and make a random id unless you pass both `decisionId` and `timestamp`, and `verifyRelease` reads the clock and the RepoMesh ledger, over the network or from a local directory. The `attest*` functions append to the event store you pass them.
 
 The examples use the workspace names (`@cognate/policy` and so on). From npm, import the same functions from the bundle's subpaths: `@mcptoolshop/cognate/civility-kernel`, `@mcptoolshop/cognate/policy`, `@mcptoolshop/cognate/model-registry`, `@mcptoolshop/cognate/agent-identity`, `@mcptoolshop/cognate/prompt-store`, `@mcptoolshop/cognate/repomesh-bridge` and `@mcptoolshop/cognate/types`.
 

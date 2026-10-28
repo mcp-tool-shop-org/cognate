@@ -62,7 +62,7 @@ Cognate è il livello mancante: registro dei modelli, applicazione delle politic
 
 ## Architettura
 
-Cognate utilizza i componenti primitivi di Attestia e aggiunge un livello di dominio nativo per l'IA. I pacchetti sono funzioni pure. Chi effettua la chiamata fornisce lo stato. Nessuno di questi elementi apre una connessione di rete, scrive un file o legge l'ora, a meno che non gli venga fornito il valore.
+Cognate utilizza i componenti primitivi di Attestia e aggiunge un livello di dominio nativo per l'IA. Le librerie utilizzano lo stato che viene loro fornito. Alcune chiamate vanno oltre questo stato: `transitionVersion` e `feedbackFromMcpResult` registrano l’ora corrente, `decide` e `decideAsync` del kernel leggono l’orologio e generano un ID casuale, a meno che non vengano forniti sia `decisionId` che `timestamp`, e `verifyRelease` legge l’orologio e il registro RepoMesh, tramite la rete o da una directory locale. Nessun altro elemento apre una connessione di rete, scrive un file o legge l’orologio.
 
 | Pacchetto | Scopo | Stato |
 |---------|---------|--------|

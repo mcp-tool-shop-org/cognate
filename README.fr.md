@@ -62,7 +62,7 @@ Cognate est la couche manquante : registre de modèles, application des politiq
 
 ## Architecture
 
-Cognate consomme les primitives d’Attestia et ajoute une couche de domaine native à l’IA. Les paquets sont des fonctions pures. Les appelants fournissent l’état. Rien ici n’ouvre de socket, n’écrit dans un fichier ou ne lit l’heure, à moins que vous ne lui fournissiez la valeur.
+Cognate consomme les primitives d’Attestia et ajoute une couche de domaine native à l’IA. Les bibliothèques utilisent l’état que vous leur transmettez. Quelques appels vont au-delà de cet état : `transitionVersion` et `feedbackFromMcpResult` enregistrent l’heure actuelle, les fonctions `decide` et `decideAsync` du noyau lisent l’heure et génèrent un identifiant aléatoire, à moins que vous ne leur transmettiez à la fois `decisionId` et `timestamp`, et `verifyRelease` lit l’heure et le registre RepoMesh, via le réseau ou à partir d’un répertoire local. Aucune autre fonction n’ouvre de socket, n’écrit dans un fichier ou ne lit l’heure.
 
 | Paquet | Objectif | État |
 |---------|---------|--------|

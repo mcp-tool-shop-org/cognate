@@ -8,7 +8,7 @@ Cognate attests to AI truth: model lineage, policy decisions, agent capabilities
 
 Attestia, Cognate, and RepoMesh are three products. Attestia ships the financial domain (personal vault, org treasury, registrum) on top of those primitives. RepoMesh is the release network: signed events, node manifests, and an XRPL-anchored trust clock, on its own RFC 6962 ledger. It does not use Attestia's Merkle tree. Cognate calls Attestia when it needs a proof, and RepoMesh when it needs a release checked.
 
-The npm package `@mcptoolshop/cognate` is those libraries in one bundle. They are pure functions. You pass in the clock, the tenant key, and the store. `@cognate/node` is a separate HTTP layer over the same functions. Its `/health` returns `"mode": "api"`. `@cognate/repomesh-bridge` checks a release on the RepoMesh ledger.
+The npm package `@mcptoolshop/cognate` is those libraries in one bundle. They take the state you pass them: the tenant key and the store. A few calls reach outside it: `transitionVersion` and `feedbackFromMcpResult` stamp the current time, the kernel's `decide` and `decideAsync` read the clock and make a random id unless you pass both `decisionId` and `timestamp`, and `verifyRelease` reads the clock and the RepoMesh ledger, over the network or from a local directory. `@cognate/node` is a separate HTTP layer over the same functions. Its `/health` returns `"mode": "api"`. `@cognate/repomesh-bridge` checks a release on the RepoMesh ledger.
 
 The pages under `site/` are this same handbook, with install, usage, and the package reference beside it.
 
@@ -42,7 +42,7 @@ Build scripts run `pnpm exec tsc` so the compiler resolves inside a pnpm workspa
 
 Cognate governs an agent at two points. Before it acts, `@cognate/civility-kernel` chooses among its candidate plans. While it acts, `@cognate/policy` gates each event.
 
-`kernel.decide(context, plans, options?)` drops every plan that breaks a hard constraint (the defaults are `no_irreversible_changes` and `max_spend_without_confirm`) and scores the rest by the policy's preference weights. The trace's `outcome` is `EXECUTE`, with `chosenPlanId`; `ASK_USER` when the top plan's uncertainty is over the policy's `uncertaintyThreshold`; or `NO_VALID_PLAN` when no plan survives. Pass `{ decisionId, timestamp }` and the same inputs give a byte-identical trace; without them a random id and the current time are used.
+`kernel.decide(context, plans, options?)` drops every plan that breaks a hard constraint (the defaults are `no_irreversible_changes`, `max_spend_without_confirm` and `require_confirm_if`) and scores the rest by the policy's preference weights. The trace's `outcome` is `EXECUTE`, with `chosenPlanId`; `ASK_USER` when the top plan's uncertainty is over the policy's `uncertaintyThreshold`; or `NO_VALID_PLAN` when no plan survives. Pass `{ decisionId, timestamp }` and the same inputs give a byte-identical trace; without them a random id and the current time are used.
 
 `computeDecisionDigests(trace, chosenPlan?)` returns `decisionSha256`, `policySha256` and `planSha256`, the form `preRegisterRun` takes. `attestDecision(config, trace, chosenPlan?)` appends `cognate.policy.decided` to `cognate-<tenantId>-policy` with those digests and the decision's outline: the outcome, the chosen plan's id, the context rules that fired, and the constraints each failed plan broke. It never records plan steps or constraint reasons. A failed plan's `utility` is `null`, so a trace survives a JSON round trip unchanged.
 

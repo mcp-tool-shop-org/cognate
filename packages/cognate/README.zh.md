@@ -34,13 +34,15 @@ if (result.overall === "deny") {
 
 | 导入 | 它的作用 |
 |--------|------------|
-| `@mcptoolshop/cognate` | 命名空间：`types`、`policy`、`modelRegistry`、`agentIdentity`、`promptStore` |
+| `@mcptoolshop/cognate` | 命名空间：`types`、`policy`、`civilityKernel`、`modelRegistry`、`agentIdentity`、`promptStore`、`repomeshBridge` |
 | `@mcptoolshop/cognate/policy` | `evaluatePolicy` |
+| `@mcptoolshop/cognate/civility-kernel` | 在代理执行操作之前进行计划选择 |
 | `@mcptoolshop/cognate/model-registry` | 模型版本以及部署前的审批 |
 | `@mcptoolshop/cognate/agent-identity` | 能力授权、批准、撤销 |
 | `@mcptoolshop/cognate/prompt-store` | 仅追加的加密提示和输出日志 |
+| `@mcptoolshop/cognate/repomesh-bridge` | RepoMesh 版本检查，`verifyRelease` |
 | `@mcptoolshop/cognate/types` | 共享的名词 |
 
-这些是纯函数。您传递时钟、租户密钥和存储。此包不打开套接字。
+这些函数会接收您传递的状态：租户密钥和存储。少数几个函数会超出该状态范围进行操作：`transitionVersion` 和 `feedbackFromMcpResult` 会记录当前时间，内核的 `decide` 和 `decideAsync` 会读取时钟并生成一个随机 ID，除非您同时传递 `decisionId` 和 `timestamp`；而 `verifyRelease` 会读取时钟和 RepoMesh 分散式账本，数据来源可以是网络或本地目录。
 
 手册：<https://mcp-tool-shop-org.github.io/cognate/handbook/>

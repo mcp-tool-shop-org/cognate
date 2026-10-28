@@ -27,11 +27,11 @@ New in 1.1.0. From npm: `@mcptoolshop/cognate/civility-kernel`, or the `civility
 |--------|------|
 | `createKernel({ policy, constraints?, scorers?, onDecision? })` | A kernel with the default constraints and scorers, plus any you register. Its methods: `decide(context, plans, options?)`, `decideAsync`, `lint`, `explain`, `diff`, `proposePolicyUpdates`, `updatePolicy`, `getPolicy` |
 | `DecisionEngine` | The engine `createKernel` wraps, for custom constraint and scorer registries |
-| `ConstraintRegistry` / `registerDefaultConstraints` | Hard constraints; the defaults are `no_irreversible_changes` and `max_spend_without_confirm` |
+| `ConstraintRegistry` / `registerDefaultConstraints` | Hard constraints; the defaults are `no_irreversible_changes`, `max_spend_without_confirm` and `require_confirm_if` |
 | `ScorerRegistry` / `registerDefaultScorers` | Preference scorers, weighted by the policy's `weights` |
 | `computeDecisionDigests(trace, chosenPlan?)` | `decisionSha256`, `policySha256` and `planSha256` (`null` when no plan was chosen), SHA-256 over RFC 8785 JSON |
 | `attestDecision(config, trace, chosenPlan?)` | Appends `cognate.policy.decided` to `cognate-<tenantId>-policy` and returns `eventId`, `streamId`, the trace and the digests. `config` is `{ eventStore, tenantId, actorId, streamPrefix? }` |
-| `AttestationError` | `code` (`civility.plan-mismatch`, `civility.non-finite-number`), `message`, `hint` |
+| `AttestationError` | `code` (`civility.plan-mismatch`, `civility.non-finite-number`, `attestia.append-failed`), `message`, `hint` |
 | `lintPolicy` / `diffPolicy` / `explainPolicy` | Check, compare and describe a policy before it is applied |
 | `proposePolicyUpdates` / `applyPolicyProposal` | Turn feedback into proposed policy changes; `applyPolicyProposal(policy, proposal)` applies one and returns the new policy, for a person to approve before `updatePolicy` |
 | `loadPolicy` / `dumpPolicy` / `PreferencePolicySchema` | Read and write a policy, validated with zod |

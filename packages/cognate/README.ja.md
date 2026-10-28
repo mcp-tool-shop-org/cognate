@@ -34,13 +34,15 @@ if (result.overall === "deny") {
 
 | インポート | 概要 |
 |--------|------------|
-| `@mcptoolshop/cognate` | 名前空間：`types`、`policy`、`modelRegistry`、`agentIdentity`、`promptStore` |
+| `@mcptoolshop/cognate` | 名前空間：`types`、`policy`、`civilityKernel`、`modelRegistry`、`agentIdentity`、`promptStore`、`repomeshBridge` |
 | `@mcptoolshop/cognate/policy` | `evaluatePolicy` |
+| `@mcptoolshop/cognate/civility-kernel` | エージェントがアクションを実行する前に、プランを選択します |
 | `@mcptoolshop/cognate/model-registry` | モデルバージョンと、デプロイ前の承認ゲート |
 | `@mcptoolshop/cognate/agent-identity` | 機能の付与、承認、取り消し |
 | `@mcptoolshop/cognate/prompt-store` | 追加専用の暗号化されたプロンプトと出力ログ |
+| `@mcptoolshop/cognate/repomesh-bridge` | RepoMeshのリリース確認、`verifyRelease` |
 | `@mcptoolshop/cognate/types` | 共有名詞 |
 
-これらは純粋な関数です。クロック、テナントキー、ストアを渡します。このパッケージはソケットを開きません。
+これらは、渡された状態、つまりテナントキーとストアを受け取ります。いくつかの関数は、その範囲外にアクセスします。具体的には、`transitionVersion`と`feedbackFromMcpResult`は現在の時刻を記録し、カーネルの`decide`と`decideAsync`はクロックを読み取り、両方の`decisionId`と`timestamp`が渡されない限り、ランダムなIDを生成します。また、`verifyRelease`はクロックとRepoMeshの台帳を、ネットワーク経由またはローカルディレクトリから読み取ります。
 
 ハンドブック：<https://mcp-tool-shop-org.github.io/cognate/handbook/>

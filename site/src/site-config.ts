@@ -27,7 +27,7 @@ export const config: SiteConfig = {
       kind: 'features',
       id: 'features',
       title: 'What holds',
-      subtitle: 'Pure functions. Callers supply the clock, the keys, and the store.',
+      subtitle: 'Callers supply the keys and the store. The few calls that read the clock or the network say so.',
       features: [
         { title: 'Plans before actions', desc: 'New in 1.1.0: the civility kernel drops plans that break a hard rule, scores the rest, and executes the best or asks a person. Each decision can be hashed and recorded.' },
         { title: 'Fail closed', desc: 'A policy disagreement stops the call. The engine does not rewrite the rule to let it through.' },

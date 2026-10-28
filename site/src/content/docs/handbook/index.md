@@ -13,7 +13,7 @@ Cognate attests to AI truth: model lineage, policy decisions, agent capabilities
 
 Attestia, Cognate, and RepoMesh are three products. Attestia ships the financial domain (personal vault, org treasury, registrum) on top of those primitives. RepoMesh is the release network: signed events, node manifests, and an XRPL-anchored trust clock, on its own RFC 6962 ledger. It does not use Attestia's Merkle tree. Cognate calls Attestia when it needs a proof, and RepoMesh when it needs a release checked.
 
-The npm package `@mcptoolshop/cognate` is those libraries in one bundle. They are pure functions. You pass in the clock, the tenant key, and the store. `@cognate/node` is a separate HTTP layer over the same functions. Its `/health` returns `"mode": "api"`. `@cognate/repomesh-bridge` checks a release on the RepoMesh ledger.
+The npm package `@mcptoolshop/cognate` is those libraries in one bundle. They take the state you pass them: the tenant key and the store. A few calls reach outside it: `transitionVersion` and `feedbackFromMcpResult` stamp the current time, the kernel's `decide` and `decideAsync` read the clock and make a random id unless you pass both `decisionId` and `timestamp`, and `verifyRelease` reads the clock and the RepoMesh ledger, over the network or from a local directory. `@cognate/node` is a separate HTTP layer over the same functions. Its `/health` returns `"mode": "api"`. `@cognate/repomesh-bridge` checks a release on the RepoMesh ledger.
 
 This handbook describes version 1.1.0. From 1.0, versions follow semantic versioning: a change that breaks the HTTP API, the signed-request format or the event and attestation format comes with a new major version.
 
