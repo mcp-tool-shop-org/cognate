@@ -18,6 +18,7 @@ COPY tsconfig.json ./
 
 COPY packages/types/package.json packages/types/
 COPY packages/policy/package.json packages/policy/
+COPY packages/civility-kernel/package.json packages/civility-kernel/
 COPY packages/model-registry/package.json packages/model-registry/
 COPY packages/agent-identity/package.json packages/agent-identity/
 COPY packages/prompt-store/package.json packages/prompt-store/
@@ -31,6 +32,7 @@ RUN pnpm install --frozen-lockfile
 
 RUN pnpm --filter "@cognate/types" build && \
     pnpm --filter "@cognate/policy" build && \
+    pnpm --filter "@cognate/civility-kernel" build && \
     pnpm --filter "@cognate/model-registry" build && \
     pnpm --filter "@cognate/agent-identity" build && \
     pnpm --filter "@cognate/prompt-store" build && \
@@ -51,6 +53,7 @@ COPY tsconfig.json ./
 
 COPY packages/types/package.json packages/types/
 COPY packages/policy/package.json packages/policy/
+COPY packages/civility-kernel/package.json packages/civility-kernel/
 COPY packages/model-registry/package.json packages/model-registry/
 COPY packages/agent-identity/package.json packages/agent-identity/
 COPY packages/prompt-store/package.json packages/prompt-store/
@@ -64,6 +67,7 @@ RUN mkdir -p /app/data/cognate
 
 COPY --from=builder /build/packages/types/dist packages/types/dist
 COPY --from=builder /build/packages/policy/dist packages/policy/dist
+COPY --from=builder /build/packages/civility-kernel/dist packages/civility-kernel/dist
 COPY --from=builder /build/packages/model-registry/dist packages/model-registry/dist
 COPY --from=builder /build/packages/agent-identity/dist packages/agent-identity/dist
 COPY --from=builder /build/packages/prompt-store/dist packages/prompt-store/dist

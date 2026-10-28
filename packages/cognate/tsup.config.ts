@@ -13,6 +13,7 @@ export default defineConfig({
     "agent-identity": "src/agent-identity.ts",
     "prompt-store": "src/prompt-store.ts",
     "repomesh-bridge": "src/repomesh-bridge.ts",
+    "civility-kernel": "src/civility-kernel.ts",
   },
   format: ["esm"],
   dts: true,

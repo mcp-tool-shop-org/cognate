@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@mcptoolshop/attestia':
         specifier: ^2.1.3
-        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^4.1.12
@@ -41,15 +41,52 @@ importers:
         specifier: ^4.1.12
         version: 4.1.12(@types/node@22.20.4)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@22.20.4)(esbuild@0.27.7))
 
+  packages/civility-kernel:
+    dependencies:
+      '@cognate/types':
+        specifier: workspace:*
+        version: link:../types
+      json-canonicalize:
+        specifier: ^2.0.0
+        version: 2.0.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.6.7
+    devDependencies:
+      '@cognate/model-registry':
+        specifier: workspace:*
+        version: link:../model-registry
+      '@mcptoolshop/attestia':
+        specifier: ^2.1.3
+        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.4
+      '@vitest/coverage-v8':
+        specifier: ^4.1.12
+        version: 4.1.12(vitest@4.1.12)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.12
+        version: 4.1.12(@types/node@22.20.4)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@22.20.4)(esbuild@0.27.7))
+
   packages/cognate:
     dependencies:
       '@mcptoolshop/repomesh':
         specifier: ^2.3.1
         version: 2.3.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      zod:
+        specifier: ^4.3.6
+        version: 4.6.7
     devDependencies:
       '@cognate/agent-identity':
         specifier: workspace:*
         version: link:../agent-identity
+      '@cognate/civility-kernel':
+        specifier: workspace:*
+        version: link:../civility-kernel
       '@cognate/model-registry':
         specifier: workspace:*
         version: link:../model-registry
@@ -85,7 +122,7 @@ importers:
         version: link:../types
       '@mcptoolshop/attestia':
         specifier: ^2.1.3
-        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -122,11 +159,14 @@ importers:
         version: link:../types
       '@mcptoolshop/attestia':
         specifier: ^2.1.3
-        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
       json-canonicalize:
         specifier: ^2.0.0
         version: 2.0.0
     devDependencies:
+      '@cognate/civility-kernel':
+        specifier: workspace:*
+        version: link:../civility-kernel
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.4
@@ -166,7 +206,7 @@ importers:
         version: link:../types
       '@mcptoolshop/attestia':
         specifier: ^2.1.3
-        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        version: 2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -1826,6 +1866,9 @@ packages:
     resolution: {integrity: sha512-sdyi7qqJ13U+nMllHgxJTWbQm/Tk8uzhBmeTKwhI9WxkHuekPfbvJ3BDopXO2vMfsty7lBja0ACSHEUKLz3F/w==}
     engines: {node: '>=20.19.0'}
 
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
 
   '@adraffy/ens-normalize@1.11.1': {}
@@ -1937,12 +1980,12 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@mcptoolshop/attestia@2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@mcptoolshop/attestia@2.1.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)':
     dependencies:
       '@solana/web3.js': 3.1.1(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       json-canonicalize: 2.0.0
       ripple-keypairs: 2.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      viem: 2.57.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      viem: 2.57.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
       xrpl: 4.6.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - bufferutil
@@ -2695,7 +2738,7 @@ snapshots:
       obug: 2.2.1
       std-env: 4.3.0
       tinyrainbow: 3.2.0
-      vitest: 4.1.12(@types/node@26.6.3)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@26.6.3)(esbuild@0.27.7))
+      vitest: 4.1.12(@types/node@22.20.4)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@22.20.4)(esbuild@0.27.7))
 
   '@vitest/expect@4.1.12':
     dependencies:
@@ -2773,9 +2816,10 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  abitype@1.2.3(typescript@5.9.3):
+  abitype@1.2.3(typescript@5.9.3)(zod@4.6.7):
     optionalDependencies:
       typescript: 5.9.3
+      zod: 4.6.7
 
   acorn@8.18.0: {}
 
@@ -3024,7 +3068,7 @@ snapshots:
 
   obug@2.2.1: {}
 
-  ox@0.14.45(typescript@5.9.3):
+  ox@0.14.45(typescript@5.9.3)(zod@4.6.7):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
@@ -3032,7 +3076,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)
+      abitype: 1.2.3(typescript@5.9.3)(zod@4.6.7)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -3254,15 +3298,15 @@ snapshots:
       node-gyp-build: 4.8.4
     optional: true
 
-  viem@2.57.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6):
+  viem@2.57.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7):
     dependencies:
       '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)
+      abitype: 1.2.3(typescript@5.9.3)(zod@4.6.7)
       isows: 1.0.7(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
-      ox: 0.14.45(typescript@5.9.3)
+      ox: 0.14.45(typescript@5.9.3)(zod@4.6.7)
       ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     optionalDependencies:
       typescript: 5.9.3
@@ -3398,3 +3442,5 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  zod@4.6.7: {}

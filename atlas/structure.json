@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "3648aef71663f12a501d209c18b24e38110d64b8d2e384b4d0795e3f317b3e91",
+          "hash": "623ee16b6650133a57b37721e3d5e38aabd9805206a21400c1825a7b3779958d",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -220,7 +220,7 @@
           "path": "packages/cognate/README.zh.md"
         },
         {
-          "hash": "6835a9f7fd41f607dd86fa7bce6d30f0dff312d2c061d6cd60031a1f6a80346f",
+          "hash": "b16fdedcfeb3a7908ec09977d3487e3203e859259be552c701ab950c628ba598",
           "path": "packages/cognate/package.json"
         },
         {
@@ -235,17 +235,30 @@
           "reexportsOnly": true
         },
         {
-          "hash": "9c0e3bb0c5274005a2915325317ec89649e3c721f0c94d991632c2e7546ea518",
+          "hash": "b28e4cf0e25bbb1afb4fd1f27dbf7c7120a305cf0eb9ed8794ab64d96cb3616d",
+          "importsFiles": [
+            "packages/civility-kernel/src/index.ts"
+          ],
+          "path": "packages/cognate/src/civility-kernel.ts",
+          "reexportsAll": [
+            "packages/civility-kernel/src/index.ts"
+          ],
+          "reexportsOnly": true
+        },
+        {
+          "hash": "271b2532c55a22fce0462ba2c17516c453ec0a05446e4ef80d39043f91960f81",
           "importOrder": [
             "packages/types/src/index.ts",
             "packages/policy/src/index.ts",
             "packages/model-registry/src/index.ts",
             "packages/agent-identity/src/index.ts",
             "packages/prompt-store/src/index.ts",
-            "packages/repomesh-bridge/src/index.ts"
+            "packages/repomesh-bridge/src/index.ts",
+            "packages/civility-kernel/src/index.ts"
           ],
           "importsFiles": [
             "packages/agent-identity/src/index.ts",
+            "packages/civility-kernel/src/index.ts",
             "packages/model-registry/src/index.ts",
             "packages/policy/src/index.ts",
             "packages/prompt-store/src/index.ts",
@@ -311,16 +324,18 @@
           "reexportsOnly": true
         },
         {
-          "hash": "9bebb06d0af5956cf17915db86dab90f38c4c203ec779ae52036507fff25146e",
+          "hash": "4c7fecd4c1909b53d148db388a71b86febb17f1ba2824d8877061582695f52ab",
           "importOrder": [
             "packages/cognate/src/index.ts",
             "packages/cognate/src/policy.ts",
             "packages/cognate/src/model-registry.ts",
             "packages/cognate/src/agent-identity.ts",
-            "packages/cognate/src/prompt-store.ts"
+            "packages/cognate/src/prompt-store.ts",
+            "packages/cognate/src/civility-kernel.ts"
           ],
           "importsFiles": [
             "packages/cognate/src/agent-identity.ts",
+            "packages/cognate/src/civility-kernel.ts",
             "packages/cognate/src/index.ts",
             "packages/cognate/src/model-registry.ts",
             "packages/cognate/src/policy.ts",
@@ -334,7 +349,7 @@
           "path": "packages/cognate/tsconfig.json"
         },
         {
-          "hash": "025bf1d305df2a8569bfa886c8ac0cc501cca9909219a539f217f1bb794fc896",
+          "hash": "dc47e06a73beaf7df2e154d618c7e74e51b0b93f10a76bfa61298dab14714c25",
           "path": "packages/cognate/tsup.config.ts"
         },
         {
@@ -397,7 +412,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "948dde19bce5cdae7b0561f5814d72c9079cf19247baba3942dd714b6375fe0c",
+          "hash": "69914ecdd138471adec161ade78b8948c82e4aab6e56d2b4abce7a4ec0455d5f",
           "path": "packages/model-registry/package.json"
         },
         {
@@ -786,7 +801,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 13,
+      "testedBy": 14,
       "unresolvedSites": 0
     },
     {
@@ -804,7 +819,7 @@
           "path": "packages/node/config/tenant-roots.json"
         },
         {
-          "hash": "12393f2a0526e4082b67461595ea02ea97b2d737a2b92111efd15d17df5aea7f",
+          "hash": "1a752c6901c5c2ac487e2dc097df366678726663a0abb3a73e29daeb372a9168",
           "path": "packages/node/package.json"
         },
         {
@@ -1946,6 +1961,15 @@
           "path": "packages/node/src/tenant.ts"
         },
         {
+          "hash": "5cdb9e981d177c59f53115243bd23aff10c6a07bfeb14276d9c67dc55219821a",
+          "importsFiles": [
+            "packages/civility-kernel/src/index.ts",
+            "packages/node/src/event-proof.ts"
+          ],
+          "path": "packages/node/tests/civility-kernel-proof.test.ts",
+          "testFramework": "vitest"
+        },
+        {
           "hash": "d18559ad6093924397130376e91bb1c1b30e8ba69bb85e5b3bcef65af956b9b7",
           "importOrder": [
             "packages/node/src/server.ts",
@@ -2032,6 +2056,14 @@
             "packages/types/src/index.ts"
           ],
           "path": "packages/node/tests/fixtures/test-only-tenant-roots.ts"
+        },
+        {
+          "hash": "40fa01e4e1b285122b98e63981f08c4fe59560fcea53fe1175d137b61bbb3b56",
+          "path": "packages/node/tests/make-tenant-root.test.ts",
+          "spawns": [
+            "scripts/make-tenant-root.mjs"
+          ],
+          "testFramework": "vitest"
         },
         {
           "hash": "a26f4e4fa4850a15dbfcab749962627ec83df3b3b854ba18e5a187953d2b904d",
@@ -2205,7 +2237,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 12,
+      "testedBy": 14,
       "unresolvedSites": 0
     },
     {
@@ -2281,7 +2313,7 @@
           "path": "packages/policy/tsconfig.json"
         },
         {
-          "hash": "316a7807e4cf85ddb1af7c951b9fbd4c42c900386402069711d4da9f547c5285",
+          "hash": "d8caa0b977b7e062cb6892a6766828f2a547aa81a5f9a3c964fe92546e03a429",
           "path": "packages/policy/vitest.config.ts"
         }
       ],
@@ -2309,7 +2341,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "c1c72f04316047fb7b87891afc05092123fcc16e9743d5820bfa5917f5248c56",
+          "hash": "1cd290167de2684463833577756740a6813da32137d1f0a0a74bbc6bcb4047af",
           "path": "packages/prompt-store/package.json"
         },
         {
@@ -2445,7 +2477,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 12,
+      "testedBy": 13,
       "unresolvedSites": 0
     },
     {
@@ -2459,7 +2491,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "9b1cfef996c3a4fdd191775539c37f7cff62e5729db0e9e5da6b9286434924ad",
+          "hash": "5b02c489ea2a4b4b25ab9711723ec5c13995ee4dfaf8d4c68d640e85778602fa",
           "path": "packages/repomesh-bridge/package.json"
         },
         {
@@ -2505,7 +2537,7 @@
           "path": "packages/repomesh-bridge/tsconfig.json"
         },
         {
-          "hash": "0619647d853125286b5a534d70895ceba502245748a3d4c20c21b83bce8b3ef6",
+          "hash": "4f38866d5e76aa2e29c2567b72b65a55a291103b0535ce47b254593516eab0d8",
           "path": "packages/repomesh-bridge/vitest.config.ts"
         }
       ],
@@ -2539,7 +2571,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "d9ed1ebecb5f9af0a03bea45303f5469e62a1cb297670c6a1240648f5deb95e5",
+          "hash": "fbe5f9a97615244356de96903160c3e8866b4136e52081736c8db73287169bf0",
           "path": "CHANGELOG.md"
         },
         {
@@ -2547,11 +2579,11 @@
           "path": "Caddyfile"
         },
         {
-          "hash": "0e863a964ef3445f9eafb50b0aeb38a149b53cc75de481c8409692d96a853aff",
+          "hash": "dde8a5fabb12b4e4a7e6bbadb0422c21744ad221404479a3a7569099496d5602",
           "path": "Dockerfile"
         },
         {
-          "hash": "6207daac4fcab957c3a6e72797328c9f4ef28f7485302d626da1baef4f22a21b",
+          "hash": "9ff40859d15cc23390ae8cb595c7632fd8db77b6013e8d8fe32d7d696e807fd7",
           "path": "HANDBOOK.md"
         },
         {
@@ -2559,35 +2591,35 @@
           "path": "LICENSE"
         },
         {
-          "hash": "10232492673f03e4a6a602adedb91b29031e5bd934bbd66cae122217e02a0821",
+          "hash": "a036f2f3e272d9457d3c36ac5e15047c9e8e6c1e7c1a2b1856bca5a9f2e9f2ed",
           "path": "README.es.md"
         },
         {
-          "hash": "95a8e2f44c4acbb3613d03ca22950ac216d7ad0649d36b71bfd6ec664479a011",
+          "hash": "91a68a371b1a0f7850abeea41a9ef5497686730363344105aede8e31378e2a04",
           "path": "README.fr.md"
         },
         {
-          "hash": "89779acef41c4fb5cbcf70b63eaa42fb714200383f0cd6d4ac6e0191a0a2cf8f",
+          "hash": "13920789571414b5efaee1a76d242882af1b8ebe9a08462937e609ad50889d26",
           "path": "README.hi.md"
         },
         {
-          "hash": "6155bce97850bf6d8d3e132871aa36ba588f2083a388bddaf6128c721cef0d9a",
+          "hash": "909e6c5f252e1532725d2222e912a4bda1557e4c5170db47936ec42675ba7f2c",
           "path": "README.it.md"
         },
         {
-          "hash": "062a3b51be2330a20c8dbb1d696819f19588f49f8d25011960eda3d4ba45aeff",
+          "hash": "20d12eb287f16bfb85afcf244c14311bc4f16a1761c237e5ae73443dbfa24d9e",
           "path": "README.ja.md"
         },
         {
-          "hash": "d6837a572fe1616191a06af4a420b86765c3c06875cd30c0924311a2201bd225",
+          "hash": "329d9df056299c2f49792ad709e7446bdc8f70113dc4ea77f3a24b2375b243d8",
           "path": "README.md"
         },
         {
-          "hash": "7436bf60c9ed559ddb520a4c59d3708ef018692cf3dd7fca343a797d0001eca5",
+          "hash": "4faa9ff66f0b71e813257295920d0c382e2104526a83be3a6d21ec9b78c6dd33",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "6e50e9703b4f1a202b45c142ef5e897eb7352c323a77327846d85676ff37ff58",
+          "hash": "34a0a44cbbea1a978d06c0201a2172a8bc2fbba0ad587b07e358af902c841642",
           "path": "README.zh.md"
         },
         {
@@ -2595,7 +2627,7 @@
           "path": "SCORECARD.md"
         },
         {
-          "hash": "c269cb264f5521ce3bb8653d5894d9d94c98c131f33f0a6ac0a8b360a31bb8a7",
+          "hash": "ad4f7aacd9484be1b47b2c6a121e77c1eaaf218afb00f4168059302b4324238b",
           "path": "SECURITY.md"
         },
         {
@@ -2615,11 +2647,11 @@
           "path": "node.json"
         },
         {
-          "hash": "f532485695bc4ed23607df17961f5adc26bf54f0876b91e4af0e8cc0e8cc4339",
+          "hash": "7751dac32f36e19285f6d5122159ded4fdfbb163c81365dccae392ff5a46a9ef",
           "path": "package.json"
         },
         {
-          "hash": "e42347275293ca345f4609d8512eefbe524c4c551f6e8eb7857a113d92521483",
+          "hash": "753faa4f01bec1747964beae9b7506da46c050be3073f40be819cbd3f653e216",
           "path": "pnpm-lock.yaml"
         },
         {
@@ -2654,7 +2686,7 @@
           "path": "scripts/health-server.mjs"
         },
         {
-          "hash": "ea095e04bb2d648786e21cf89cca0875beb52e79816466464644e5cfde80a76d",
+          "hash": "b2118f1c00195c21b891fabf50aec4863c895cccac6e6fbbd9967881e175c58c",
           "importsFiles": [
             "packages/node/src/server.ts"
           ],
@@ -2669,16 +2701,20 @@
       "origin": "authored",
       "outsidePlaces": [
         {
-          "reads": 0,
+          "reads": 1,
           "where": [
             "caller"
           ],
           "writes": 2
         }
       ],
+      "outsideReads": 1,
       "outsideWrites": 2,
       "role": "code",
-      "testedBy": 0,
+      "testRunners": [
+        "vitest"
+      ],
+      "testedBy": 1,
       "unresolvedSites": 0
     },
     {
@@ -2715,28 +2751,32 @@
           "path": "site/src/content.config.ts"
         },
         {
-          "hash": "7d2ba275976b11624681a968f9fb578b7e025e25846dbc862679619a7dac2b4b",
+          "hash": "4e93880f48edf6b4e7e15e5d1232613834fe22711f8d9c32031b4497f8814c60",
           "path": "site/src/content/docs/handbook/architecture.md"
         },
         {
-          "hash": "2dd3ebe6a9e9e6d39c59f5667bb3f1f22126fc79f371849dd40488a02e165d35",
+          "hash": "8177c91fb893be9aaee10573eb688f354f9a4aaaab36abed1f69f616e729a89a",
           "path": "site/src/content/docs/handbook/getting-started.md"
         },
         {
-          "hash": "5295f41da0961afd9d65638e0b5b03e794bc1f34598db70209e29a1e1a108d69",
+          "hash": "a9e46a773b0cdfd7454b1fcaa6fd28c8e0bbd442cfcb610ac423169574ed50ea",
           "path": "site/src/content/docs/handbook/index.md"
         },
         {
-          "hash": "bb1db4aa9128a43796f2432c2a9dbd887b007b9247090e87739a168d898f53f7",
+          "hash": "d81dfd45406989650e8b0c232ac68302f27ee2af0f2aa705f6d8fbbea6197cf1",
           "path": "site/src/content/docs/handbook/reference.md"
         },
         {
-          "hash": "4b4b0b1a5c95454d67dd76464fa81c19d041dbbdbe7a00d75f5de50dc541b5f1",
+          "hash": "909f18d7cc8c878bedaacf3375bdf1b111e027801be943f7cf990d1a2012771e",
           "path": "site/src/content/docs/handbook/security.md"
         },
         {
-          "hash": "6eb69e49354b0484a37c2fd5e0e3b4441f42d743fcf6a09a4ea9cbbff8eb7abd",
+          "hash": "ef714dcd6de95045ab9fff62e8c3fa2ff59084af1d1ee135a846d476fe7ea1d3",
           "path": "site/src/content/docs/handbook/usage.md"
+        },
+        {
+          "hash": "4250e0bed1f8cb8ec6d30d788439a51e659aa4f9bfecb829cbf659f7e283d37c",
+          "path": "site/src/content/docs/handbook/whats-new.md"
         },
         {
           "hash": "4fb84a646c4d833c33f4058e1ed1775849e855c65e5adb7e45d2a633674bd603",
@@ -2752,7 +2792,7 @@
         },
         {
           "constantOnly": true,
-          "hash": "9d6e36f547c168643a5a81f031280e2693ec7ce7852b3ee1cde4181801108c57",
+          "hash": "6fadd47bae32b67d75fd76e9339c4dde2bc430905eab77e38e86cd8d17024877",
           "path": "site/src/site-config.ts"
         },
         {
@@ -2812,7 +2852,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "9af8c920421d6bb1363208b615085259a66418157f982e8ec64dc601fe9fed6e",
+          "hash": "808a6211a6df56ad0bcccf139caa76bf241328a985ad0bf310d6af67c2bf4ff9",
           "path": "packages/types/package.json"
         },
         {
@@ -2834,7 +2874,7 @@
       "testRunners": [
         "vitest"
       ],
-      "testedBy": 19,
+      "testedBy": 20,
       "unresolvedSites": 0
     }
   ],
@@ -2991,7 +3031,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 7
+          "files": 9
         },
         {
           "boundary": "model-registry",
@@ -3001,7 +3041,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 28
+          "files": 30
         },
         {
           "boundary": "policy",
@@ -3016,7 +3056,7 @@
         {
           "boundary": "repomesh-bridge",
           "depth": 0,
-          "files": 4
+          "files": 5
         },
         {
           "boundary": "scripts",
@@ -3050,8 +3090,31 @@
         },
         {
           "built": true,
+          "directory": true,
+          "job": "build-and-test",
+          "matched": true,
+          "path": "packages/civility-kernel/src/",
+          "runKind": "executes",
+          "via": "tsc packages/civility-kernel/tsconfig.json"
+        },
+        {
+          "directory": true,
+          "job": "build-and-test",
+          "matched": true,
+          "path": "packages/civility-kernel/tests/",
+          "runKind": "executes",
+          "via": "vitest packages/civility-kernel/vitest.config.ts"
+        },
+        {
+          "built": true,
           "job": "build-and-test",
           "path": "packages/cognate/src/agent-identity.ts",
+          "runKind": "executes"
+        },
+        {
+          "built": true,
+          "job": "build-and-test",
+          "path": "packages/cognate/src/civility-kernel.ts",
           "runKind": "executes"
         },
         {
@@ -3091,6 +3154,14 @@
           "runKind": "executes"
         },
         {
+          "directory": true,
+          "job": "build-and-test",
+          "matched": true,
+          "path": "packages/cognate/tests/",
+          "runKind": "executes",
+          "via": "vitest packages/cognate/vitest.config.ts"
+        },
+        {
           "built": true,
           "directory": true,
           "job": "build-and-test",
@@ -3119,6 +3190,13 @@
         {
           "job": "build-and-test",
           "matched": true,
+          "path": "packages/node/tests/civility-kernel-proof.test.ts",
+          "runKind": "executes",
+          "via": "vitest packages/node/vitest.config.ts"
+        },
+        {
+          "job": "build-and-test",
+          "matched": true,
           "path": "packages/node/tests/deploy-gate.test.ts",
           "runKind": "executes",
           "via": "vitest packages/node/vitest.config.ts"
@@ -3134,6 +3212,13 @@
           "job": "build-and-test",
           "matched": true,
           "path": "packages/node/tests/event-proof.test.ts",
+          "runKind": "executes",
+          "via": "vitest packages/node/vitest.config.ts"
+        },
+        {
+          "job": "build-and-test",
+          "matched": true,
+          "path": "packages/node/tests/make-tenant-root.test.ts",
           "runKind": "executes",
           "via": "vitest packages/node/vitest.config.ts"
         },
@@ -3223,6 +3308,14 @@
           "via": "tsc packages/repomesh-bridge/tsconfig.json"
         },
         {
+          "directory": true,
+          "job": "build-and-test",
+          "matched": true,
+          "path": "packages/repomesh-bridge/tests/",
+          "runKind": "executes",
+          "via": "vitest packages/repomesh-bridge/vitest.config.ts"
+        },
+        {
           "built": true,
           "directory": true,
           "job": "build-and-test",
@@ -3237,7 +3330,7 @@
           "runKind": "executes"
         }
       ],
-      "runsCount": 28,
+      "runsCount": 35,
       "secrets": [],
       "sends": {
         "deploysPages": false,
@@ -3265,6 +3358,31 @@
           ]
         },
         {
+          "config": "packages/civility-kernel/vitest.config.ts",
+          "coverage": true,
+          "dir": "packages/civility-kernel",
+          "files": 19,
+          "job": "build-and-test",
+          "runner": "vitest",
+          "step": "Test with coverage",
+          "through": [
+            "pnpm run test:coverage",
+            "pnpm run test:coverage (packages/civility-kernel)"
+          ]
+        },
+        {
+          "config": "packages/cognate/vitest.config.ts",
+          "dir": "packages/cognate",
+          "files": 1,
+          "job": "build-and-test",
+          "runner": "vitest",
+          "step": "Test with coverage",
+          "through": [
+            "pnpm run test:coverage",
+            "pnpm run test:coverage (packages/cognate)"
+          ]
+        },
+        {
           "config": "packages/model-registry/vitest.config.ts",
           "coverage": true,
           "dir": "packages/model-registry",
@@ -3281,7 +3399,7 @@
           "config": "packages/node/vitest.config.ts",
           "coverage": true,
           "dir": "packages/node",
-          "files": 9,
+          "files": 11,
           "job": "build-and-test",
           "runner": "vitest",
           "step": "Test with coverage",
@@ -3317,6 +3435,19 @@
           ]
         },
         {
+          "config": "packages/repomesh-bridge/vitest.config.ts",
+          "coverage": true,
+          "dir": "packages/repomesh-bridge",
+          "files": 1,
+          "job": "build-and-test",
+          "runner": "vitest",
+          "step": "Test with coverage",
+          "through": [
+            "pnpm run test:coverage",
+            "pnpm run test:coverage (packages/repomesh-bridge)"
+          ]
+        },
+        {
           "coverage": true,
           "dir": "packages/types",
           "files": 0,
@@ -3334,15 +3465,7 @@
           "branches": [
             "main"
           ],
-          "event": "pull_request",
-          "paths": [
-            "**/*.ts",
-            ".github/workflows/**",
-            "atlas/**",
-            "package.json",
-            "pnpm-lock.yaml",
-            "tsconfig*.json"
-          ]
+          "event": "pull_request"
         },
         {
           "branches": [
@@ -3351,10 +3474,13 @@
           "event": "push",
           "paths": [
             "**/*.ts",
+            "**/package.json",
             ".github/workflows/**",
+            "Dockerfile",
             "atlas/**",
-            "package.json",
+            "docker-compose*.yml",
             "pnpm-lock.yaml",
+            "scripts/**",
             "tsconfig*.json"
           ]
         },
@@ -3370,7 +3496,7 @@
       "usesWorkflowToken": false
     },
     {
-      "checksCount": 13,
+      "checksCount": 14,
       "commands": [],
       "elsewhere": [],
       "file": ".github/workflows/docker.yml",
@@ -3425,7 +3551,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 11
+          "files": 12
         },
         {
           "boundary": "model-registry",
@@ -3435,7 +3561,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 30
+          "files": 32
         },
         {
           "boundary": "policy",
@@ -3495,6 +3621,22 @@
           "path": "packages/agent-identity/src/",
           "runKind": "executes",
           "via": "docker build Dockerfile → tsc packages/agent-identity/tsconfig.json"
+        },
+        {
+          "job": "build-and-push",
+          "packed": true,
+          "path": "packages/civility-kernel/package.json",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "built": true,
+          "directory": true,
+          "job": "build-and-push",
+          "matched": true,
+          "path": "packages/civility-kernel/src/",
+          "runKind": "executes",
+          "via": "docker build Dockerfile → tsc packages/civility-kernel/tsconfig.json"
         },
         {
           "job": "build-and-push",
@@ -3627,7 +3769,7 @@
           "via": "docker build Dockerfile"
         }
       ],
-      "runsCount": 21,
+      "runsCount": 23,
       "secrets": [
         "GITHUB_TOKEN"
       ],
@@ -3807,7 +3949,7 @@
       "usesWorkflowToken": false
     },
     {
-      "checksCount": 13,
+      "checksCount": 14,
       "commands": [
         {
           "dir": "",
@@ -3974,7 +4116,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 11
+          "files": 12
         },
         {
           "boundary": "model-registry",
@@ -3984,7 +4126,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 30
+          "files": 32
         },
         {
           "boundary": "policy",
@@ -4065,6 +4207,39 @@
         {
           "job": "image/build-and-push",
           "packed": true,
+          "path": "packages/civility-kernel/package.json",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "built": true,
+          "directory": true,
+          "job": "image/build-and-push",
+          "matched": true,
+          "path": "packages/civility-kernel/src/",
+          "runKind": "executes",
+          "via": "docker build Dockerfile → tsc packages/civility-kernel/tsconfig.json"
+        },
+        {
+          "built": true,
+          "directory": true,
+          "job": "release",
+          "matched": true,
+          "path": "packages/civility-kernel/src/",
+          "runKind": "executes",
+          "via": "tsc packages/civility-kernel/tsconfig.json"
+        },
+        {
+          "directory": true,
+          "job": "release",
+          "matched": true,
+          "path": "packages/civility-kernel/tests/",
+          "runKind": "executes",
+          "via": "vitest packages/civility-kernel/vitest.config.ts"
+        },
+        {
+          "job": "image/build-and-push",
+          "packed": true,
           "path": "packages/cognate/package.json",
           "runKind": "checks",
           "via": "docker build Dockerfile"
@@ -4073,6 +4248,12 @@
           "built": true,
           "job": "release",
           "path": "packages/cognate/src/agent-identity.ts",
+          "runKind": "executes"
+        },
+        {
+          "built": true,
+          "job": "release",
+          "path": "packages/cognate/src/civility-kernel.ts",
           "runKind": "executes"
         },
         {
@@ -4186,6 +4367,13 @@
         {
           "job": "release",
           "matched": true,
+          "path": "packages/node/tests/civility-kernel-proof.test.ts",
+          "runKind": "executes",
+          "via": "vitest packages/node/vitest.config.ts"
+        },
+        {
+          "job": "release",
+          "matched": true,
           "path": "packages/node/tests/deploy-gate.test.ts",
           "runKind": "executes",
           "via": "vitest packages/node/vitest.config.ts"
@@ -4201,6 +4389,13 @@
           "job": "release",
           "matched": true,
           "path": "packages/node/tests/event-proof.test.ts",
+          "runKind": "executes",
+          "via": "vitest packages/node/vitest.config.ts"
+        },
+        {
+          "job": "release",
+          "matched": true,
+          "path": "packages/node/tests/make-tenant-root.test.ts",
           "runKind": "executes",
           "via": "vitest packages/node/vitest.config.ts"
         },
@@ -4392,7 +4587,7 @@
           "via": "docker build Dockerfile"
         }
       ],
-      "runsCount": 43,
+      "runsCount": 49,
       "secrets": [
         "GITHUB_TOKEN"
       ],
@@ -4431,6 +4626,18 @@
           ]
         },
         {
+          "config": "packages/civility-kernel/vitest.config.ts",
+          "dir": "packages/civility-kernel",
+          "files": 19,
+          "job": "release",
+          "runner": "vitest",
+          "step": "Run tests",
+          "through": [
+            "pnpm test",
+            "pnpm test (packages/civility-kernel)"
+          ]
+        },
+        {
           "config": "packages/cognate/vitest.config.ts",
           "dir": "packages/cognate",
           "files": 1,
@@ -4457,7 +4664,7 @@
         {
           "config": "packages/node/vitest.config.ts",
           "dir": "packages/node",
-          "files": 9,
+          "files": 11,
           "job": "release",
           "runner": "vitest",
           "step": "Run tests",
@@ -4653,8 +4860,8 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "b9b7ba232eb85c7f87c0e8fcf9989dc8dedbc145",
-    "tracked": 155
+    "commit": "e7ac6bbe182c3383e6034392052dfa4595f22e9e",
+    "tracked": 200
   },
   "landings": [
     {
@@ -4830,6 +5037,18 @@
     {
       "readers": [
         {
+          "by": "packages/node/tests/make-tenant-root.test.ts",
+          "call": "literal",
+          "confidence": "ast",
+          "fromTests": true
+        }
+      ],
+      "target": "scripts/make-tenant-root.mjs",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
           "by": "site/astro.config.mjs",
           "call": "content-collection",
           "confidence": "ast"
@@ -4865,10 +5084,571 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 23,
-  "unassigned": [],
+  "testFiles": 44,
+  "unassigned": [
+    {
+      "hash": "fe1791e229deb0c99a30655a59d3055407751c8d90715c14f2016e8f7c32d9f5",
+      "path": "packages/civility-kernel/CHANGELOG.md"
+    },
+    {
+      "hash": "367e5141e4f5884e5791c4021f33a9faa958840a5decf44e1b273a87aad1c459",
+      "path": "packages/civility-kernel/LICENSE"
+    },
+    {
+      "hash": "cfe626964230b04dbbf5a2fac7cac02c29b0e4d7a871590141405e60d62efb8a",
+      "path": "packages/civility-kernel/package.json"
+    },
+    {
+      "exports": [
+        "attestDecision",
+        "computeDecisionDigests"
+      ],
+      "failurePaths": [
+        {
+          "in": "sha256Canonical",
+          "kind": "throw",
+          "line": 53
+        },
+        {
+          "in": "computeDecisionDigests",
+          "kind": "throw",
+          "line": 68
+        },
+        {
+          "in": "attestDecision",
+          "kind": "catch",
+          "line": 143
+        },
+        {
+          "in": "attestDecision",
+          "kind": "throw",
+          "line": 144
+        }
+      ],
+      "hash": "604e727fc57f2b0584219cf2f3ca370a1551632a29ab6fe9be136f73888d44ec",
+      "importOrder": [
+        "packages/types/src/index.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/types/src/index.ts"
+      ],
+      "path": "packages/civility-kernel/src/attestation.ts"
+    },
+    {
+      "hash": "5502c962bbe88126c0c5dcfb2a1a2d6616b5b9f47ae09b54ba1ef21d21c8b027",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/explain.ts",
+        "packages/civility-kernel/src/policy/features.ts",
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/context.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/learning.ts",
+        "packages/civility-kernel/src/policy/lint.ts",
+        "packages/civility-kernel/src/policy/diff.ts",
+        "packages/civility-kernel/src/policy/canonicalize.ts",
+        "packages/civility-kernel/src/policy/persistence.ts",
+        "packages/civility-kernel/src/policy/builder.ts",
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/mcp-adapter.ts",
+        "packages/civility-kernel/src/attestation.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/attestation.ts",
+        "packages/civility-kernel/src/policy/builder.ts",
+        "packages/civility-kernel/src/policy/canonicalize.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/context.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/diff.ts",
+        "packages/civility-kernel/src/policy/explain.ts",
+        "packages/civility-kernel/src/policy/features.ts",
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/learning.ts",
+        "packages/civility-kernel/src/policy/lint.ts",
+        "packages/civility-kernel/src/policy/mcp-adapter.ts",
+        "packages/civility-kernel/src/policy/persistence.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/index.ts",
+      "reexportsAll": [
+        "packages/civility-kernel/src/attestation.ts",
+        "packages/civility-kernel/src/policy/builder.ts",
+        "packages/civility-kernel/src/policy/canonicalize.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/context.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/diff.ts",
+        "packages/civility-kernel/src/policy/explain.ts",
+        "packages/civility-kernel/src/policy/features.ts",
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/learning.ts",
+        "packages/civility-kernel/src/policy/lint.ts",
+        "packages/civility-kernel/src/policy/mcp-adapter.ts",
+        "packages/civility-kernel/src/policy/persistence.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "reexportsOnly": true
+    },
+    {
+      "hash": "71dc5385858b3b41e9cfb2e8c5244b6510024c670a9eb83768c6c4dd0b66d924",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/civility-kernel/src/policy/persistence.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/persistence.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/builder.ts"
+    },
+    {
+      "exports": [
+        "canonicalizePolicy"
+      ],
+      "hash": "1d41c993082452db8aee32059e9141d983e4b3badd44db0a4d0860aaec15af68",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/civility-kernel/src/policy/constraints.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/canonicalize.ts"
+    },
+    {
+      "exports": [
+        "registerDefaultConstraints"
+      ],
+      "hash": "2e7fff9f604020cc23e603556bf6efbe245fdd3ae7fafe6f8777d516d466604b",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/constraints.ts"
+    },
+    {
+      "exports": [
+        "compileEffectivePolicy",
+        "computeCacheKey",
+        "matchesContext"
+      ],
+      "hash": "c148869fdaa4831c318bf753b9db6709a1b4df9f729b8d14cb6156f39de8478e",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/context.ts"
+    },
+    {
+      "hash": "077091744118ce2fda962be2ca63eb9033c8e5b3bd2d649fc21dd6c2b67b067a",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/context.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/decision.ts"
+    },
+    {
+      "exports": [
+        "diffPolicy"
+      ],
+      "hash": "7e6a7597ea7a0aa9daa54099de1b58ed4db0ad2899274d3a376e0e11cea714b6",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/civility-kernel/src/policy/constraints.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/diff.ts"
+    },
+    {
+      "exports": [
+        "explainPolicy"
+      ],
+      "hash": "f5e7ea0577d4dd9cbac9b44b0207e38ce9f953ab5f4d293fe81752b852756d0e",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/civility-kernel/src/policy/constraints.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/explain.ts"
+    },
+    {
+      "exports": [
+        "annotatePlanWithTags",
+        "extractTags"
+      ],
+      "hash": "023b5ac48838e1943de7602f9b986fe713d6345286aaa3aa7bedbad477d0510a",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/features.ts"
+    },
+    {
+      "exports": [
+        "createKernel"
+      ],
+      "hash": "90dcc522474e934e6afa594378210418e968714b1f16ed032fbc6736da982352",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/lint.ts",
+        "packages/civility-kernel/src/policy/explain.ts",
+        "packages/civility-kernel/src/policy/diff.ts",
+        "packages/civility-kernel/src/policy/learning.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/diff.ts",
+        "packages/civility-kernel/src/policy/explain.ts",
+        "packages/civility-kernel/src/policy/learning.ts",
+        "packages/civility-kernel/src/policy/lint.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/kernel.ts"
+    },
+    {
+      "exports": [
+        "applyPolicyProposal",
+        "proposePolicyUpdates"
+      ],
+      "hash": "a42ab34b58a7685625bb579036b25d11ea1eab8e12aee7397641a1937e107020",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/learning.ts"
+    },
+    {
+      "exports": [
+        "lintPolicy"
+      ],
+      "hash": "85b9e01012a9feb769534fa49e78e4bdef6b9baea6a976451dcf613df8fbbcab",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/lint.ts"
+    },
+    {
+      "exports": [
+        "feedbackFromMcpResult",
+        "planFromMcpToolCall"
+      ],
+      "hash": "57a86ee22959ba58350f9cf039548ea9a3f3fe99efea2adbd648d62b527aa18f",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/civility-kernel/src/policy/learning.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/learning.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/mcp-adapter.ts"
+    },
+    {
+      "exports": [
+        "dumpPolicy",
+        "loadPolicy"
+      ],
+      "failurePaths": [
+        {
+          "in": "loadPolicy",
+          "kind": "throw",
+          "line": 53
+        }
+      ],
+      "hash": "fddada12ba4cf547cff7c725532689b5ebdbeaf6f05385fee21ae0a0432379c8",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/persistence.ts"
+    },
+    {
+      "exports": [
+        "registerDefaultScorers"
+      ],
+      "hash": "e20314b8e0aca6c71aa5976cc3c6a951cb2e21d31c40a1dc56f05abc009e7264",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/src/policy/scoring.ts"
+    },
+    {
+      "hash": "791809e411e63e1ba02a0051c70e3ee8fe6a4ded38107b92525d385a6cd042ee",
+      "path": "packages/civility-kernel/src/policy/types.ts"
+    },
+    {
+      "hash": "1f56a287509f741c8641cb4f732fc9518940bc9f0643b745a0b62d6b40c5d54c",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/async-decision.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "80be793c79bb6b9974bb6ca62abb0a05c54d87f3c415f8e124009cd8e7edf835",
+      "importOrder": [
+        "packages/model-registry/src/index.ts",
+        "packages/types/src/index.ts",
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/attestation.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/attestation.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts",
+        "packages/model-registry/src/index.ts",
+        "packages/types/src/index.ts"
+      ],
+      "path": "packages/civility-kernel/tests/attestation.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "3c605926b33d6c174245df07cb41565fc42097aeb1e589d5dfe0d5eef84eb1ea",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/builder.ts"
+      ],
+      "path": "packages/civility-kernel/tests/builder.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "4993b4ddac7d7308bd4f99b68d423a91ede0038b66573d1f9f360ea47d6dbc93",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/canonicalize.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/canonicalize.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "fcb6472a5508c77f371a9bb1d58a00d8fc8cdca070cdda937c5436ea42e16947",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/context.ts",
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/context.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/cognate-fixes.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "ec00d9caa45550b4a496c40d78a86d3a2f7d8a70789c5c8e3bd58ca89725fff3",
+      "importsFiles": [
+        "packages/civility-kernel/src/index.ts"
+      ],
+      "path": "packages/civility-kernel/tests/constraint-param-validation.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "8c5c3ce03638abb1eef014f423d3b1207582ce05640ce59357783af80c64051f",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/context.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/context.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "d44da7f513fa17530aff6e9f9353d2ca49238ab1971d3f007f134d640e276129",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/decision.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "c85d22f6b76ea8d2436e3c8d1e23432c333697e3f4eb60cbe66eea67361079cf",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/diff.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/diff.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "22b3f92f54c4efc665c2707f7e1653fe03fdb60e0eca9863f2db960e7a045608",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/explain.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/explain.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/explain.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "1cc1a8a7d04e13f705012a3441c6f2dfcf6945184d8a7d8ba154c3137f7aed08",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/features.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/features.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "dc1347a34f9f3c0a277842ab17034d29c7ff4922a578c89fa6296d27d2651e63",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/decision.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/hooks.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "6680947d64792b27ca13999d4a1e4444cd13fb844557396ede5fb4a928273da7",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/builder.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/builder.ts",
+        "packages/civility-kernel/src/policy/kernel.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/kernel.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "569373ed3c76d8f2b747f607430641916427e6d620308372572aba62821f04a1",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/learning.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/learning.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "6d892e810e71f40450454bdcb02f81b6431b9dee51ffeaf39a4caf9340128fdb",
+      "importOrder": [
+        "packages/civility-kernel/src/policy/lint.ts",
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/constraints.ts",
+        "packages/civility-kernel/src/policy/lint.ts",
+        "packages/civility-kernel/src/policy/scoring.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/lint.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "abcdb79495a3829fbc224771243390de2dc887ede79d5142730c6d905fb721d2",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/mcp-adapter.ts"
+      ],
+      "path": "packages/civility-kernel/tests/mcp-adapter.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "f00248a86de7431dec4cf9becd965d575010ca7d726034312d143a9f9c34bc47",
+      "importsFiles": [
+        "packages/civility-kernel/src/index.ts"
+      ],
+      "path": "packages/civility-kernel/tests/parameterized-constraints.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "699cce95362b84e26f904ea25ceda75eebcdf93a774c0303275219abf37b8cb1",
+      "importsFiles": [
+        "packages/civility-kernel/src/policy/persistence.ts",
+        "packages/civility-kernel/src/policy/types.ts"
+      ],
+      "path": "packages/civility-kernel/tests/persistence.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "7548a4ee60bd081c5cb90f40379551d33dd38f0be8e47dacd38ebc44d9a6da23",
+      "importsFiles": [
+        "packages/civility-kernel/src/index.ts"
+      ],
+      "path": "packages/civility-kernel/tests/public-api.test.ts",
+      "testFramework": "vitest"
+    },
+    {
+      "hash": "69482d7a725ef98761717809bdfe84a160ac7817888c5e34a6af524f3f91faad",
+      "path": "packages/civility-kernel/tsconfig.json"
+    },
+    {
+      "hash": "06f506e3851bece815c796675180dd641e3c3f180914883b0dc566c72986f5fb",
+      "path": "packages/civility-kernel/vitest.config.ts"
+    }
+  ],
   "workspaces": [
     "packages/agent-identity",
+    "packages/civility-kernel",
     "packages/cognate",
     "packages/model-registry",
     "packages/node",
