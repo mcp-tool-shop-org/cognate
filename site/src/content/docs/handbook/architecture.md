@@ -5,12 +5,14 @@ sidebar:
   order: 3
 ---
 
-Attestia proves that an event, a transaction, or a state transition happened, and binds that proof to a chain: an append-only event store and Merkle proofs. Cognate does not build a second store. It uses that one for AI — model lineage, policy decisions, agent capabilities, and prompt integrity.
+Attestia proves that an event, a transaction, or a state transition happened, and binds that proof to a chain: an append-only event store and Merkle proofs. Cognate does not build a second store. It uses that one for AI — model lineage, plan and policy decisions, agent capabilities, and prompt integrity.
 
 RepoMesh is the other neighbour. It is the release network: signed events, node manifests, and an XRPL-anchored trust clock, on its own RFC 6962 ledger. `@cognate/repomesh-bridge` calls that ledger to check a release. It does not use Attestia's Merkle tree.
 
 ```
-policy  ── evaluate before inference
+civility-kernel ── choose a plan before acting
+   │
+policy  ── gate each event, before inference
    │
    ├─ model-registry ── version hashes, approval, deploy
    ├─ agent-identity ── who may act, and under which grant
@@ -27,6 +29,7 @@ policy  ── evaluate before inference
 |---------|------|----------------|
 | `@cognate/types` | The nouns: model, version, policy, agent, hash, tenant | Behavior |
 | `@cognate/policy` | Whether this call is allowed | Fetching the policy |
+| `@cognate/civility-kernel` | Which of an agent's plans runs, or whether to ask a person first | Running the plan, or gating its events (that is `@cognate/policy`) |
 | `@cognate/model-registry` | Whether this version may be deployed | Storing weight files |
 | `@cognate/agent-identity` | Whether this agent holds a live capability | Issuing keys |
 | `@cognate/prompt-store` | The append-only encrypted log | Choosing a database |

@@ -34,13 +34,15 @@ if (result.overall === "deny") {
 
 | आयात करें | यह क्या है |
 |--------|------------|
-| `@mcptoolshop/cognate` | नेमस्पेस: `types`, `policy`, `modelRegistry`, `agentIdentity`, `promptStore` |
+| `@mcptoolshop/cognate` | नेमस्पेस: `types`, `policy`, `civilityKernel`, `modelRegistry`, `agentIdentity`, `promptStore`, `repomeshBridge` |
 | `@mcptoolshop/cognate/policy` | `evaluatePolicy` |
+| `@mcptoolshop/cognate/civility-kernel` | योजना चयन, किसी एजेंट के कार्य करने से पहले |
 | `@mcptoolshop/cognate/model-registry` | मॉडल संस्करण और तैनाती से पहले अनुमोदन द्वार |
 | `@mcptoolshop/cognate/agent-identity` | क्षमता अनुदान, अनुमोदन, निरसन |
 | `@mcptoolshop/cognate/prompt-store` | केवल-जोड़ने योग्य एन्क्रिप्टेड प्रॉम्प्ट और आउटपुट लॉग |
+| `@mcptoolshop/cognate/repomesh-bridge` | रिपोमेश रिलीज़ जाँच, `verifyRelease` |
 | `@mcptoolshop/cognate/types` | साझा संज्ञाएं |
 
-ये शुद्ध फ़ंक्शन हैं। आप घड़ी, किरायेदार कुंजी और स्टोर पास करते हैं। यह पैकेज सॉकेट नहीं खोलता है।
+ये उस स्थिति को लेते हैं जिसे आप उन्हें प्रदान करते हैं: किरायेदार कुंजी और भंडार। कुछ कॉल इसके बाहर तक पहुँचते हैं: `transitionVersion` और `feedbackFromMcpResult` वर्तमान समय को अंकित करते हैं, कर्नेल के `decide` और `decideAsync` घड़ी को पढ़ते हैं और एक यादृच्छिक आईडी बनाते हैं, जब तक कि आप `decisionId` और `timestamp` दोनों प्रदान नहीं करते, और `verifyRelease` घड़ी और रेपोमेश लेज़र को नेटवर्क पर या किसी स्थानीय निर्देशिका से पढ़ता है।
 
 हैंडबुक: <https://mcp-tool-shop-org.github.io/cognate/handbook/>

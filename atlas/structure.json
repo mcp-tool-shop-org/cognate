@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "cfa81b465a24ca273b1c4d0064f3d71e6f54414baf5c2a755aa903b396bd8eea",
+          "hash": "93a6349a7bf4c121c54ca79f4c6ff449294f272bf4de8370561fb08f4eb70f02",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -220,7 +220,7 @@
           "path": "packages/cognate/README.zh.md"
         },
         {
-          "hash": "904d7b648d7225b9f74814a3179ce8f0f4e9c3c52f14a85ef21d7c9b2186007a",
+          "hash": "9500898d24b4635f7fa3ec7bc1da554dde765c8a72fcb566fc439c2511736498",
           "path": "packages/cognate/package.json"
         },
         {
@@ -2601,7 +2601,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "2fbd64d42c5df09bb54a6b24fa48aa4a44245a7bb35ed1cadccd30886c9da0e7",
+          "hash": "728bfd22a149f2adf4689dd2901134402d72ee46a544ff673d135f51c8c052ad",
           "path": "CHANGELOG.md"
         },
         {
@@ -2613,7 +2613,7 @@
           "path": "Dockerfile"
         },
         {
-          "hash": "9ff40859d15cc23390ae8cb595c7632fd8db77b6013e8d8fe32d7d696e807fd7",
+          "hash": "661f7900014edfb5ccd1f35d16366ce4f4b73d752cbedbef48fc551de18686ab",
           "path": "HANDBOOK.md"
         },
         {
@@ -2641,7 +2641,7 @@
           "path": "README.ja.md"
         },
         {
-          "hash": "329d9df056299c2f49792ad709e7446bdc8f70113dc4ea77f3a24b2375b243d8",
+          "hash": "067c5536a09eded1d03391e8fc3f2567401ab7a5089ad0bd00efaef45e1de9f5",
           "path": "README.md"
         },
         {
@@ -2677,7 +2677,7 @@
           "path": "node.json"
         },
         {
-          "hash": "7751dac32f36e19285f6d5122159ded4fdfbb163c81365dccae392ff5a46a9ef",
+          "hash": "ce0878a543bf3e931aed4f3e607a753a28b03960770f1efcdfc5ab0e3aa54266",
           "path": "package.json"
         },
         {
@@ -2827,7 +2827,7 @@
           "path": "site/src/content.config.ts"
         },
         {
-          "hash": "4e93880f48edf6b4e7e15e5d1232613834fe22711f8d9c32031b4497f8814c60",
+          "hash": "a87bbe28b82f57e3a8121e3713deac77e6f9c40c525738c009822198b50abe2a",
           "path": "site/src/content/docs/handbook/architecture.md"
         },
         {
@@ -2835,23 +2835,23 @@
           "path": "site/src/content/docs/handbook/getting-started.md"
         },
         {
-          "hash": "a9e46a773b0cdfd7454b1fcaa6fd28c8e0bbd442cfcb610ac423169574ed50ea",
+          "hash": "7d3b69a84ac7398580a4683d3cebcfe957c9a1f7eaa48ee1fc893a7933ef51e1",
           "path": "site/src/content/docs/handbook/index.md"
         },
         {
-          "hash": "d81dfd45406989650e8b0c232ac68302f27ee2af0f2aa705f6d8fbbea6197cf1",
+          "hash": "7793805ca73c2fdb01e3f5f5232947bb946ba007840d71fc188d45706160f9b5",
           "path": "site/src/content/docs/handbook/reference.md"
         },
         {
-          "hash": "909f18d7cc8c878bedaacf3375bdf1b111e027801be943f7cf990d1a2012771e",
+          "hash": "623d34526fc56eac5d1ff2334821abb358f1c6a12baad7b4e332af21b9f79041",
           "path": "site/src/content/docs/handbook/security.md"
         },
         {
-          "hash": "ef714dcd6de95045ab9fff62e8c3fa2ff59084af1d1ee135a846d476fe7ea1d3",
+          "hash": "56a9ebdcbe0d9701af1e8271195ee03494198eb177b90c9138dbb76864e8e37a",
           "path": "site/src/content/docs/handbook/usage.md"
         },
         {
-          "hash": "4250e0bed1f8cb8ec6d30d788439a51e659aa4f9bfecb829cbf659f7e283d37c",
+          "hash": "b4147d434d8cfa3aaf0dffea0f09b5f7ac0e5bb500bca4a03ffbd7b661627576",
           "path": "site/src/content/docs/handbook/whats-new.md"
         },
         {
@@ -2868,7 +2868,7 @@
         },
         {
           "constantOnly": true,
-          "hash": "6fadd47bae32b67d75fd76e9339c4dde2bc430905eab77e38e86cd8d17024877",
+          "hash": "63664928f493946471af5d52f69a8eb8a3fd4623381eb3df39366aa78b436d40",
           "path": "site/src/site-config.ts"
         },
         {
@@ -3567,6 +3567,7 @@
           ],
           "event": "push",
           "paths": [
+            "**/*.mjs",
             "**/*.ts",
             "**/package.json",
             ".github/workflows/**",
@@ -4965,7 +4966,7 @@
   ],
   "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "a7f3f0dd3469be6ecc53c9adaf4b2b632f586495",
+    "commit": "f3f8a28eb4bef0af6e4477d2f8060998ca0af788",
     "tracked": 206
   },
   "landings": [

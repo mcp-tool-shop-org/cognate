@@ -5,7 +5,7 @@ sidebar:
   order: 4
 ---
 
-`@mcptoolshop/cognate` is `1.0.0`. The `@cognate/*` packages stay in this workspace and are inlined into that bundle.
+`@mcptoolshop/cognate` is `1.1.0`. The `@cognate/*` packages stay in this workspace and are inlined into that bundle, with their type declarations inside it (from 1.1.0).
 
 ## @cognate/policy
 
@@ -18,6 +18,28 @@ sidebar:
 `overall` is one of `deny`, `quarantine`, `require-human-review`, `allow`.
 
 `EvaluationContext` includes `tenantId`, `actorId`, `modelVersionId`, `agentId`, `timestamp`, `promptText`, `outputText`, `metadata`, `agentCapabilities`, and `counters`.
+
+## @cognate/civility-kernel
+
+New in 1.1.0. From npm: `@mcptoolshop/cognate/civility-kernel`, or the `civilityKernel` namespace on the root entry.
+
+| Export | Role |
+|--------|------|
+| `createKernel({ policy, constraints?, scorers?, onDecision? })` | A kernel with the default constraints and scorers, plus any you register. Its methods: `decide(context, plans, options?)`, `decideAsync`, `lint`, `explain`, `diff`, `proposePolicyUpdates`, `updatePolicy`, `getPolicy` |
+| `DecisionEngine` | The engine `createKernel` wraps, for custom constraint and scorer registries |
+| `ConstraintRegistry` / `registerDefaultConstraints` | Hard constraints; the defaults are `no_irreversible_changes`, `max_spend_without_confirm` and `require_confirm_if` |
+| `ScorerRegistry` / `registerDefaultScorers` | Preference scorers, weighted by the policy's `weights` |
+| `computeDecisionDigests(trace, chosenPlan?)` | `decisionSha256`, `policySha256` and `planSha256` (`null` when no plan was chosen), SHA-256 over RFC 8785 JSON |
+| `attestDecision(config, trace, chosenPlan?)` | Appends `cognate.policy.decided` to `cognate-<tenantId>-policy` and returns `eventId`, `streamId`, the trace and the digests. `config` is `{ eventStore, tenantId, actorId, streamPrefix? }` |
+| `AttestationError` | `code` (`civility.plan-mismatch`, `civility.non-finite-number`, `attestia.append-failed`), `message`, `hint` |
+| `lintPolicy` / `diffPolicy` / `explainPolicy` | Check, compare and describe a policy before it is applied |
+| `proposePolicyUpdates` / `applyPolicyProposal` | Turn feedback into proposed policy changes; `applyPolicyProposal(policy, proposal)` applies one and returns the new policy, for a person to approve before `updatePolicy` |
+| `loadPolicy` / `dumpPolicy` / `PreferencePolicySchema` | Read and write a policy, validated with zod |
+| `canonicalizePolicy` / `computeCacheKey` / `compileEffectivePolicy` | The canonical form, its key, and the policy after context rules |
+| `planFromMcpToolCall` / `feedbackFromMcpResult` | Build a plan from an MCP tool call, and feedback from its result |
+| `PolicyBuilder` | Build a policy in code |
+
+`decide` returns a trace whose `outcome` is `EXECUTE` (with `chosenPlanId`), `ASK_USER` (the top plan's uncertainty is over `uncertaintyThreshold`) or `NO_VALID_PLAN` (no plan survived the hard constraints). `options` is `{ decisionId, timestamp }`; with both, the trace is byte-identical for the same inputs.
 
 ## @cognate/model-registry
 

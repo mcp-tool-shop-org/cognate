@@ -14,7 +14,7 @@
 
 <p align="center"><strong>Structural governance for autonomous intelligence.</strong></p>
 
-**Version 1.0.0.** The previous release was 0.1.8. 0.2.0 and 0.3.0 were never published separately, and their changes ship in 1.0.0. 1.0.0 changes the HTTP API: the server now refuses unsigned requests. From 1.0, versions follow semantic versioning: a change that breaks the HTTP API, the signed-request format or the event and attestation format comes with a new major version. See [What's new in 1.0.0](#whats-new-in-100).
+**Version 1.1.0.** 1.1.0 adds plan selection before an agent acts, and makes the npm bundle's types work for TypeScript users. It changes nothing in the HTTP API, the signed-request format or the event and attestation format, so a 1.0.0 caller keeps working. Versions follow semantic versioning: a change that breaks any of those comes with a new major version. See [What's new in 1.1.0](#whats-new-in-110).
 
 Cognate is the AI governance layer built on [Attestia](https://github.com/mcp-tool-shop-org/attestia). Attestia proves that something happened — an event, a transaction, a state transition — and binds that proof to a chain. Cognate uses those same attestation primitives to govern AI systems: what a model was permitted to do, what it actually did, and who authorized it.
 
@@ -24,7 +24,16 @@ Attestia, Cognate, and RepoMesh are three products. Attestia ships the financial
 
 ---
 
-## What's new in 1.0.0
+## What's new in 1.1.0
+
+- **Plan selection, before an agent acts.** `@cognate/civility-kernel` (from npm, `@mcptoolshop/cognate/civility-kernel`) takes an agent's candidate plans, drops any that break a hard constraint, scores the rest by the policy's preference weights, and returns one of three outcomes, `EXECUTE` (with the chosen plan), `ASK_USER` or `NO_VALID_PLAN`, with a trace of why. It is the first of [two stages](#two-stages-choose-a-plan-then-gate-each-event): the kernel chooses the plan, and `@cognate/policy` still gates each event while the plan runs.
+- **Decisions that can be recorded and proved.** `computeDecisionDigests` hashes a decision in the form a run pre-registration takes (`planSha256`, `decisionSha256`), and `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream, which `GET /events/:eventId` already proves. The event carries the outcome and the rules each rejected plan broke, never the plan steps. Given a `decisionId` and a `timestamp`, the same inputs give a byte-identical trace.
+- **Three fixes made to the kernel as it moved into Cognate.** Its compile cache keyed on the policy's version alone, so two policies with one version but different weights got the same rules (the cache is gone). A decision can now be reproduced. And a failed plan scores `null` rather than minus infinity, so a trace survives a JSON round trip.
+- **Types that resolve from npm.** The 1.0.0 bundle's type declarations pointed at workspace packages that aren't on npm, so a TypeScript project got unresolved types on every subpath. 1.1.0 ships those declarations inside the bundle, and CI installs the packed bundle into an empty project and type-checks an import from every entry.
+
+The full list is in [CHANGELOG.md](CHANGELOG.md).
+
+### What came in 1.0.0
 
 - **Run records.** `@cognate/model-registry` pre-registers a run before it launches and records its outcome on the `cognate-<tenant>-runs` stream. Account-naming identifiers are stored only as SHA-256 digests, and a run records its own cost, never an account balance.
 - **Evaluations.** A model version carries any number of evaluations (a run, its replication, a pooled result), and a transition cites the ones it rests on. `requireEvaluationCitations` sets which transitions must cite. An approved version can be rejected before it deploys.
@@ -32,8 +41,6 @@ Attestia, Cognate, and RepoMesh are three products. Attestia ships the financial
 - **Signed requests (breaking).** Every write and every `GET /events/:eventId` must be signed with the caller's Ed25519 key (`cognate-request-v1`), with a timestamp window and replay protection. The actor on every route is the verified signer. Registering agents and approving grants need a `delegate` capability, and an operator-supplied tenant root key bootstraps each tenant's first delegate. See [Authentication & Migration Guide](#authentication--migration-guide).
 - **The root key's powers, in plain words.** The docs list everything the tenant root can still do after bootstrap, and say that a root derived from a test seed must never be configured in production.
 - **Test toolchain.** vitest 4.1.12 and vite 8.3.5; the high and critical advisories in the dev tree are cleared at the root, with no ignores or overrides.
-
-The full list is in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -55,20 +62,20 @@ Cognate is the missing layer: model registry, policy enforcement, agent identity
 
 ## Architecture
 
-Cognate consumes Attestia primitives and adds an AI-native domain layer. The packages are pure functions. Callers supply state. Nothing here opens a socket, writes a file, or reads a clock unless you hand it the value.
+Cognate consumes Attestia primitives and adds an AI-native domain layer. The libraries take the state you pass them. A few calls reach outside it: `transitionVersion` and `feedbackFromMcpResult` stamp the current time, the kernel's `decide` and `decideAsync` read the clock and make a random id unless you pass both `decisionId` and `timestamp`, and `verifyRelease` reads the clock and the RepoMesh ledger, over the network or from a local directory. Nothing else opens a socket, writes a file or reads the clock.
 
 | Package | Purpose | Status |
 |---------|---------|--------|
 | @cognate/types | Shared AI governance domain types (zero deps) | Ready |
 | @cognate/policy | Semantic policy evaluation engine | Ready |
-| @cognate/civility-kernel | Plan selection: filter candidate plans by hard constraints, score them by preference weights, then execute or ask | Ready (unreleased) |
+| @cognate/civility-kernel | Plan selection: filter candidate plans by hard constraints, score them by preference weights, then execute or ask | Ready (new in 1.1.0) |
 | @cognate/model-registry | Model lifecycle, versioning, evaluation | Ready |
 | @cognate/agent-identity | Agent identity, capabilities, grants | Ready |
 | @cognate/prompt-store | Prompt/output logging with encrypted events | Ready |
 | @cognate/repomesh-bridge | RepoMesh release check (`verifyRelease`) before a deploy | Ready |
 | @cognate/node | HTTP API server on port 4000, with signed requests and tenant scoping | Ready |
 
-`@mcptoolshop/cognate` on npm bundles the libraries. `@cognate/node` runs in the Docker image.
+`@mcptoolshop/cognate` on npm bundles the libraries, with their type declarations inside it. `@cognate/node` runs in the Docker image.
 
 ### Two stages: choose a plan, then gate each event
 
@@ -80,11 +87,11 @@ Cognate governs an agent at two points.
    threshold: then the agent asks. If no plan survives, the agent asks the person to relax a constraint or offer
    another option.
 2. **While it acts, `@cognate/policy` gates each event.** Every prompt, output or spend is checked against the tenant's
-   rules (content filters, rate and spend limits, capabilities), and the worst matching rule wins.
+   rules (content filters, rate and spend limits, capabilities), and of the rules that match, the strictest wins.
 
 A decision can be recorded and hashed. `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream,
 carrying digests and the decision's outline, never the plan steps. `computeDecisionDigests` gives the `planSha256` and
-`decisionSha256` that a run pre-registration (`preRegisterRun`) asks for. Pass `decisionId` and `timestamp` and the same
+`decisionSha256` that a run pre-registration (`preRegisterRun`) asks for. Given a `decisionId` and a `timestamp`, the same
 inputs give a byte-identical trace.
 
 ```js
@@ -268,7 +275,7 @@ The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data
 
 ## Authentication & Migration Guide
 
-### What is enforced in 1.0.0
+### What is enforced in 1.1.0 (unchanged since 1.0.0)
 
 - **Ed25519 request signing (`cognate-request-v1`).** By default (`signedRequests: "enforce"`), every `POST` and `GET /events/:eventId` must carry `X-Agent-Id`, `X-Timestamp`, `X-Nonce`, `X-Key-Id`, and `X-Signature` over the 8-line canonical request string (`cognate-request-v1\n<METHOD>\n<PATH>\n<BODY_SHA256>\n<X-Timestamp>\n<X-Nonce>\n<X-Agent-Id>\n<X-Key-Id>`). `POST` bodies must be RFC 8785 JCS-canonical UTF-8 (`400 auth.body-not-canonical` otherwise). `kid` is the 64-character lowercase hex SHA-256 of the raw 32-byte Ed25519 public key.
 - **Ordered replay protection and uniform 401.** `X-Timestamp` must be within ±300 s of server time (`GET /health` exposes `serverTime`). The in-memory replay store checks `(agentId, nonce)` read-only before signature verification, records it only after the signature verifies, and retains it across the full 600 s validity span. Every pre-signature authentication failure returns an identical `401` with `code: "auth.unauthenticated"`.
@@ -278,7 +285,7 @@ The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data
 ### Not yet, and current limits
 
 - **Single-instance replay store.** The `(agentId, nonce)` replay store is in-memory on a single `@cognate/node` process; multi-instance deployments do not share replay state.
-- **Detached approvals, identity stream, and offline verification are planned for a later release.** Today, any sign-off-gated action must be signed directly by the authorizing principal. Detached `cognate-approval-v1` approvals (allowing an agent to submit a transition carrying a separate human signature), durable `approvalId` consumption, the attested `cognate-<tenant>-identity` event stream, `submittedBy` / `authorizedBy` event fields, the standalone offline verifier, and RepoMesh root-key anchoring are not in 1.0.0.
+- **Detached approvals, identity stream, and offline verification are planned for a later release.** Today, any sign-off-gated action must be signed directly by the authorizing principal. Detached `cognate-approval-v1` approvals (allowing an agent to submit a transition carrying a separate human signature), durable `approvalId` consumption, the attested `cognate-<tenant>-identity` event stream, `submittedBy` / `authorizedBy` event fields, the standalone offline verifier, and RepoMesh root-key anchoring are not in 1.1.0.
 - **Ids are global across tenants.** Registering an id that another tenant already holds is refused as a duplicate.
 
 ### Migrating existing agents to Ed25519 keys
@@ -313,7 +320,7 @@ The `cognate-data` volume is mounted at `/app/data`. The event log is `/app/data
 Cognate assumes the following threat model:
 
 1. **Compromised inference endpoint.** An attacker gains access to the model API. Mitigation: all prompts and outputs are logged with encrypted payloads and SHA-256 integrity hashes. Replay is deterministic.
-2. **Rogue agent or forged caller identity.** Mitigation: every HTTP write and `/events/:eventId` read is authenticated with an Ed25519 signature (`cognate-request-v1`), ±300 s timestamp check, and 600 s nonce replay store; capabilities are time-bound, scope-limited, and revocable (`POST /identity/agents/:id/revoke`, `POST /identity/agents/:id/key`), and every route binds its body actor fields to the verified signer (`403 auth.actor-mismatch`). Limit: the replay store is in-memory per process, and detached multi-party approvals (`cognate-approval-v1`) and offline event-stream signature verification are not in 1.0.0.
+2. **Rogue agent or forged caller identity.** Mitigation: every HTTP write and `/events/:eventId` read is authenticated with an Ed25519 signature (`cognate-request-v1`), ±300 s timestamp check, and 600 s nonce replay store; capabilities are time-bound, scope-limited, and revocable (`POST /identity/agents/:id/revoke`, `POST /identity/agents/:id/key`), and every route binds its body actor fields to the verified signer (`403 auth.actor-mismatch`). Limit: the replay store is in-memory per process, and detached multi-party approvals (`cognate-approval-v1`) and offline event-stream signature verification are not in 1.1.0.
 3. **Supply-chain model tampering.** Weights or configs are swapped post-evaluation. Mitigation: the model registry hashes weights, config, and manifest at registration, and `ModelVersion.repo` is stored as `sha256:<hex>`. Any deviation invalidates the version.
 4. **Policy bypass via prompt injection.** An adversarial prompt attempts to circumvent content rules. Mitigation: policy evaluation is deterministic, versioned, and runs before inference. No prompt executes without a passing policy check.
 5. **Insider abuse of audit logs.** A privileged operator tampers with logs. Mitigation: the event store is append-only and backed by Attestia's Merkle-tree proofs. Tampering breaks the chain hash.
@@ -326,16 +333,16 @@ No telemetry or analytics. A deploy on the HTTP server asks RepoMesh whether the
 
 ## Status
 
-Version 1.0.0, building in public. All packages are implemented, tested, and building. Install the bundle with `npm install @mcptoolshop/cognate`. The `@cognate/*` names stay in this repo.
+Version 1.1.0, building in public. All packages are implemented, tested, and building. Install the bundle with `npm install @mcptoolshop/cognate`. The `@cognate/*` names stay in this repo.
 
 | Gate | Status |
 |------|--------|
 | Build | Passing |
-| Tests | 316 passing (node 147, model-registry 58, policy 47, agent-identity 29, prompt-store 24, repomesh-bridge 9, cognate 2) |
-| Coverage | Lines: 94.3% in node, 93.4% in policy, 99.6% in model-registry, and 100% in agent-identity, prompt-store and repomesh-bridge, with vitest coverage floors in those six packages |
-| Typecheck | Clean |
+| Tests | 490 passing (civility-kernel 164, node 157, model-registry 58, policy 47, agent-identity 29, prompt-store 24, repomesh-bridge 9, cognate 2) |
+| Coverage | Lines: 91.9% in civility-kernel, 94.3% in node, 93.4% in policy, 99.6% in model-registry, and 100% in agent-identity, prompt-store and repomesh-bridge, with a vitest line floor of 90 or above in each of those seven packages |
+| Typecheck | Clean, and the packed bundle type-checks in an empty project under `bundler` and `node16` resolution |
 | Docker | Image serves the governance API. The volume holds the event log and the three snapshots |
-| Shipcheck | Handbook, landing page, and repo metadata in this release |
+| Shipcheck | All hard gates pass (16 of 16 checked) |
 
 ---
 

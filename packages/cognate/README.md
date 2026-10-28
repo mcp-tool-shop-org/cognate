@@ -34,13 +34,15 @@ if (result.overall === "deny") {
 
 | Import | What it is |
 |--------|------------|
-| `@mcptoolshop/cognate` | Namespaces: `types`, `policy`, `modelRegistry`, `agentIdentity`, `promptStore` |
+| `@mcptoolshop/cognate` | Namespaces: `types`, `policy`, `civilityKernel`, `modelRegistry`, `agentIdentity`, `promptStore`, `repomeshBridge` |
 | `@mcptoolshop/cognate/policy` | `evaluatePolicy` |
+| `@mcptoolshop/cognate/civility-kernel` | Plan selection: choose among an agent's plans, or ask a person first |
 | `@mcptoolshop/cognate/model-registry` | Model versions and the approval gate before deploy |
 | `@mcptoolshop/cognate/agent-identity` | Capability grants, approvals, revocations |
 | `@mcptoolshop/cognate/prompt-store` | Append-only encrypted prompt and output log |
+| `@mcptoolshop/cognate/repomesh-bridge` | The RepoMesh release check, `verifyRelease` |
 | `@mcptoolshop/cognate/types` | The shared nouns |
 
-These are pure functions. You pass the clock, the tenant key, and the store. This package does not open a socket.
+These take the state you pass them: the tenant key and the store. A few calls reach outside it: `transitionVersion` and `feedbackFromMcpResult` stamp the current time, the kernel's `decide` and `decideAsync` read the clock and make a random id unless you pass both `decisionId` and `timestamp`, and `verifyRelease` reads the clock and the RepoMesh ledger, over the network or from a local directory.
 
 Handbook: <https://mcp-tool-shop-org.github.io/cognate/handbook/>
