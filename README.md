@@ -26,9 +26,9 @@ Attestia, Cognate, and RepoMesh are three products. Attestia ships the financial
 
 ## What's new in 1.1.0
 
-- **Plan selection, before an agent acts.** `@cognate/civility-kernel` (from npm, `@mcptoolshop/cognate/civility-kernel`) takes an agent's candidate plans, drops any that break a hard constraint, scores the rest by the policy's preference weights, and returns `EXECUTE` with the chosen plan, `ASK_USER`, or `NO_VALID_PLAN`, with a trace of why. It is the first of [two stages](#two-stages-choose-a-plan-then-gate-each-event): the kernel chooses the plan, and `@cognate/policy` still gates each event while the plan runs.
-- **Decisions that can be recorded and proved.** `computeDecisionDigests` hashes a decision in the form a run pre-registration takes (`planSha256`, `decisionSha256`), and `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream, which `GET /events/:eventId` already proves. The event carries the outcome and the rules each rejected plan broke, never the plan steps. Pass `decisionId` and `timestamp` and the same inputs give a byte-identical trace.
-- **Three fixes in the kernel, on the way in.** Its compile cache keyed on the policy's version alone, so two policies with one version but different weights got the same rules (the cache is gone). A decision can now be reproduced. And a failed plan scores `null` rather than minus infinity, so a trace survives a JSON round trip.
+- **Plan selection, before an agent acts.** `@cognate/civility-kernel` (from npm, `@mcptoolshop/cognate/civility-kernel`) takes an agent's candidate plans, drops any that break a hard constraint, scores the rest by the policy's preference weights, and returns one of three outcomes, `EXECUTE` (with the chosen plan), `ASK_USER` or `NO_VALID_PLAN`, with a trace of why. It is the first of [two stages](#two-stages-choose-a-plan-then-gate-each-event): the kernel chooses the plan, and `@cognate/policy` still gates each event while the plan runs.
+- **Decisions that can be recorded and proved.** `computeDecisionDigests` hashes a decision in the form a run pre-registration takes (`planSha256`, `decisionSha256`), and `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream, which `GET /events/:eventId` already proves. The event carries the outcome and the rules each rejected plan broke, never the plan steps. Given a `decisionId` and a `timestamp`, the same inputs give a byte-identical trace.
+- **Three fixes made to the kernel as it moved into Cognate.** Its compile cache keyed on the policy's version alone, so two policies with one version but different weights got the same rules (the cache is gone). A decision can now be reproduced. And a failed plan scores `null` rather than minus infinity, so a trace survives a JSON round trip.
 - **Types that resolve from npm.** The 1.0.0 bundle's type declarations pointed at workspace packages that aren't on npm, so a TypeScript project got unresolved types on every subpath. 1.1.0 ships those declarations inside the bundle, and CI installs the packed bundle into an empty project and type-checks an import from every entry.
 
 The full list is in [CHANGELOG.md](CHANGELOG.md).
@@ -87,7 +87,7 @@ Cognate governs an agent at two points.
    threshold: then the agent asks. If no plan survives, the agent asks the person to relax a constraint or offer
    another option.
 2. **While it acts, `@cognate/policy` gates each event.** Every prompt, output or spend is checked against the tenant's
-   rules (content filters, rate and spend limits, capabilities), and the worst matching rule wins.
+   rules (content filters, rate and spend limits, capabilities), and of the rules that match, the strictest wins.
 
 A decision can be recorded and hashed. `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream,
 carrying digests and the decision's outline, never the plan steps. `computeDecisionDigests` gives the `planSha256` and

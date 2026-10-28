@@ -11,13 +11,13 @@ sidebar:
 
 ### Plan selection, before an agent acts
 
-`@cognate/civility-kernel` (from npm, `@mcptoolshop/cognate/civility-kernel`) takes an agent's candidate plans, drops any that break a hard constraint, scores the rest by the policy's preference weights, and returns `EXECUTE` with the chosen plan, `ASK_USER`, or `NO_VALID_PLAN`, with a trace of why. It is the first of two stages: the kernel chooses the plan, and `@cognate/policy` still gates each event while the plan runs. The [usage page](/cognate/handbook/usage/) has an example.
+`@cognate/civility-kernel` (from npm, `@mcptoolshop/cognate/civility-kernel`) takes an agent's candidate plans, drops any that break a hard constraint, scores the rest by the policy's preference weights, and returns one of three outcomes, `EXECUTE` (with the chosen plan), `ASK_USER` or `NO_VALID_PLAN`, with a trace of why. It is the first of two stages: the kernel chooses the plan, and `@cognate/policy` still gates each event while the plan runs. The [usage page](/cognate/handbook/usage/) has an example.
 
 ### Decisions that can be recorded and proved
 
-`computeDecisionDigests` hashes a decision in the form a run pre-registration takes (`planSha256`, `decisionSha256`). `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream, which `GET /events/:eventId` already proves. The event carries the outcome and the rules each rejected plan broke, never the plan steps. Pass `decisionId` and `timestamp` and the same inputs give a byte-identical trace.
+`computeDecisionDigests` hashes a decision in the form a run pre-registration takes (`planSha256`, `decisionSha256`). `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream, which `GET /events/:eventId` already proves. The event carries the outcome and the rules each rejected plan broke, never the plan steps. Given a `decisionId` and a `timestamp`, the same inputs give a byte-identical trace.
 
-### Three fixes in the kernel, on the way in
+### Three fixes made to the kernel as it moved into Cognate
 
 - Its compile cache keyed on the policy's version alone, so two policies with one version but different weights or constraints got the first one's rules. The cache is gone.
 - A decision can be reproduced, given its id and time.
