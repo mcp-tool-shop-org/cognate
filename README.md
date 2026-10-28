@@ -61,6 +61,7 @@ Cognate consumes Attestia primitives and adds an AI-native domain layer. The pac
 |---------|---------|--------|
 | @cognate/types | Shared AI governance domain types (zero deps) | Ready |
 | @cognate/policy | Semantic policy evaluation engine | Ready |
+| @cognate/civility-kernel | Plan selection: filter candidate plans by hard constraints, score them by preference weights, then execute or ask | Ready (unreleased) |
 | @cognate/model-registry | Model lifecycle, versioning, evaluation | Ready |
 | @cognate/agent-identity | Agent identity, capabilities, grants | Ready |
 | @cognate/prompt-store | Prompt/output logging with encrypted events | Ready |
@@ -68,6 +69,53 @@ Cognate consumes Attestia primitives and adds an AI-native domain layer. The pac
 | @cognate/node | HTTP API server on port 4000, with signed requests and tenant scoping | Ready |
 
 `@mcptoolshop/cognate` on npm bundles the libraries. `@cognate/node` runs in the Docker image.
+
+### Two stages: choose a plan, then gate each event
+
+Cognate governs an agent at two points.
+
+1. **Before it acts, `@cognate/civility-kernel` chooses among plans.** The agent proposes candidate plans. Hard
+   constraints remove the ones that break a rule (an irreversible change, a spend over a limit). The survivors are
+   scored by the policy's preference weights. The top plan executes, unless its uncertainty is over the policy's
+   threshold: then the agent asks. If no plan survives, the agent asks the person to relax a constraint or offer
+   another option.
+2. **While it acts, `@cognate/policy` gates each event.** Every prompt, output or spend is checked against the tenant's
+   rules (content filters, rate and spend limits, capabilities), and the worst matching rule wins.
+
+A decision can be recorded and hashed. `attestDecision` appends `cognate.policy.decided` to the tenant's policy stream,
+carrying digests and the decision's outline, never the plan steps. `computeDecisionDigests` gives the `planSha256` and
+`decisionSha256` that a run pre-registration (`preRegisterRun`) asks for. Pass `decisionId` and `timestamp` and the same
+inputs give a byte-identical trace.
+
+```js
+import { createKernel, computeDecisionDigests } from "@mcptoolshop/cognate/civility-kernel";
+
+const kernel = createKernel({
+  policy: {
+    version: "1.0",
+    weights: { efficiency: 0.3, low_risk: 0.7 },
+    constraints: ["no_irreversible_changes"],
+    contextRules: [],
+    uncertaintyThreshold: 0.4,
+    memory: {},
+    calibration: { riskTolerance: 0.3, verbosity: 0.5, initiative: 0.5 },
+  },
+});
+
+const plans = [
+  { id: "drop-and-reload", summary: "Drop the table and reload it", steps: [], meta: { reversibility: 0, estimatedTimeSec: 30 } },
+  { id: "migrate-with-backup", summary: "Back up, then migrate", steps: [], meta: { reversibility: 1, estimatedTimeSec: 300, stake: 0.2 } },
+];
+
+const trace = kernel.decide("deploy:db", plans, { decisionId: "dec-1", timestamp: "2026-10-28T12:00:00.000Z" });
+console.log(trace.outcome, trace.chosenPlanId); // "EXECUTE migrate-with-backup"
+
+const { planSha256, decisionSha256 } = computeDecisionDigests(trace, plans[1]);
+console.log(planSha256.length, decisionSha256.length); // 64 64
+```
+
+Policies are changed through the kernel's own loop, with a human approving each step: `proposePolicyUpdates` from
+feedback, then `diffPolicy`, `lintPolicy` and `explainPolicy` before the change is applied.
 
 ### Regulatory Alignment
 
@@ -142,7 +190,7 @@ const context = {
 console.log(evaluatePolicy(policy, context).overall); // "deny"
 ```
 
-Each library is a subpath of the bundle: `@mcptoolshop/cognate/policy`, `/model-registry`, `/agent-identity`, `/prompt-store`, `/repomesh-bridge` and `/types`. The examples below use the workspace names (`@cognate/policy` and so on), which are the same code.
+Each library is a subpath of the bundle: `@mcptoolshop/cognate/policy`, `/civility-kernel`, `/model-registry`, `/agent-identity`, `/prompt-store`, `/repomesh-bridge` and `/types`. The examples below use the workspace names (`@cognate/policy` and so on), which are the same code.
 
 ### Run the HTTP server from this repository
 

@@ -4,6 +4,19 @@ All notable changes to Cognate are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`@cognate/civility-kernel`, plan selection before an agent acts** (`@mcptoolshop/cognate/civility-kernel`, and the `civilityKernel` namespace on the root entry). It filters candidate plans by hard constraints, scores the rest by preference weights, and returns `EXECUTE` with the chosen plan, `ASK_USER`, or `NO_VALID_PLAN`, with a trace of why. It is imported from `@mcptoolshop/civility-kernel@1.1.0` (the archived `prototypes` monorepo at `3359fd0`) with its 143 tests and its changelog, and fixed on the way in:
+  - **The compile cache keyed on the policy's version only**, so two policies with the same version and context but different weights or constraints got the first one's compiled policy. The module-level cache is gone: every compile is computed fresh and returns its own object. `computeCacheKey` now covers the whole policy in RFC 8785 canonical form.
+  - **Decisions can be reproduced.** `decide` and `decideAsync` (and the kernel's wrappers) take optional `{ decisionId, timestamp }`; with both, the same inputs give a byte-identical trace. Without them, a random UUID and the current time are used, as before.
+  - **A failed plan's `utility` is `null`, not `-Infinity`.** `JSON.stringify` and RFC 8785 write `-Infinity` as `null`, so a trace didn't survive a JSON round-trip unchanged.
+- **`attestDecision` and `computeDecisionDigests`.** `computeDecisionDigests(trace, chosenPlan?)` returns `decisionSha256`, `policySha256` and `planSha256` (SHA-256 over RFC 8785 JSON, 64 lowercase hex characters), the form `preRegisterRun` accepts for `planSha256` and `decisionSha256`. It refuses a plan the trace didn't choose, and any non-finite number. `attestDecision(config, trace, chosenPlan?)` appends `cognate.policy.decided` to `cognate-<tenantId>-policy` with the digests and the decision's outline (outcome, chosen plan id, context rules that fired, constraint ids each failed plan broke), never plan steps or constraint reasons, and returns nothing unless the append succeeds. The event is on a stream `GET /events/:eventId` already proves, and a test proves one with `proveRecordedEvent`.
+- `zod` is a runtime dependency of `@mcptoolshop/cognate`, for the kernel's policy and constraint validation.
+
+### Tests
+
+- `@cognate/civility-kernel`: 164 tests (143 ported, 21 new), coverage 91.9% of lines, floor 90. `@cognate/node`: an inclusion-proof test for an attested decision. The bundle smoke test checks the new subpath and namespace.
+
 ## [1.0.0] - 2026-10-25
 
 The first release since 0.1.8. 0.2.0 and 0.3.0 were never published separately; their changes, listed here and under 0.2.0, ship in 1.0.0. From 1.0, versions follow semantic versioning: a change that breaks the HTTP API, the signed-request format or the event and attestation format comes with a new major version.

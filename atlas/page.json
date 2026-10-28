@@ -98,97 +98,59 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 5,
-      "changed": 48,
+      "added": 2,
+      "changed": 34,
       "moved": 0,
-      "parts": 12,
-      "removed": 1
+      "parts": 11,
+      "removed": 0
     },
     "items": [
       {
-        "kind": "import-added",
-        "sentence": "scripts now imports node.",
+        "kind": "door",
+        "sentence": "CI's pull request trigger no longer names `**/*.ts`, `.github/workflows/**`, `atlas/**`, `package.json`, `pnpm-lock.yaml` and `tsconfig*.json`.",
         "subjects": [
-          "scripts",
-          "node"
+          ".github/workflows/ci.yml"
         ]
       },
       {
         "kind": "door",
-        "sentence": "CI now also runs packages/node/tests/deploy-gate.test.ts, packages/node/tests/evaluations.test.ts, packages/node/tests/event-proof.test.ts and 7 more.",
+        "sentence": "CI's push trigger now also names `**/package.json`, `Dockerfile`, `docker-compose*.yml` and `scripts/**` and no longer names `package.json`.",
         "subjects": [
-          ".github/workflows/ci.yml",
-          "packages/node/tests/deploy-gate.test.ts",
-          "packages/node/tests/evaluations.test.ts",
-          "packages/node/tests/event-proof.test.ts",
-          "packages/node/tests/middleware.test.ts",
-          "packages/node/tests/server.test.ts",
-          "packages/node/tests/signed-requests.test.ts",
-          "packages/node/tests/snapshot.test.ts",
-          "packages/node/tests/startup-errors.test.ts",
-          "packages/node/tests/tenant-scoping.test.ts",
-          "scripts/make-tenant-root.mjs"
+          ".github/workflows/ci.yml"
         ]
       },
       {
         "kind": "door",
-        "sentence": "CI no longer runs packages/node/tests/.",
+        "sentence": "CI now also runs packages/cognate/tests/, packages/node/tests/make-tenant-root.test.ts and packages/repomesh-bridge/tests/.",
         "subjects": [
           ".github/workflows/ci.yml",
-          "packages/node/tests/"
+          "packages/cognate/tests/",
+          "packages/node/tests/make-tenant-root.test.ts",
+          "packages/repomesh-bridge/tests/"
         ]
       },
       {
         "kind": "door",
-        "sentence": "Docker Publish (.github/workflows/docker-publish.yml) is no longer a door.",
-        "subjects": [
-          ".github/workflows/docker-publish.yml"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "And 4 more changes to doors.",
+        "sentence": "And 1 more change to a door.",
         "subjects": []
       },
       {
         "kind": "landing",
-        "sentence": "Dockerfile is now read by .github/workflows/ci.yml and packages/node/tests/signed-requests.test.ts.",
+        "sentence": "scripts/make-tenant-root.mjs is now read by packages/node/tests/make-tenant-root.test.ts.",
         "subjects": [
-          "Dockerfile",
-          ".github/workflows/ci.yml",
-          "packages/node/tests/signed-requests.test.ts"
+          "scripts/make-tenant-root.mjs",
+          "packages/node/tests/make-tenant-root.test.ts"
         ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "HANDBOOK.md is now read by packages/node/tests/signed-requests.test.ts.",
-        "subjects": [
-          "HANDBOOK.md",
-          "packages/node/tests/signed-requests.test.ts"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "README.md is now read by packages/node/tests/signed-requests.test.ts.",
-        "subjects": [
-          "README.md",
-          "packages/node/tests/signed-requests.test.ts"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "And 7 more new writers and readers of places.",
-        "subjects": []
       },
       {
         "kind": "counts",
-        "sentence": "5 files added, 1 removed and 48 changed content, across 12 parts.",
+        "sentence": "2 files added and 34 changed content, across 11 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "8db91735116259a6faeb8201daf7bfe876ff4497",
-      "generatedAt": "2026-10-24T23:22:11.112Z"
+      "commit": "b9b7ba232eb85c7f87c0e8fcf9989dc8dedbc145",
+      "generatedAt": "2026-10-25T06:19:00.265Z"
     },
     "unchanged": false
   },
@@ -197,9 +159,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 0 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "b9b7ba232eb85c7f87c0e8fcf9989dc8dedbc145",
+  "commit": "9aef44d05d6767be1738f65226a2b1b306f22800",
   "defaultBranch": "main",
-  "derived": "14 parts, mostly TypeScript (78 files), JavaScript (3), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
+  "derived": "14 parts, mostly TypeScript (79 files), JavaScript (3), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
   "doors": [
     {
       "builds": [
@@ -235,7 +197,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 7
+          "files": 8
         },
         {
           "boundary": "model-registry",
@@ -245,7 +207,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 28
+          "files": 29
         },
         {
           "boundary": "policy",
@@ -260,7 +222,7 @@
         {
           "boundary": "repomesh-bridge",
           "depth": 0,
-          "files": 4
+          "files": 5
         },
         {
           "boundary": "scripts",
@@ -276,10 +238,12 @@
       "runs": [
         "scripts/make-tenant-root.mjs",
         "packages/agent-identity/tests/",
+        "packages/cognate/tests/",
         "packages/model-registry/tests/",
         "packages/node/tests/deploy-gate.test.ts",
         "packages/node/tests/evaluations.test.ts",
         "packages/node/tests/event-proof.test.ts",
+        "packages/node/tests/make-tenant-root.test.ts",
         "packages/node/tests/middleware.test.ts",
         "packages/node/tests/server.test.ts",
         "packages/node/tests/signed-requests.test.ts",
@@ -287,15 +251,16 @@
         "packages/node/tests/startup-errors.test.ts",
         "packages/node/tests/tenant-scoping.test.ts",
         "packages/policy/tests/",
-        "packages/prompt-store/tests/"
+        "packages/prompt-store/tests/",
+        "packages/repomesh-bridge/tests/"
       ],
-      "runsCount": 14,
-      "runsMore": 13,
+      "runsCount": 17,
+      "runsMore": 19,
       "sends": [],
       "stages": [],
       "triggers": [
-        "on a pull request to main touching 6 paths",
-        "on a push to main touching 6 paths",
+        "on a pull request to main",
+        "on a push to main touching 9 paths",
         "or by hand"
       ]
     },
@@ -351,7 +316,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 30
+          "files": 31
         },
         {
           "boundary": "policy",
@@ -453,7 +418,7 @@
         {
           "boundary": "node",
           "depth": 0,
-          "files": 30
+          "files": 31
         },
         {
           "boundary": "policy",
@@ -489,6 +454,7 @@
         "packages/node/tests/deploy-gate.test.ts",
         "packages/node/tests/evaluations.test.ts",
         "packages/node/tests/event-proof.test.ts",
+        "packages/node/tests/make-tenant-root.test.ts",
         "packages/node/tests/middleware.test.ts",
         "packages/node/tests/server.test.ts",
         "packages/node/tests/signed-requests.test.ts",
@@ -499,8 +465,8 @@
         "packages/prompt-store/tests/",
         "packages/repomesh-bridge/tests/"
       ],
-      "runsCount": 16,
-      "runsMore": 18,
+      "runsCount": 17,
+      "runsMore": 19,
       "sends": [
         "publishes @mcptoolshop/cognate to npm and a container image",
         "creates a GitHub release"
@@ -648,10 +614,11 @@
   ],
   "engine": "1.24.0",
   "generated": [],
-  "generatedAt": "2026-10-25T06:19:00.265Z",
+  "generatedAt": "2026-10-28T01:38:02.215Z",
   "limits": [
+    "2 imports could not be resolved: `packages/cognate/src/index.ts` imports `@cognate/civility-kernel`, which no workspace member provides; `packages/cognate/tests/smoke.test.ts` imports `../src/civility-kernel.js`, which is not in this repository.",
     "2 reads use paths built at run time and are not named here.",
-    "5 writes and 21 reads go to a path their caller passes, not to this repository.",
+    "5 writes and 22 reads go to a path their caller passes, not to this repository.",
     "3 reads go to the directory the command is run in, not to this repository.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
@@ -685,29 +652,23 @@
   ],
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 23,
+  "testFiles": 24,
   "testedBy": {
     "agent-identity": 11,
     "cognate": 1,
     "model-registry": 13,
-    "node": 12,
+    "node": 13,
     "policy": 8,
     "prompt-store": 12,
     "repomesh-bridge": 4,
-    "scripts": 0,
+    "scripts": 1,
     "types": 19
   },
   "unnamedWrites": 0,
   "unread": [],
   "unreadFiles": 0,
   "unreadNote": [],
-  "untested": [
-    {
-      "part": "scripts",
-      "partLabel": "scripts",
-      "testedBy": 0
-    }
-  ],
+  "untested": [],
   "untestedNote": [],
   "written": 0
 }
