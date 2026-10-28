@@ -1,24 +1,19 @@
 # cognate: how it works
 
-Mapped at 2026-10-28 from commit a7f3f0d by Atlas 1.24.0.
+Mapped at 2026-10-28 from commit f3f8a28 by Atlas 1.24.0.
 
 ## What this is
 
 14 parts, mostly TypeScript (119 files), JavaScript (5), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.
 
-## What changed since 2026-10-28 (e7ac6bb)
+## What changed since 2026-10-28 (a7f3f0d)
 
-- CI now also runs packages/cognate/scripts/vendor-types.mjs and scripts/check-bundle-types.mjs.
-- Release now also runs packages/cognate/scripts/vendor-types.mjs.
-- packages/cognate/dist is now written by packages/cognate/scripts/vendor-types.mjs.
-- packages/cognate/dist/_types/attestia/index.d.ts/* is now written by packages/cognate/scripts/vendor-types.mjs.
-- packages/cognate/dist/_types/cognate/* is now written by packages/cognate/scripts/vendor-types.mjs.
-- And 5 more new writers and readers of places.
-- 6 files added and 3 changed content, across 4 parts.
+- CI's push trigger now also names `**/*.mjs`.
+- 13 files changed content, across 4 parts.
 
 ## What comes in
 
-1. **CI.** On a pull request to main; on a push to main touching 9 paths; or by hand. Runs packages/cognate/scripts/vendor-types.mjs, scripts/check-bundle-types.mjs, scripts/make-tenant-root.mjs and 42 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more.
+1. **CI.** On a pull request to main; on a push to main touching 10 paths; or by hand. Runs packages/cognate/scripts/vendor-types.mjs, scripts/check-bundle-types.mjs, scripts/make-tenant-root.mjs and 42 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more.
 2. **Publish to GHCR.** When a release is published; on a `workflow_call` event; or by hand. Runs packages/node/src/index.ts; builds packages/agent-identity/src/, packages/civility-kernel/src/, packages/model-registry/src/ and 30 more; packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image.
 3. **Release.** When a tag matching `v*` is pushed. Runs packages/cognate/scripts/vendor-types.mjs, packages/node/src/index.ts, packages/agent-identity/tests/ and 40 more; builds packages/cognate/src/agent-identity.ts, packages/cognate/src/civility-kernel.ts, packages/cognate/src/index.ts and 61 more; packs package.json, packages/, packages/agent-identity/package.json and 11 more into an image.
 4. **Deploy site to GitHub Pages.** On a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
