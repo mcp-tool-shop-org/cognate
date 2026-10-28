@@ -52,7 +52,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "cognate",
-      "qualifyingSourceCommits": 4,
+      "qualifyingSourceCommits": 5,
       "rebaseline": null
     },
     {
@@ -194,7 +194,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "scripts",
-      "qualifyingSourceCommits": 3,
+      "qualifyingSourceCommits": 4,
       "rebaseline": null
     },
     {
@@ -262,8 +262,8 @@
         "path": ".dockerignore"
       },
       {
-        "commits": 6,
-        "lines": 224,
+        "commits": 7,
+        "lines": 229,
         "path": ".github/workflows/ci.yml"
       },
       {
@@ -292,8 +292,8 @@
         "path": ".gitignore"
       },
       {
-        "commits": 20,
-        "lines": 199,
+        "commits": 21,
+        "lines": 204,
         "path": "CHANGELOG.md"
       },
       {
@@ -373,7 +373,7 @@
       },
       {
         "commits": 8,
-        "lines": 367,
+        "lines": 372,
         "path": "atlas/README.md"
       },
       {
@@ -383,17 +383,17 @@
       },
       {
         "commits": 8,
-        "lines": 2047,
+        "lines": 2062,
         "path": "atlas/page.json"
       },
       {
         "commits": 8,
-        "lines": 3580,
+        "lines": 3824,
         "path": "atlas/statistics.json"
       },
       {
         "commits": 8,
-        "lines": 9989,
+        "lines": 10699,
         "path": "atlas/structure.json"
       },
       {
@@ -732,9 +732,14 @@
         "path": "packages/cognate/README.zh.md"
       },
       {
-        "commits": 15,
-        "lines": 133,
+        "commits": 16,
+        "lines": 135,
         "path": "packages/cognate/package.json"
+      },
+      {
+        "commits": 1,
+        "lines": 112,
+        "path": "packages/cognate/scripts/vendor-types.mjs"
       },
       {
         "commits": 1,
@@ -1178,6 +1183,31 @@
       },
       {
         "commits": 1,
+        "lines": 37,
+        "path": "scripts/bundle-types-fixture/consumer.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 5,
+        "path": "scripts/bundle-types-fixture/package.json"
+      },
+      {
+        "commits": 1,
+        "lines": 12,
+        "path": "scripts/bundle-types-fixture/tsconfig.bundler.json"
+      },
+      {
+        "commits": 1,
+        "lines": 12,
+        "path": "scripts/bundle-types-fixture/tsconfig.node16.json"
+      },
+      {
+        "commits": 1,
+        "lines": 94,
+        "path": "scripts/check-bundle-types.mjs"
+      },
+      {
+        "commits": 1,
         "lines": 26,
         "path": "scripts/health-server.mjs"
       },
@@ -1292,24 +1322,24 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-10-28T01:40:18.743Z",
+  "generatedAt": "2026-10-28T02:13:17.241Z",
   "generatedFrom": {
-    "commit": "e7ac6bbe182c3383e6034392052dfa4595f22e9e"
+    "commit": "a7f3f0dd3469be6ecc53c9adaf4b2b632f586495"
   },
   "pairs": [
     {
       "a": "CHANGELOG.md",
       "b": "HANDBOOK.md",
-      "either": 21,
+      "either": 22,
       "shared": 11,
-      "strength": 0.52381
+      "strength": 0.5
     },
     {
       "a": "CHANGELOG.md",
       "b": "README.md",
-      "either": 20,
+      "either": 21,
       "shared": 14,
-      "strength": 0.7
+      "strength": 0.666667
     },
     {
       "a": "HANDBOOK.md",
@@ -1510,9 +1540,9 @@
     {
       "a": "package.json",
       "b": "packages/cognate/package.json",
-      "either": 19,
+      "either": 20,
       "shared": 12,
-      "strength": 0.631579
+      "strength": 0.6
     },
     {
       "a": "packages/agent-identity/package.json",
@@ -1546,16 +1576,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-10-27T21:38:43-04:00",
-    "inScopeFiles": 205,
+    "headDate": "2026-10-27T22:12:44-04:00",
+    "inScopeFiles": 211,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 50,
+    "qualifyingCommits": 51,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-05-01T01:38:43.000Z",
+    "since": "2026-05-01T02:12:44.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

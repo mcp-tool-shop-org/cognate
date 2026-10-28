@@ -98,79 +98,68 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 43,
-      "changed": 0,
+      "added": 6,
+      "changed": 3,
       "moved": 0,
-      "parts": 2,
+      "parts": 4,
       "removed": 0
     },
     "items": [
       {
         "kind": "door",
-        "sentence": "CI now also runs packages/civility-kernel/tests/ and packages/node/tests/civility-kernel-proof.test.ts.",
+        "sentence": "CI now also runs packages/cognate/scripts/vendor-types.mjs and scripts/check-bundle-types.mjs.",
         "subjects": [
           ".github/workflows/ci.yml",
-          "packages/civility-kernel/tests/",
-          "packages/node/tests/civility-kernel-proof.test.ts"
+          "packages/cognate/scripts/vendor-types.mjs",
+          "scripts/check-bundle-types.mjs"
         ]
       },
       {
         "kind": "door",
-        "sentence": "CI now also builds packages/civility-kernel/src/ and packages/cognate/src/civility-kernel.ts.",
+        "sentence": "Release now also runs packages/cognate/scripts/vendor-types.mjs.",
         "subjects": [
-          ".github/workflows/ci.yml",
-          "packages/civility-kernel/src/",
-          "packages/cognate/src/civility-kernel.ts"
+          ".github/workflows/release.yml",
+          "packages/cognate/scripts/vendor-types.mjs"
         ]
       },
       {
-        "kind": "door",
-        "sentence": "Publish to GHCR now also builds packages/civility-kernel/src/.",
+        "kind": "landing",
+        "sentence": "packages/cognate/dist is now written by packages/cognate/scripts/vendor-types.mjs.",
         "subjects": [
-          ".github/workflows/docker.yml",
-          "packages/civility-kernel/src/"
+          "packages/cognate/dist",
+          "packages/cognate/scripts/vendor-types.mjs"
         ]
       },
       {
-        "kind": "door",
-        "sentence": "And 4 more changes to doors.",
-        "subjects": []
-      },
-      {
-        "kind": "unassigned",
-        "sentence": "packages/civility-kernel/CHANGELOG.md is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "kind": "landing",
+        "sentence": "packages/cognate/dist/_types/attestia/index.d.ts/* is now written by packages/cognate/scripts/vendor-types.mjs.",
         "subjects": [
-          "packages/civility-kernel/CHANGELOG.md"
+          "packages/cognate/dist/_types/attestia/index.d.ts/*",
+          "packages/cognate/scripts/vendor-types.mjs"
         ]
       },
       {
-        "kind": "unassigned",
-        "sentence": "packages/civility-kernel/LICENSE is new and belongs to no part, so atlas check fails on it against the previous map.",
+        "kind": "landing",
+        "sentence": "packages/cognate/dist/_types/cognate/* is now written by packages/cognate/scripts/vendor-types.mjs.",
         "subjects": [
-          "packages/civility-kernel/LICENSE"
+          "packages/cognate/dist/_types/cognate/*",
+          "packages/cognate/scripts/vendor-types.mjs"
         ]
       },
       {
-        "kind": "unassigned",
-        "sentence": "packages/civility-kernel/package.json is new and belongs to no part, so atlas check fails on it against the previous map.",
-        "subjects": [
-          "packages/civility-kernel/package.json"
-        ]
-      },
-      {
-        "kind": "unassigned",
-        "sentence": "And 38 more new files that belong to no part.",
+        "kind": "landing",
+        "sentence": "And 5 more new writers and readers of places.",
         "subjects": []
       },
       {
         "kind": "counts",
-        "sentence": "43 files added, across 2 parts.",
+        "sentence": "6 files added and 3 changed content, across 4 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "9aef44d05d6767be1738f65226a2b1b306f22800",
-      "generatedAt": "2026-10-28T01:38:02.215Z"
+      "commit": "e7ac6bbe182c3383e6034392052dfa4595f22e9e",
+      "generatedAt": "2026-10-28T01:40:18.743Z"
     },
     "unchanged": false
   },
@@ -179,9 +168,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 0 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "e7ac6bbe182c3383e6034392052dfa4595f22e9e",
+  "commit": "a7f3f0dd3469be6ecc53c9adaf4b2b632f586495",
   "defaultBranch": "main",
-  "derived": "14 parts, mostly TypeScript (118 files), JavaScript (3), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
+  "derived": "14 parts, mostly TypeScript (119 files), JavaScript (5), CSS (2) and Astro (1). Work enters through 5 doors; CI, Publish to GHCR and Release each reach 9 parts, and CI is followed because a pull request goes through it. It publishes @mcptoolshop/cognate to npm and a container image. It deploys a site to GitHub Pages. People import @mcptoolshop/cognate.",
   "doors": [
     {
       "builds": [
@@ -219,7 +208,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 9
+          "files": 10
         },
         {
           "boundary": "model-registry",
@@ -249,7 +238,7 @@
         {
           "boundary": "scripts",
           "depth": 0,
-          "files": 1
+          "files": 2
         },
         {
           "boundary": "types",
@@ -258,6 +247,8 @@
         }
       ],
       "runs": [
+        "packages/cognate/scripts/vendor-types.mjs",
+        "scripts/check-bundle-types.mjs",
         "scripts/make-tenant-root.mjs",
         "packages/agent-identity/tests/",
         "packages/civility-kernel/tests/",
@@ -278,15 +269,16 @@
         "packages/prompt-store/tests/",
         "packages/repomesh-bridge/tests/"
       ],
-      "runsCount": 19,
-      "runsMore": 21,
+      "runsCount": 21,
+      "runsMore": 42,
       "sends": [],
       "stages": [],
       "triggers": [
         "on a pull request to main",
         "on a push to main touching 9 paths",
         "or by hand"
-      ]
+      ],
+      "untracked": "packages/cognate/dist/, which is not tracked"
     },
     {
       "builds": [
@@ -332,7 +324,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 12
+          "files": 13
         },
         {
           "boundary": "model-registry",
@@ -437,7 +429,7 @@
         {
           "boundary": "cognate",
           "depth": 0,
-          "files": 12
+          "files": 13
         },
         {
           "boundary": "model-registry",
@@ -476,6 +468,7 @@
         }
       ],
       "runs": [
+        "packages/cognate/scripts/vendor-types.mjs",
         "packages/node/src/index.ts",
         "packages/agent-identity/tests/",
         "packages/civility-kernel/tests/",
@@ -496,8 +489,8 @@
         "packages/prompt-store/tests/",
         "packages/repomesh-bridge/tests/"
       ],
-      "runsCount": 19,
-      "runsMore": 21,
+      "runsCount": 20,
+      "runsMore": 40,
       "sends": [
         "publishes @mcptoolshop/cognate to npm and a container image",
         "creates a GitHub release"
@@ -505,7 +498,8 @@
       "stages": [],
       "triggers": [
         "when a tag matching `v*` is pushed"
-      ]
+      ],
+      "untracked": "packages/cognate/dist/, which is not tracked"
     },
     {
       "checks": [],
@@ -645,11 +639,14 @@
   ],
   "engine": "1.24.0",
   "generated": [],
-  "generatedAt": "2026-10-28T01:40:18.743Z",
+  "generatedAt": "2026-10-28T02:13:17.241Z",
   "limits": [
-    "2 reads use paths built at run time and are not named here.",
-    "5 writes and 22 reads go to a path their caller passes, not to this repository.",
+    "8 imports could not be resolved: `scripts/bundle-types-fixture/consumer.ts` imports `@mcptoolshop/cognate`, which a build generates; `scripts/bundle-types-fixture/consumer.ts` imports `@mcptoolshop/cognate/policy`, which a build generates; `scripts/bundle-types-fixture/consumer.ts` imports `@mcptoolshop/cognate/types`, which a build generates; and 5 more.",
+    "3 reads use paths built at run time and are not named here.",
+    "3 writes go to places this repository does not track, so they are not listed as generated.",
+    "6 writes and 24 reads go to a path their caller passes, not to this repository.",
     "3 reads go to the directory the command is run in, not to this repository.",
+    "4 commands are built at run time and not followed.",
     "41 files belong to no part: packages/civility-kernel/CHANGELOG.md, packages/civility-kernel/LICENSE, packages/civility-kernel/package.json and 38 more.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
