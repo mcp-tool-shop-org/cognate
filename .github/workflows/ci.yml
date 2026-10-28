@@ -10,6 +10,7 @@ on:
       - "tsconfig*.json"
       - "Dockerfile"
       - "docker-compose*.yml"
+      - "**/*.mjs"
       - "scripts/**"
       - ".github/workflows/**"
       - "atlas/**"

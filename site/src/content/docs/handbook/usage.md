@@ -1,17 +1,55 @@
 ---
 title: Usage
-description: Call the policy engine, the model registry, agent identity, and the prompt store.
+description: Choose a plan with the civility kernel, then call the policy engine, the model registry, agent identity, and the prompt store.
 sidebar:
   order: 2
 ---
 
-Every call takes the state you already have. None of these functions read the clock, the filesystem, or the network.
+Every call takes the state you already have. None of these functions read the filesystem or the network, and only the kernel's `decide` reads the clock, when you don't pass it a time.
 
-The examples use the workspace names (`@cognate/policy` and so on). From npm, import the same functions from the bundle's subpaths: `@mcptoolshop/cognate/policy`, `@mcptoolshop/cognate/model-registry`, `@mcptoolshop/cognate/agent-identity` and `@mcptoolshop/cognate/prompt-store`.
+The examples use the workspace names (`@cognate/policy` and so on). From npm, import the same functions from the bundle's subpaths: `@mcptoolshop/cognate/civility-kernel`, `@mcptoolshop/cognate/policy`, `@mcptoolshop/cognate/model-registry`, `@mcptoolshop/cognate/agent-identity`, `@mcptoolshop/cognate/prompt-store`, `@mcptoolshop/cognate/repomesh-bridge` and `@mcptoolshop/cognate/types`.
+
+## Choose a plan (new in 1.1.0)
+
+Before an agent acts, the civility kernel chooses among its candidate plans. Plans that break a hard constraint are dropped, the rest are scored by the policy's weights, and the top plan executes unless its uncertainty is over the policy's threshold.
+
+```ts
+import { createKernel, computeDecisionDigests } from "@cognate/civility-kernel";
+
+const kernel = createKernel({
+  policy: {
+    version: "1.0",
+    weights: { efficiency: 0.3, low_risk: 0.7 },
+    constraints: ["no_irreversible_changes"],
+    contextRules: [],
+    uncertaintyThreshold: 0.4,
+    memory: {},
+    calibration: { riskTolerance: 0.3, verbosity: 0.5, initiative: 0.5 },
+  },
+});
+
+const plans = [
+  { id: "drop-and-reload", summary: "Drop the table and reload it", steps: [], meta: { reversibility: 0, estimatedTimeSec: 30 } },
+  { id: "migrate-with-backup", summary: "Back up, then migrate", steps: [], meta: { reversibility: 1, estimatedTimeSec: 300, stake: 0.2 } },
+];
+
+const trace = kernel.decide("deploy:db", plans, { decisionId: "dec-1", timestamp: "2026-10-28T12:00:00.000Z" });
+trace.outcome;      // "EXECUTE"
+trace.chosenPlanId; // "migrate-with-backup": the irreversible plan broke no_irreversible_changes
+
+const { planSha256, decisionSha256 } = computeDecisionDigests(trace, plans[1]);
+// two 64-character hex digests, the form preRegisterRun takes
+```
+
+With only `drop-and-reload` offered, the outcome is `NO_VALID_PLAN`. Give `migrate-with-backup` a `meta.uncertainty` of 0.9 and it is `ASK_USER`: the kernel asks a person rather than act. In both cases `chosenPlanId` is undefined.
+
+Without `decisionId` and `timestamp`, `decide` uses a random id and the current time. Pass both and the same inputs give a byte-identical trace.
+
+To record the decision, `attestDecision({ eventStore, tenantId, actorId }, trace, plans[1])` appends `cognate.policy.decided` to `cognate-<tenantId>-policy`. The event carries the digests, the outcome, the chosen plan's id, and the constraints each rejected plan broke. It never carries plan steps.
 
 ## Policy
 
-`evaluatePolicy` returns one overall action. Precedence is `deny`, then `quarantine`, then `require-human-review`, then `allow`. A matched rule with severity `block` is what stops the call.
+Once a plan runs, the policy engine gates each event: every prompt, output or spend. `evaluatePolicy` returns one overall action. Precedence is `deny`, then `quarantine`, then `require-human-review`, then `allow`. A matched rule with severity `block` is what stops the call.
 
 ```ts
 import { evaluatePolicy } from "@cognate/policy";

@@ -2,7 +2,9 @@
 
 All notable changes to Cognate are documented in this file.
 
-## [Unreleased]
+## [1.1.0] - release date to be set on the release day
+
+1.1.0 adds plan selection before an agent acts, alongside the existing gate on each event, and fixes the bundle's type declarations for npm consumers. Nothing in the HTTP API, the signed-request format or the event and attestation format changes, so a 1.0.0 caller keeps working.
 
 ### Added
 
@@ -21,6 +23,15 @@ All notable changes to Cognate are documented in this file.
 
 - `@cognate/civility-kernel`: 164 tests (143 ported, 21 new), coverage 91.9% of lines, floor 90. `@cognate/node`: an inclusion-proof test for an attested decision. The bundle smoke test checks the new subpath and namespace.
 - `scripts/check-bundle-types.mjs`, a CI step: it packs the bundle as `release.yml` publishes it, installs it into an empty project with only `typescript` and `@types/node`, and runs strict `tsc --noEmit` under `moduleResolution` `bundler` and `node16` on a file importing a type and a value from the root entry and every subpath. It also fails if an entry declaration mentions `@cognate/`, or any declaration imports a module that is neither relative nor a runtime dependency. On the build before this fix it fails (54 type errors across the two settings); after it, it passes.
+- 490 tests pass across the workspace (civility-kernel 164, node 157, model-registry 58, policy 47, agent-identity 29, prompt-store 24, repomesh-bridge 9, cognate 2). Line coverage is 91.9% in civility-kernel, 94.3% in node, 93.4% in policy, 99.6% in model-registry and 100% in agent-identity, prompt-store and repomesh-bridge, and each of those seven packages has a vitest line floor of 90 or above, which meets the org's 90% bar. `@cognate/types` holds types only, and the bundle is covered by its smoke tests.
+
+### Docs
+
+- The README, the handbook, HANDBOOK.md and the landing page are brought current for 1.1.0: a "What's new in 1.1.0" section and handbook entry, civility-kernel in the package tables, the architecture page and the reference, the `./civility-kernel` subpath in every list of subpaths, the two stages (choose a plan, then gate each event), and the measured test counts and coverage.
+
+### CI
+
+- `ci.yml` runs on a push that changes any `.mjs` file (`"**/*.mjs"` in `on.push.paths`), so a change to `packages/cognate/scripts/vendor-types.mjs` or `scripts/check-bundle-types.mjs` alone is tested.
 
 ## [1.0.0] - 2026-10-25
 

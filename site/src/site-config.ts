@@ -9,7 +9,7 @@ export const config: SiteConfig = {
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">mcp-tool-shop</a>',
 
   hero: {
-    badge: 'v1.0.0',
+    badge: 'v1.1.0',
     headline: 'Structural governance',
     headlineAccent: 'for autonomous intelligence.',
     description: 'Every model version, prompt, output, and policy decision — attested, immutable, and human-governed. Built on Attestia.',
@@ -29,6 +29,7 @@ export const config: SiteConfig = {
       title: 'What holds',
       subtitle: 'Pure functions. Callers supply the clock, the keys, and the store.',
       features: [
+        { title: 'Plans before actions', desc: 'New in 1.1.0: the civility kernel drops plans that break a hard rule, scores the rest, and executes the best or asks a person. Each decision can be hashed and recorded.' },
         { title: 'Fail closed', desc: 'A policy disagreement stops the call. The engine does not rewrite the rule to let it through.' },
         { title: 'Human approval', desc: 'Models do not deploy themselves. Agents do not grant themselves capabilities. Approval is a separate act.' },
         { title: 'Append-only', desc: 'Prompts and outputs are logged, encrypted with a tenant key, and hashed. Nothing in the store updates or deletes.' },
@@ -40,11 +41,12 @@ export const config: SiteConfig = {
       kind: 'data-table',
       id: 'packages',
       title: 'Packages',
-      subtitle: 'Six libraries, bundled into @mcptoolshop/cognate on npm, and an HTTP server that runs from the repository or the Docker image.',
+      subtitle: 'Seven libraries, bundled into @mcptoolshop/cognate on npm with their types, and an HTTP server that runs from the repository or the Docker image.',
       columns: ['Package', 'Role'],
       rows: [
         ['@cognate/types', 'Domain types. Zero dependencies.'],
         ['@cognate/policy', 'evaluatePolicy. Pure. No I/O.'],
+        ['@cognate/civility-kernel', "New in 1.1.0. Chooses among an agent's plans, or asks a person first."],
         ['@cognate/model-registry', 'Lifecycle from registered to deployed.'],
         ['@cognate/agent-identity', 'Grants, approvals, revocations.'],
         ['@cognate/prompt-store', 'Encrypted append-only prompt log.'],
