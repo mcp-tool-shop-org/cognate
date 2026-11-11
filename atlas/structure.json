@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "93a6349a7bf4c121c54ca79f4c6ff449294f272bf4de8370561fb08f4eb70f02",
+          "hash": "0db38ba507e652e0dac2b3d085ffb42a284188171591e63e031c0fe45d11d961",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -188,35 +188,35 @@
           "path": "packages/cognate/LICENSE"
         },
         {
-          "hash": "d56b8b4cc2fe8f29e1354c032a72c5632c17212d4f2134b00027955fca8dcc1a",
+          "hash": "53ee56530bdd515c167ab858afb5f43147501ee3693c1b4879dfc8bfb8656eac",
           "path": "packages/cognate/README.es.md"
         },
         {
-          "hash": "acb0b0e6daa4dbe7b4825e642a53dbb0143c10dbbd879b98a22471ba8bcf78ca",
+          "hash": "872af614da9256c07e74a7c3b564a6cc38d4b77e7a2c169060e2fccf5960a4d2",
           "path": "packages/cognate/README.fr.md"
         },
         {
-          "hash": "bd942d4922058c4164d81ac2441dcc190633ff4cc5127c7f5534096165841e42",
+          "hash": "b3d638da881701458e9401b1c224e2592753d93cbea76fc116937461fe769892",
           "path": "packages/cognate/README.hi.md"
         },
         {
-          "hash": "42171c8935df7b1e66eb8949f67a81afb9724a29fc43b59f09ad9bab80de2d26",
+          "hash": "1b3128a8217f29a4f52ca32409f3f2224da13fa56c1083cf652a32156de5dc76",
           "path": "packages/cognate/README.it.md"
         },
         {
-          "hash": "4582b61d7cc5387bd8e0edacbe4bd72944f981732d35329f4ec3dad518000d0b",
+          "hash": "2454dd55f92d2479ee4ec93329ec12b3b5e02d8a2effcfa4409277fee1af9c61",
           "path": "packages/cognate/README.ja.md"
         },
         {
-          "hash": "4714ad01e0a3a9e3d302f0cbff948eb9d644c8c72a0198bdd247f4460a0b9659",
+          "hash": "109ada2d3abba7abbdc8006998b3058d2f073db4249bdc90d7bfd7b3c3635f7e",
           "path": "packages/cognate/README.md"
         },
         {
-          "hash": "6570084af1395a3ecf8cf2913be226e47a454974236adceceece1a194dd88509",
+          "hash": "9e16c3b55f8142c7b2ddefeb298b4ec4d890cfdb7ba8bb1a6883a388c59544bc",
           "path": "packages/cognate/README.pt-BR.md"
         },
         {
-          "hash": "6bb68ae2981676bde0675d820f2698ca96e4f1f37ff861a198ed6f0eb7221393",
+          "hash": "a8af05cc0a22cb80bec953cec891a91719f239880142e63ea1d7764579a1f6e1",
           "path": "packages/cognate/README.zh.md"
         },
         {
@@ -2601,7 +2601,7 @@
           "path": ".gitignore"
         },
         {
-          "hash": "728bfd22a149f2adf4689dd2901134402d72ee46a544ff673d135f51c8c052ad",
+          "hash": "614fb72869ff5584c647f250848871556371a93c0645304705f64ecae917b127",
           "path": "CHANGELOG.md"
         },
         {
@@ -2613,7 +2613,7 @@
           "path": "Dockerfile"
         },
         {
-          "hash": "661f7900014edfb5ccd1f35d16366ce4f4b73d752cbedbef48fc551de18686ab",
+          "hash": "61d4f2883e4a23888b2470425c77062e9f30b106d3a72bad0f75eb1cce138930",
           "path": "HANDBOOK.md"
         },
         {
@@ -2621,35 +2621,35 @@
           "path": "LICENSE"
         },
         {
-          "hash": "a036f2f3e272d9457d3c36ac5e15047c9e8e6c1e7c1a2b1856bca5a9f2e9f2ed",
+          "hash": "283bb6896449745cbd412f6f9d4b6cb24937e39236d16768152f8f9a3433c215",
           "path": "README.es.md"
         },
         {
-          "hash": "91a68a371b1a0f7850abeea41a9ef5497686730363344105aede8e31378e2a04",
+          "hash": "8357c825ac8e6d931c97dfe0f27b2dc272a671e386adf8c07dc0fb52983564fc",
           "path": "README.fr.md"
         },
         {
-          "hash": "13920789571414b5efaee1a76d242882af1b8ebe9a08462937e609ad50889d26",
+          "hash": "1ab30a7facb15510a1ff114b7d8ec123167090c8ae4340a9d558803c471d447c",
           "path": "README.hi.md"
         },
         {
-          "hash": "909e6c5f252e1532725d2222e912a4bda1557e4c5170db47936ec42675ba7f2c",
+          "hash": "c3ebb05c4d0ce255d6f5cb32475481f0cc95748b7b81d8a50dbf052e5267e18b",
           "path": "README.it.md"
         },
         {
-          "hash": "20d12eb287f16bfb85afcf244c14311bc4f16a1761c237e5ae73443dbfa24d9e",
+          "hash": "19b747edb64d92cdc35d160e1330eafecb9509c1c6d988abf86fedbc32d18860",
           "path": "README.ja.md"
         },
         {
-          "hash": "067c5536a09eded1d03391e8fc3f2567401ab7a5089ad0bd00efaef45e1de9f5",
+          "hash": "3b052c91e8ce9e714575e02622d50b3665a7536abfcefc63bf03ca234e451c96",
           "path": "README.md"
         },
         {
-          "hash": "4faa9ff66f0b71e813257295920d0c382e2104526a83be3a6d21ec9b78c6dd33",
+          "hash": "461665c1fc24538c59595db023be90d0b8f964f0aff0a1c42b31e4de94f6c9fe",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "34a0a44cbbea1a978d06c0201a2172a8bc2fbba0ad587b07e358af902c841642",
+          "hash": "5d01d72e27b9e81df68fef62e9ef57413169d66248f87a1420b8d30bdf7204db",
           "path": "README.zh.md"
         },
         {
@@ -2835,11 +2835,11 @@
           "path": "site/src/content/docs/handbook/getting-started.md"
         },
         {
-          "hash": "7d3b69a84ac7398580a4683d3cebcfe957c9a1f7eaa48ee1fc893a7933ef51e1",
+          "hash": "613531648f26f8af95c35d2b88ed3dc5a427be144fefa7b88cbd270264e709c8",
           "path": "site/src/content/docs/handbook/index.md"
         },
         {
-          "hash": "7793805ca73c2fdb01e3f5f5232947bb946ba007840d71fc188d45706160f9b5",
+          "hash": "6e02c9a085055f5a027c3e8bbce3f4cac618e22a71fa030364b075b56507ed77",
           "path": "site/src/content/docs/handbook/reference.md"
         },
         {
@@ -2847,11 +2847,11 @@
           "path": "site/src/content/docs/handbook/security.md"
         },
         {
-          "hash": "56a9ebdcbe0d9701af1e8271195ee03494198eb177b90c9138dbb76864e8e37a",
+          "hash": "b090705969ef761fb035dee6a0b29296a72e9955e13bea570b2b892a6a4b1ce2",
           "path": "site/src/content/docs/handbook/usage.md"
         },
         {
-          "hash": "b4147d434d8cfa3aaf0dffea0f09b5f7ac0e5bb500bca4a03ffbd7b661627576",
+          "hash": "2e97cc0462d524da3b95fc16607f4a85785a52fefbd17ce8e3e65bb5d1edaae3",
           "path": "site/src/content/docs/handbook/whats-new.md"
         },
         {
@@ -2868,7 +2868,7 @@
         },
         {
           "constantOnly": true,
-          "hash": "63664928f493946471af5d52f69a8eb8a3fd4623381eb3df39366aa78b436d40",
+          "hash": "c9564e79e55afb6b4f502cf78022ed92967cabfa284ffb8cb09bb41b5d123957",
           "path": "site/src/site-config.ts"
         },
         {
@@ -4964,9 +4964,9 @@
       "to": "node"
     }
   ],
-  "engine": "1.24.0",
+  "engine": "1.26.0",
   "generatedFrom": {
-    "commit": "f3f8a28eb4bef0af6e4477d2f8060998ca0af788",
+    "commit": "90d8b208dbd6849976784fb0352133ca14777653",
     "tracked": 206
   },
   "landings": [
